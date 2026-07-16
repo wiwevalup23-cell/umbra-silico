@@ -17,9 +17,11 @@ const timeFormatter = new Intl.DateTimeFormat(undefined, {
   month: 'short',
 })
 
+// 'dirty' is intentionally absent: in the local-first flow it only means
+// "not replicated to a remote yet" while the note is already persisted on
+// disk, so surfacing it as "Unsaved" would misinform the user.
 const exceptionalSyncStatusLabels: Record<string, string> = {
   conflict: 'Review needed',
-  dirty: 'Unsaved',
   error: 'Review needed',
   saving: 'Saving',
   syncing: 'Saving',
@@ -95,6 +97,11 @@ export function NoteCard({
         </span>
         {shouldShowPreview ? (
           <span className="sn-note-card__preview">{preview}</span>
+        ) : null}
+        {!note.isLocked && note.tags?.length ? (
+          <span className="sn-note-card__tags" aria-label="Tags">
+            {note.tags.slice(0, 2).map((tag) => <span key={tag}>{tag}</span>)}
+          </span>
         ) : null}
         {shouldShowSyncStatus ? (
           <span className="sn-note-card__meta">{syncStatus}</span>

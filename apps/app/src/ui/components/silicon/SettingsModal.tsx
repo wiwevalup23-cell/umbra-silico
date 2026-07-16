@@ -74,7 +74,7 @@ export function SettingsModal({ onClose, settings, updateSetting }: SettingsModa
             title="Close"
             type="button"
           >
-            <UiIcon name="chevronRight" />
+            <UiIcon name="close" />
           </button>
         </header>
 

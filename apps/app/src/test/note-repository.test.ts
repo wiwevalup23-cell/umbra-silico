@@ -432,6 +432,7 @@ describe('DefaultNoteRepository', () => {
     const noteId = await repository.createNote({
       title: 'Secret title',
       document: createDocument('Secret body'),
+      properties: { status: 'active', tags: ['classified'] },
     })
     const noteQuery = repository.liveNote(noteId)
 
@@ -464,9 +465,84 @@ describe('DefaultNoteRepository', () => {
     expect(rawOps.map((op) => op.type)).toContain('note.lock')
     expect(rawStorage).not.toContain('Secret title')
     expect(rawStorage).not.toContain('Secret body')
+    expect(rawStorage).not.toContain('classified')
     await expect(repository.updateNote(noteId, { title: 'Plain leak' })).rejects.toThrow(
       'unlock session',
     )
+  })
+
+  it('moves and lifts locked notes across folders without an unlock session', async () => {
+    const { cleanup, database, repository } = createRepositoryHarness()
+    cleanupTasks.push(cleanup)
+
+    const source = await repository.createFolder({ name: 'Source' })
+    const target = await repository.createFolder({ name: 'Target' })
+    const noteId = await repository.createNote({
+      parentFolderId: source,
+      title: 'Secret in folder',
+      document: createDocument('Secret body'),
+    })
+    await repository.lockNote(noteId, {
+      masterPassword: 'correct horse battery staple',
+    })
+
+    // Metadata-only move must not require plaintext access and must keep ciphertext intact.
+    await expect(repository.moveNoteToFolder(noteId, target)).resolves.toBeUndefined()
+
+    const movedRaw = await database.notes.get(noteId)
+    expect(movedRaw).toMatchObject({
+      isLocked: 1,
+      title: null,
+      document: null,
+      parentFolderId: target,
+    })
+    expect(movedRaw?.encryptedPayload).toEqual(expect.any(String))
+
+    // Deleting the containing folder lifts the locked note to root, still without decryption.
+    await expect(repository.deleteFolder(target)).resolves.toBeUndefined()
+
+    const rootList = repository.liveNoteList({ folderId: null })
+    const rootSnapshot = await waitForSnapshot(
+      () => rootList.getSnapshot(),
+      (snapshot) => snapshot.some((note) => note.id === noteId),
+    )
+
+    expect(rootSnapshot).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ id: noteId, isLocked: true, parentFolderId: null }),
+      ]),
+    )
+
+    const liftedRaw = await database.notes.get(noteId)
+    expect(liftedRaw).toMatchObject({ isLocked: 1, parentFolderId: null })
+  })
+
+  it('persists page properties and finds notes by stored tags', async () => {
+    const { cleanup, repository } = createRepositoryHarness()
+    cleanupTasks.push(cleanup)
+
+    const noteId = await repository.createNote({
+      title: 'Field notes',
+      properties: { status: 'idea', tags: ['Research', 'Archive'] },
+    })
+    const taggedQuery = repository.liveNoteList({ search: 'research' })
+    const noteQuery = repository.liveNote(noteId)
+
+    await waitForSnapshot(() => taggedQuery.getSnapshot(), (notes) => notes.length === 1)
+    expect(taggedQuery.getSnapshot()[0]).toMatchObject({
+      id: noteId,
+      propertyStatus: 'idea',
+      tags: ['Research', 'Archive'],
+    })
+
+    await repository.updateNote(noteId, {
+      properties: { status: 'done', tags: ['Reference'] },
+    })
+
+    expect(noteQuery.getSnapshot()).toMatchObject({
+      properties: { status: 'done', tags: ['Reference'] },
+    })
+    expect(taggedQuery.getSnapshot()).toEqual([])
   })
 
   it('unlocks notes for an in-memory session and keeps edits encrypted at rest', async () => {

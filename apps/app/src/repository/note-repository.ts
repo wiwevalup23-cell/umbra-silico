@@ -15,9 +15,11 @@ import {
   createNoteInputSchema,
   deviceIdSchema,
   documentV1Contract,
+  encryptedLocalNoteSchema,
   folderIdSchema,
   lockCredentialsSchema,
   noteDocumentSchema,
+  notePropertiesSchema,
   noteIdSchema,
   operationIdSchema,
   plaintextLocalNoteSchema,
@@ -76,6 +78,7 @@ const lockedNotePayloadSchema = z.object({
   title: z.string().min(1),
   preview: z.string(),
   document: noteDocumentSchema,
+  properties: notePropertiesSchema.default({ status: 'none', tags: [] }),
 })
 
 type LockedNotePayload = z.infer<typeof lockedNotePayloadSchema>
@@ -281,6 +284,7 @@ export class DefaultNoteRepository implements NoteRepository {
       title: parsedInput.title,
       document: parsedInput.document ?? documentV1Contract.createEmpty(),
       parentFolderId: parsedInput.parentFolderId ?? null,
+      properties: parsedInput.properties,
     })
 
     const noteWithOp: PlaintextLocalNote = {
@@ -398,7 +402,7 @@ export class DefaultNoteRepository implements NoteRepository {
     }
 
     for (const note of notes.filter((candidate) => candidate.parentFolderId === folderId)) {
-      await this.updateNote(note.id, { parentFolderId: folder.parentFolderId })
+      await this.reparentNote(note.id, folder.parentFolderId)
     }
 
     await this.localStore.softDeleteFolder(folderId, now)
@@ -406,7 +410,71 @@ export class DefaultNoteRepository implements NoteRepository {
   }
 
   moveNoteToFolder(noteId: NoteId, folderId: FolderId | null): Promise<void> {
-    return this.updateNote(noteId, { parentFolderId: folderId })
+    return this.reparentNote(noteId, folderId)
+  }
+
+  /**
+   * Moves a note between folders by updating only the parentFolderId metadata.
+   * parentFolderId lives outside the encrypted payload, so this works for locked
+   * notes without an unlock session and never touches ciphertext.
+   */
+  private async reparentNote(
+    noteId: NoteId,
+    folderId: FolderId | null,
+  ): Promise<void> {
+    const existing = await this.requireNote(noteId)
+
+    if (existing.parentFolderId === folderId) {
+      return
+    }
+
+    const opId = this.createOperationId()
+    const now = this.clock()
+    const reparentedNote: LocalNote = {
+      ...existing,
+      parentFolderId: folderId,
+      updatedAt: now,
+      localRevision: existing.localRevision + 1,
+      syncStatus: 'dirty',
+      lastOpId: opId,
+    }
+    const op = this.createOperation('note.update', reparentedNote, opId)
+
+    await this.localStore.putNoteWithOp(reparentedNote, op)
+    this.reparentUnlockedSession(noteId, folderId, now, reparentedNote.localRevision)
+    await this.emitAutomationEvent({
+      type: 'note.updated',
+      noteId,
+      changedFields: ['parentFolderId'],
+    })
+    await this.refreshLiveQueries()
+  }
+
+  /**
+   * Keeps an active unlocked session consistent after a metadata-only reparent so
+   * the next edit does not fail the stale-session revision check.
+   */
+  private reparentUnlockedSession(
+    noteId: NoteId,
+    folderId: FolderId | null,
+    updatedAt: string,
+    localRevision: number,
+  ): void {
+    const session = this.unlockedSessions.get(noteId)
+
+    if (!session) {
+      return
+    }
+
+    this.unlockedSessions.set(noteId, {
+      ...session,
+      note: {
+        ...session.note,
+        parentFolderId: folderId,
+        updatedAt,
+        localRevision,
+      },
+    })
   }
 
   async updateNote(noteId: NoteId, patch: UpdateNotePatch): Promise<void> {
@@ -426,6 +494,7 @@ export class DefaultNoteRepository implements NoteRepository {
           : plaintextNote.parentFolderId,
       preview: createPreview(document),
       document,
+      properties: parsedPatch.properties ?? plaintextNote.properties,
       updatedAt: this.clock(),
       localRevision: plaintextNote.localRevision + 1,
       syncStatus: 'dirty',
@@ -751,6 +820,7 @@ export class DefaultNoteRepository implements NoteRepository {
       title: note.title,
       preview: note.preview,
       document: note.document,
+      properties: note.properties ?? { status: 'none', tags: [] },
     })
   }
 
@@ -787,7 +857,7 @@ export class DefaultNoteRepository implements NoteRepository {
       activeMasterKey,
     )
 
-    return {
+    return encryptedLocalNoteSchema.parse({
       ...persistedNote,
       title: null,
       preview: null,
@@ -803,7 +873,7 @@ export class DefaultNoteRepository implements NoteRepository {
       baseRemoteRevision: note.baseRemoteRevision,
       syncStatus,
       lastOpId: opId,
-    }
+    })
   }
 
   private async decryptEncryptedNote(
@@ -826,6 +896,7 @@ export class DefaultNoteRepository implements NoteRepository {
       preview: payload.preview,
       isLocked: false,
       document: payload.document,
+      properties: payload.properties,
       encryptedPayload: null,
       encryption: null,
     })
@@ -857,7 +928,8 @@ export class DefaultNoteRepository implements NoteRepository {
     return filteredNotes.filter(
       (note) =>
         note.title.toLowerCase().includes(search) ||
-        note.preview.toLowerCase().includes(search),
+        note.preview.toLowerCase().includes(search) ||
+        note.tags?.some((tag) => tag.toLocaleLowerCase().includes(search)),
     )
   }
 

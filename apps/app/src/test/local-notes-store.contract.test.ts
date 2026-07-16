@@ -193,6 +193,9 @@ class MemorySqlDatabase implements SqlDatabase {
         syncStatus: String(bindValues[16]),
         lastOpId: bindValues[17] === null ? null : String(bindValues[17]),
         deviceId: String(bindValues[18]),
+        properties: bindValues[19] === null || bindValues[19] === undefined
+          ? null
+          : String(bindValues[19]),
       }
 
       this.notes.set(row.id, row)

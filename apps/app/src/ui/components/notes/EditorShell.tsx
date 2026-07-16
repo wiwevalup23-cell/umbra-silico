@@ -38,6 +38,7 @@ type EditorShellProps = {
   onChangeDocument: (noteId: NoteId, document: NoteDocument) => Promise<void>
   onChangeTitle: (noteId: NoteId, title: string) => Promise<void>
   onCreateNote: () => void
+  onBrowseTemplates?: () => void
   onRequestLock: (noteId: NoteId) => void
   pendingOperations: number
   syncStatus: string
@@ -984,6 +985,14 @@ type EditableNoteEditorProps = {
   onRequestLock: (noteId: NoteId) => void
 }
 
+/**
+ * Manual-save model: the user commits changes with the Save button (or
+ * Ctrl/Cmd+S), while a slow background autosave acts as a safety net. The long
+ * interval keeps the local store (and its live queries) quiet during typing,
+ * so the editor never gets "echo" content resets mid-keystroke.
+ */
+const backgroundAutosaveIntervalMs = 5 * 60 * 1000
+
 function EditableNoteEditor({
   note,
   onChangeDocument,
@@ -997,7 +1006,7 @@ function EditableNoteEditor({
   const documentAutosave = useMemo(
     () =>
       createDebouncedAutosave<DocumentAutosavePayload>({
-        delayMs: 450,
+        delayMs: backgroundAutosaveIntervalMs,
         onError: () => {
           setAutosaveState('error')
         },
@@ -1012,7 +1021,7 @@ function EditableNoteEditor({
   const titleAutosave = useMemo(
     () =>
       createDebouncedAutosave<TitleAutosavePayload>({
-        delayMs: 450,
+        delayMs: backgroundAutosaveIntervalMs,
         onError: () => {
           setAutosaveState('error')
         },
@@ -1038,6 +1047,15 @@ function EditableNoteEditor({
         class: 'sn-tiptap-prosemirror',
         role: 'textbox',
         spellcheck: 'true',
+      },
+      handleKeyDown(_view, event) {
+        if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 's') {
+          event.preventDefault()
+          void Promise.all([titleAutosave.flush(), documentAutosave.flush()])
+          return true
+        }
+
+        return false
       },
     },
     extensions: [
@@ -1102,11 +1120,24 @@ function EditableNoteEditor({
   }, [onChangeTitle])
 
   useEffect(() => {
+    // Don't clobber a title the user is still typing: with the manual-save
+    // model the incoming prop can only be the echo of our own save.
+    if (titleAutosave.hasPending()) {
+      return
+    }
+
     setTitleDraft(note.title)
-  }, [note.id, note.title])
+  }, [note.id, note.title, titleAutosave])
 
   useEffect(() => {
     if (!editor) {
+      return
+    }
+
+    // While a draft is pending or the user is typing, the incoming document is
+    // the echo of our own save; resetting content would yank the caret and
+    // make the text "jump" mid-keystroke.
+    if (documentAutosave.hasPending() || editor.isFocused) {
       return
     }
 
@@ -1115,7 +1146,7 @@ function EditableNoteEditor({
     if (!isSameContent(editor.getJSON(), nextContent)) {
       editor.commands.setContent(nextContent, { emitUpdate: false })
     }
-  }, [editor, note.document])
+  }, [documentAutosave, editor, note.document])
 
   useEffect(
     () => () => {
@@ -1174,6 +1205,12 @@ function EditableNoteEditor({
                   })
                 }}
                 onKeyDown={(event) => {
+                  if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 's') {
+                    event.preventDefault()
+                    void Promise.all([titleAutosave.flush(), documentAutosave.flush()])
+                    return
+                  }
+
                   if (event.key === 'Enter') {
                     event.preventDefault()
                     editor?.chain().focus().run()
@@ -1192,6 +1229,18 @@ function EditableNoteEditor({
             ))}
           </div>
           <div className="sn-editor-actions">
+            <button
+              aria-label="Save note"
+              className="sn-icon-button"
+              disabled={autosaveState === 'saved' || autosaveState === 'saving'}
+              onClick={() => {
+                void Promise.all([titleAutosave.flush(), documentAutosave.flush()])
+              }}
+              title="Save note (Ctrl+S)"
+              type="button"
+            >
+              <UiIcon name="save" />
+            </button>
             <button
               aria-label="Lock note"
               className="sn-icon-button"
@@ -1225,7 +1274,7 @@ function EditableNoteEditor({
       >
         <div className="sn-page-layout-frame">
           <BlockHandle editor={editor} />
-          <EditorContent editor={editor} />
+          <EditorContent className="sn-editor-content" editor={editor} />
         </div>
       </div>
     </div>
@@ -1237,6 +1286,7 @@ export function EditorShell({
   onChangeDocument,
   onChangeTitle,
   onCreateNote,
+  onBrowseTemplates,
   onRequestLock,
   pendingOperations,
   syncStatus,
@@ -1253,6 +1303,18 @@ export function EditorShell({
           pendingOperations={pendingOperations}
           syncStatus={syncStatus}
         />
+        <div className="sn-empty-actions" aria-label="Create a note">
+          <button className="sn-empty-actions__primary" onClick={onCreateNote} type="button">
+            <UiIcon name="plus" />
+            New blank note
+          </button>
+          {onBrowseTemplates ? (
+            <button onClick={onBrowseTemplates} type="button">
+              <UiIcon name="template" />
+              Browse templates
+            </button>
+          ) : null}
+        </div>
       </article>
     )
   }

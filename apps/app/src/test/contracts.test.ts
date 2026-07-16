@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest'
+import { createNoteFromTemplate } from '@/shared/note-templates'
 import {
   automationEventIdSchema,
   automationEventRecordSchema,
@@ -13,6 +14,7 @@ import {
   localNoteSchema,
   noteDocumentSchema,
   noteEncryptionMetadataSchema,
+  notePropertiesSchema,
   noteIdSchema,
   parseAutomationEvent,
   parseAutomationEventRecord,
@@ -24,6 +26,7 @@ import {
   userIdSchema,
   deviceIdSchema,
   operationIdSchema,
+  normalizeNoteTags,
 } from '@/shared/contracts'
 
 const noteId = noteIdSchema.parse('note_1')
@@ -81,6 +84,28 @@ describe('shared contract validation', () => {
 
     expect(encryptedLocalNoteSchema.parse(encryptedNote).isLocked).toBe(true)
     expect(localNoteSchema.safeParse(encryptedNote).success).toBe(true)
+  })
+
+  it('normalizes persisted page tags and validates the focused property model', () => {
+    expect(normalizeNoteTags([' Work ', '#work', 'Research notes', '', '#Ideas'])).toEqual([
+      'Work',
+      'Research notes',
+      'Ideas',
+    ])
+    expect(notePropertiesSchema.parse({ status: 'active', tags: ['Work'] })).toEqual({
+      status: 'active',
+      tags: ['Work'],
+    })
+    expect(notePropertiesSchema.safeParse({ status: 'blocked', tags: [] }).success).toBe(false)
+  })
+
+  it('creates valid built-in note templates with real starting properties', () => {
+    const daily = createNoteFromTemplate('daily', new Date('2026-07-16T12:00:00.000Z'))
+    const meeting = createNoteFromTemplate('meeting')
+
+    expect(noteDocumentSchema.parse(daily.document).content.content?.length).toBeGreaterThan(2)
+    expect(daily.properties).toEqual({ status: 'active', tags: ['daily'] })
+    expect(meeting.properties).toEqual({ status: 'active', tags: ['meeting'] })
   })
 
   it('rejects locked notes that still persist plaintext document data', () => {

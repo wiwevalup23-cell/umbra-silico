@@ -396,8 +396,76 @@ describe('Silicon Nostalgia UI shell', () => {
 
     expect(onChangeTitle).not.toHaveBeenCalled()
 
+    // Manual-save model: a quick debounce no longer fires; the background
+    // autosave waits five minutes before committing on its own.
     await act(async () => {
       vi.advanceTimersByTime(450)
+      await Promise.resolve()
+    })
+
+    expect(onChangeTitle).not.toHaveBeenCalled()
+
+    await act(async () => {
+      vi.advanceTimersByTime(5 * 60 * 1000)
+      await Promise.resolve()
+    })
+
+    expect(onChangeTitle).toHaveBeenCalledWith(plainNoteId, 'Renamed Draft')
+  })
+
+  it('saves immediately through the Save button', async () => {
+    vi.useFakeTimers()
+
+    const onChangeDocument = vi.fn(async () => undefined)
+    const onChangeTitle = vi.fn(async () => undefined)
+    const note = {
+      ...createDraftLocalNote({
+        deviceId,
+        id: plainNoteId,
+        now,
+        title: 'Draft Title',
+        userId,
+      }),
+      preview: '',
+    }
+
+    const rendered = renderUi(
+      <EditorShell
+        note={note}
+        onChangeDocument={onChangeDocument}
+        onChangeTitle={onChangeTitle}
+        onCreateNote={vi.fn()}
+        onRequestLock={vi.fn()}
+        pendingOperations={0}
+        syncStatus="idle"
+      />,
+    )
+    cleanupTasks.push(rendered.cleanup)
+
+    const titleInput = rendered.container.querySelector<HTMLInputElement>(
+      'input[aria-label="Note title"]',
+    )
+    const saveButton = rendered.container.querySelector<HTMLButtonElement>(
+      'button[aria-label="Save note"]',
+    )
+
+    expect(saveButton).not.toBeNull()
+    expect(saveButton?.disabled).toBe(true)
+
+    await act(async () => {
+      if (!titleInput) {
+        throw new Error('Expected title input.')
+      }
+
+      setInputValue(titleInput, 'Renamed Draft')
+      await Promise.resolve()
+    })
+
+    expect(saveButton?.disabled).toBe(false)
+    expect(onChangeTitle).not.toHaveBeenCalled()
+
+    await act(async () => {
+      saveButton?.click()
       await Promise.resolve()
     })
 

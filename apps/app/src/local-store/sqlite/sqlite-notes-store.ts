@@ -43,6 +43,7 @@ const noteColumns = `
   preview,
   is_locked as isLocked,
   document,
+  properties,
   encrypted_payload as encryptedPayload,
   encryption,
   created_at as createdAt,
@@ -126,6 +127,7 @@ function noteBindValues(row: StoredNoteRow): SqlBindValue[] {
     row.syncStatus,
     row.lastOpId,
     row.deviceId,
+    row.properties ?? null,
   ]
 }
 
@@ -444,11 +446,11 @@ export class SqliteNotesStore implements LocalNotesStore {
          id, user_id, schema_version, title, preview, is_locked, document,
          encrypted_payload, encryption, created_at, updated_at, deleted_at,
          parent_folder_id, local_revision, remote_revision, base_remote_revision,
-         sync_status, last_op_id, device_id
+         sync_status, last_op_id, device_id, properties
        )
        values (
          $1, $2, $3, $4, $5, $6, $7, $8, $9,
-         $10, $11, $12, $13, $14, $15, $16, $17, $18, $19
+         $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20
        )
        on conflict(id) do update set
          user_id = excluded.user_id,
@@ -457,6 +459,7 @@ export class SqliteNotesStore implements LocalNotesStore {
          preview = excluded.preview,
          is_locked = excluded.is_locked,
          document = excluded.document,
+         properties = excluded.properties,
          encrypted_payload = excluded.encrypted_payload,
          encryption = excluded.encryption,
          created_at = excluded.created_at,
@@ -508,9 +511,14 @@ export async function initializeSqliteNotesStore(db: SqlDatabase): Promise<void>
 async function ensureSqliteNotesMigrations(db: SqlDatabase): Promise<void> {
   const columns = await db.select<{ name: string }>('pragma table_info(notes)')
   const hasParentFolderId = columns.some((column) => column.name === 'parent_folder_id')
+  const hasProperties = columns.some((column) => column.name === 'properties')
 
   if (!hasParentFolderId) {
     await db.execute('alter table notes add column parent_folder_id text')
+  }
+
+  if (!hasProperties) {
+    await db.execute('alter table notes add column properties text')
   }
 }
 

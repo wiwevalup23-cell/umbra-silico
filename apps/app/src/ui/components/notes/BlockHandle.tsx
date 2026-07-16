@@ -76,7 +76,9 @@ export function BlockHandle({ editor }: BlockHandleProps) {
 
       try {
         const coords = currentEditor.view.coordsAtPos(position)
-        setTop(Math.max(8, coords.top - frameRect.top - 2))
+        // Center the 24px button cluster on the vertical midpoint of the line.
+        const lineMidpoint = (coords.top + coords.bottom) / 2
+        setTop(Math.max(8, Math.round(lineMidpoint - frameRect.top - 12)))
       } catch {
         setTop(48)
       }
@@ -204,7 +206,7 @@ export function BlockHandle({ editor }: BlockHandleProps) {
     >
       <button
         aria-label="Insert block"
-        className="sn-block-handle__button"
+        className="sn-block-handle__button sn-block-handle__button--insert"
         onClick={() => setActiveMenu((menu) => (menu === 'insert' ? null : 'insert'))}
         title="Insert block"
         type="button"

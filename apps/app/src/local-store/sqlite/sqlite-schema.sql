@@ -6,6 +6,7 @@ create table if not exists notes (
   preview text,
   is_locked integer not null default 0,
   document text,
+  properties text,
   encrypted_payload text,
   encryption text,
   created_at text not null,

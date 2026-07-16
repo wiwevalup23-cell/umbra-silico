@@ -36,6 +36,46 @@ export const noteSyncStatusValues = [
 export const noteSyncStatusSchema = z.enum(noteSyncStatusValues)
 export type NoteSyncStatus = z.infer<typeof noteSyncStatusSchema>
 
+export const notePropertyStatusValues = ['none', 'idea', 'active', 'done'] as const
+export const notePropertyStatusSchema = z.enum(notePropertyStatusValues)
+export type NotePropertyStatus = z.infer<typeof notePropertyStatusSchema>
+
+export const noteTagSchema = z.string().trim().min(1).max(32)
+export const notePropertiesSchema = z.object({
+  status: notePropertyStatusSchema.default('none'),
+  tags: z.array(noteTagSchema).max(12).transform(normalizeNoteTags).default([]),
+})
+
+export type NoteProperties = z.infer<typeof notePropertiesSchema>
+
+export const emptyNoteProperties: NoteProperties = {
+  status: 'none',
+  tags: [],
+}
+
+export function normalizeNoteTags(tags: string[]): string[] {
+  const seen = new Set<string>()
+  const normalized: string[] = []
+
+  for (const value of tags) {
+    const tag = value.trim().replace(/^#+/, '').replace(/\s+/g, ' ')
+    const key = tag.toLocaleLowerCase()
+
+    if (!tag || tag.length > 32 || seen.has(key)) {
+      continue
+    }
+
+    seen.add(key)
+    normalized.push(tag)
+
+    if (normalized.length === 12) {
+      break
+    }
+  }
+
+  return normalized
+}
+
 export const noteListItemSchema = z.object({
   id: noteIdSchema,
   title: z.string(),
@@ -44,6 +84,8 @@ export const noteListItemSchema = z.object({
   parentFolderId: folderIdSchema.nullable(),
   updatedAt: isoDateTimeSchema,
   syncStatus: noteSyncStatusSchema,
+  propertyStatus: notePropertyStatusSchema.optional(),
+  tags: z.array(noteTagSchema).optional(),
 })
 
 export type NoteListItem = z.infer<typeof noteListItemSchema>
@@ -69,6 +111,7 @@ export const plaintextLocalNoteSchema = localNoteBaseSchema.extend({
   title: z.string().min(1),
   preview: z.string(),
   document: noteDocumentSchema,
+  properties: notePropertiesSchema.optional(),
   encryptedPayload: z.null(),
   encryption: z.null(),
 })
@@ -96,6 +139,7 @@ export const createNoteInputSchema = z.object({
   title: z.string().min(1).optional(),
   document: noteDocumentSchema.optional(),
   parentFolderId: folderIdSchema.nullable().optional(),
+  properties: notePropertiesSchema.optional(),
 })
 
 export type CreateNoteInput = z.infer<typeof createNoteInputSchema>
@@ -105,12 +149,14 @@ export const updateNotePatchSchema = z
     title: z.string().min(1).optional(),
     document: noteDocumentSchema.optional(),
     parentFolderId: folderIdSchema.nullable().optional(),
+    properties: notePropertiesSchema.optional(),
   })
   .refine(
     (patch) =>
       patch.title !== undefined ||
       patch.document !== undefined ||
-      patch.parentFolderId !== undefined,
+      patch.parentFolderId !== undefined ||
+      patch.properties !== undefined,
     {
       message: 'Update patch must include at least one changed field.',
     },
@@ -142,6 +188,7 @@ export function createDraftLocalNote(input: {
   title?: string
   document?: NoteDocument
   parentFolderId?: z.infer<typeof folderIdSchema> | null
+  properties?: NoteProperties
 }): PlaintextLocalNote {
   return {
     id: input.id,
@@ -151,6 +198,7 @@ export function createDraftLocalNote(input: {
     preview: '',
     isLocked: false,
     document: input.document ?? emptyDocumentV1,
+    properties: notePropertiesSchema.parse(input.properties ?? emptyNoteProperties),
     encryptedPayload: null,
     encryption: null,
     createdAt: input.now,
@@ -187,6 +235,8 @@ export function toPlaintextListItem(note: PlaintextLocalNote): NoteListItem {
     parentFolderId: note.parentFolderId,
     updatedAt: note.updatedAt,
     syncStatus: note.syncStatus,
+    propertyStatus: note.properties?.status,
+    tags: note.properties?.tags,
   }
 }
 

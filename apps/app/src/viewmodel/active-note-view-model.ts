@@ -1,5 +1,5 @@
 import { useMemo } from 'react'
-import type { NoteDetail, NoteDocument, NoteId } from '@/shared/contracts'
+import type { NoteDetail, NoteDocument, NoteId, NoteProperties } from '@/shared/contracts'
 import { useAppUiStore } from '@/viewmodel/app-ui-store'
 import {
   createStaticLiveQuery,
@@ -13,6 +13,7 @@ export type ActiveNoteViewModel = {
   note: NoteDetail | null
   setActiveNote(noteId: NoteId | null): void
   updateDocument(noteId: NoteId, document: NoteDocument): Promise<void>
+  updateProperties(noteId: NoteId, properties: NoteProperties): Promise<void>
   updateTitle(noteId: NoteId, title: string): Promise<void>
 }
 
@@ -36,6 +37,10 @@ export function useActiveNoteViewModel(): ActiveNoteViewModel {
     setActiveNote,
     async updateDocument(noteId, document) {
       await repository.updateNote(noteId, { document })
+      syncEngine?.requestSync('outbox-change')
+    },
+    async updateProperties(noteId, properties) {
+      await repository.updateNote(noteId, { properties })
       syncEngine?.requestSync('outbox-change')
     },
     async updateTitle(noteId, title) {

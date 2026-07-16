@@ -5,6 +5,12 @@ import { useNoteRepository } from '@/viewmodel/repository-hooks'
 import { useSyncEngine } from '@/viewmodel/sync-engine-hooks'
 
 export type SyncViewModelState = {
+  /**
+   * False while the app runs purely local (no sync engine configured).
+   * Pending-operation counts are only meaningful when a remote will
+   * eventually drain the outbox.
+   */
+  hasRemote: boolean
   pendingOperations: number
   refreshPendingOperations(): Promise<void>
   setSyncBadge(status: SyncStatusSnapshot['status']): void
@@ -59,6 +65,7 @@ export function useSyncViewModel(): SyncViewModelState {
   }, [repository, setSyncBadge, syncEngine])
 
   return {
+    hasRemote: syncEngine !== null,
     pendingOperations,
     refreshPendingOperations,
     setSyncBadge,

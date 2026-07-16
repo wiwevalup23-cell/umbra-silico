@@ -28,7 +28,7 @@ export function LockModal({
   const actionLabel = isLocking ? 'Lock' : 'Unlock'
   const actionHeading = isLocking ? 'Encrypt this note' : 'Decrypt this note'
   const helpText = isLocking
-    ? 'Title, preview and body are sealed before the note leaves memory.'
+    ? 'Title, preview and body are sealed before the note leaves memory. There is no recovery: a forgotten master password means locked notes stay locked forever.'
     : 'Decrypt for a short local editing session. Plaintext stays out of storage.'
   const passwordDescription = error ? 'sn-lock-help sn-lock-error' : 'sn-lock-help'
 

@@ -5,11 +5,19 @@ import { FolderTree } from '@/ui/components/notes/FolderTree'
 import { noteDragType } from '@/ui/components/notes/note-drag'
 import { LockModal } from '@/ui/components/notes/LockModal'
 import { NoteList } from '@/ui/components/notes/NoteList'
+import { QuickSwitcher } from '@/ui/components/notes/QuickSwitcher'
+import { TemplatePicker } from '@/ui/components/notes/TemplatePicker'
 import { TrashView } from '@/ui/components/notes/TrashView'
 import { WorkspaceInspector } from '@/ui/components/notes/WorkspaceInspector'
 import { SettingsModal } from '@/ui/components/silicon/SettingsModal'
+import { MobileTabBar, type MobileTab } from '@/ui/components/silicon/MobileTabBar'
 import { UiIcon } from '@/ui/icons/ui/UiIcon'
-import type { NoteId } from '@/shared/contracts/note'
+import type { CreateNoteInput, FolderTreeNode, NoteId } from '@/shared/contracts'
+import {
+  createNoteFromTemplate,
+  noteTemplates,
+  type NoteTemplateId,
+} from '@/shared/note-templates'
 import {
   useActiveNoteViewModel,
   useFoldersViewModel,
@@ -63,17 +71,27 @@ function AppWorkspace() {
   })
   const [isHomeView, setIsHomeView] = useState(false)
   const [isSettingsOpen, setIsSettingsOpen] = useState(false)
+  const [isQuickSwitcherOpen, setIsQuickSwitcherOpen] = useState(false)
+  const [isTemplatePickerOpen, setIsTemplatePickerOpen] = useState(false)
+  const [mobileTab, setMobileTab] = useState<MobileTab>('notes')
 
   const foldersViewModel = useFoldersViewModel()
   const notesViewModel = useNotesViewModel({
     folderId: libraryMode === 'notes' ? foldersViewModel.activeFolderId : undefined,
     search: searchQuery,
   })
+  const allNotesViewModel = useNotesViewModel()
   const trashViewModel = useTrashViewModel()
   const activeNoteViewModel = useActiveNoteViewModel()
   const syncViewModel = useSyncViewModel()
   const lockModalViewModel = useLockModalViewModel()
   const { settings, updateSetting } = useSettings()
+
+  // In the local-only build the outbox is never drained, so a growing
+  // pending-operations count would only mislead; show it when a remote exists.
+  const visiblePendingOperations = syncViewModel.hasRemote
+    ? syncViewModel.pendingOperations
+    : 0
 
   const selectedNoteId = notesViewModel.activeNoteId
   const firstNoteId = notesViewModel.notes[0]?.id ?? null
@@ -94,18 +112,42 @@ function AppWorkspace() {
   }, [isNarrow])
 
   useEffect(() => {
+    function handleGlobalKeyDown(event: KeyboardEvent) {
+      if ((event.metaKey || event.ctrlKey) && event.key.toLocaleLowerCase() === 'k') {
+        event.preventDefault()
+        setIsTemplatePickerOpen(false)
+        setIsSettingsOpen(false)
+        setIsQuickSwitcherOpen((isOpen) => !isOpen)
+        return
+      }
+
+      if (event.key === 'Escape') {
+        setIsQuickSwitcherOpen(false)
+        setIsTemplatePickerOpen(false)
+      }
+    }
+
+    window.addEventListener('keydown', handleGlobalKeyDown)
+    return () => window.removeEventListener('keydown', handleGlobalKeyDown)
+  }, [])
+
+  useEffect(() => {
     if (!isHomeView && !selectedNoteId && firstNoteId) {
       notesViewModel.selectNote(firstNoteId)
     }
   }, [firstNoteId, isHomeView, notesViewModel, selectedNoteId])
 
-  const handleCreateNote = useCallback(() => {
+  const handleCreateNote = useCallback((input: CreateNoteInput = {}) => {
     setLibraryMode('notes')
     setIsHomeView(false)
     setInspectorCollapsed(true)
+    setMobileTab('editor')
+    setIsQuickSwitcherOpen(false)
+    setIsTemplatePickerOpen(false)
     void notesViewModel.createNote({
+      ...input,
       parentFolderId: foldersViewModel.activeFolderId,
-      title: 'Untitled',
+      title: input.title ?? 'Untitled',
     })
   }, [foldersViewModel.activeFolderId, notesViewModel])
 
@@ -113,6 +155,7 @@ function AppWorkspace() {
     (noteId: NoteId) => {
       setLibraryMode('notes')
       setIsHomeView(false)
+      setMobileTab('editor')
       notesViewModel.selectNote(noteId)
     },
     [notesViewModel],
@@ -121,12 +164,14 @@ function AppWorkspace() {
   const handleOpenHome = useCallback(() => {
     setLibraryMode('notes')
     setIsHomeView(true)
+    setMobileTab('editor')
     foldersViewModel.selectFolder(null)
     notesViewModel.selectNote(null)
   }, [foldersViewModel, notesViewModel])
 
   const handleOpenTrash = useCallback(() => {
     setLibraryMode('trash')
+    setMobileTab('notes')
     setIsHomeView(false)
     notesViewModel.selectNote(null)
   }, [notesViewModel])
@@ -135,6 +180,7 @@ function AppWorkspace() {
     (folderId: typeof foldersViewModel.activeFolderId) => {
       setLibraryMode('notes')
       setIsHomeView(false)
+      setMobileTab('notes')
       foldersViewModel.selectFolder(folderId)
       notesViewModel.selectNote(null)
     },
@@ -151,6 +197,29 @@ function AppWorkspace() {
     },
     [foldersViewModel],
   )
+
+  const handleOpenTemplates = useCallback(() => {
+    setIsQuickSwitcherOpen(false)
+    setIsTemplatePickerOpen(true)
+  }, [])
+
+  const handleSelectTemplate = useCallback((templateId: NoteTemplateId) => {
+    handleCreateNote(createNoteFromTemplate(templateId))
+  }, [handleCreateNote])
+
+  function findFolderName(nodes: FolderTreeNode[], folderId: string | null): string {
+    if (!folderId) return 'All notes'
+    for (const node of nodes) {
+      if (node.folder.id === folderId) return node.folder.name
+      const nested = findFolderName(node.children, folderId)
+      if (nested !== 'All notes') return nested
+    }
+    return 'All notes'
+  }
+
+  const activeFolderName = activeNote
+    ? findFolderName(foldersViewModel.folderTree, activeNote.parentFolderId)
+    : 'All notes'
 
   const handleRestoreNote = useCallback(
     async (noteId: NoteId) => {
@@ -194,9 +263,18 @@ function AppWorkspace() {
 
           <div className="sn-topbar-actions">
             <button
+              aria-label="Open quick switcher"
+              className="sn-icon-button"
+              onClick={() => setIsQuickSwitcherOpen(true)}
+              title="Quick switcher (Ctrl/⌘ K)"
+              type="button"
+            >
+              <UiIcon name="search" />
+            </button>
+            <button
               aria-label="Create note"
               className="sn-icon-button sn-icon-button--primary"
-              onClick={handleCreateNote}
+              onClick={() => handleCreateNote()}
               title="Create note"
               type="button"
             >
@@ -255,8 +333,9 @@ function AppWorkspace() {
           data-focus={isFocusLayout}
           data-left-collapsed={isLibraryCollapsed}
           data-right-collapsed={isInspectorCollapsed}
+          data-mobile-tab={isNarrow ? mobileTab : undefined}
         >
-          {isLibraryCollapsed ? (
+          {!isNarrow && isLibraryCollapsed ? (
             <button
               aria-label="Show library"
               className="sn-rail sn-rail--library"
@@ -273,7 +352,7 @@ function AppWorkspace() {
                 <TrashView
                   notes={trashViewModel.trashedNotes}
                   onBack={() => setLibraryMode('notes')}
-                  onCollapse={() => setLibraryCollapsed(true)}
+                  onCollapse={() => isNarrow ? setMobileTab('editor') : setLibraryCollapsed(true)}
                   onPurge={(noteId) => {
                     void trashViewModel.purgeNote(noteId)
                   }}
@@ -304,7 +383,7 @@ function AppWorkspace() {
                     />
                   }
                   notes={notesViewModel.notes}
-                  onCollapse={() => setLibraryCollapsed(true)}
+                  onCollapse={() => isNarrow ? setMobileTab('editor') : setLibraryCollapsed(true)}
                   onCreateNote={handleCreateNote}
                   onDeleteNote={(noteId) => {
                     void notesViewModel.deleteNote(noteId)
@@ -313,11 +392,14 @@ function AppWorkspace() {
                     event.dataTransfer.effectAllowed = 'move'
                     event.dataTransfer.setData(noteDragType, noteId)
                   }}
-                  onOpenLockedNote={notesViewModel.openLockModal}
+                  onOpenLockedNote={(noteId) => {
+                    setMobileTab('editor')
+                    notesViewModel.openLockModal(noteId)
+                  }}
                   onOpenTrash={handleOpenTrash}
                   onSearchChange={setSearchQuery}
                   onSelectNote={handleSelectNote}
-                  pendingOperations={syncViewModel.pendingOperations}
+                  pendingOperations={visiblePendingOperations}
                   searchQuery={searchQuery}
                   syncStatus={syncViewModel.status}
                   trashCount={trashViewModel.trashedNotes.length}
@@ -330,15 +412,16 @@ function AppWorkspace() {
             <EditorShell
               note={activeNote}
               onChangeDocument={activeNoteViewModel.updateDocument}
+              onBrowseTemplates={handleOpenTemplates}
               onChangeTitle={activeNoteViewModel.updateTitle}
               onCreateNote={handleCreateNote}
               onRequestLock={notesViewModel.openLockModal}
-              pendingOperations={syncViewModel.pendingOperations}
+              pendingOperations={visiblePendingOperations}
               syncStatus={syncViewModel.status}
             />
           </section>
 
-          {isInspectorCollapsed ? (
+          {!isNarrow && isInspectorCollapsed ? (
             <button
               aria-label="Show note details"
               className="sn-rail sn-rail--inspector"
@@ -353,17 +436,61 @@ function AppWorkspace() {
             <aside className="sn-inspector-panel">
               <WorkspaceInspector
                 activeNote={activeNote}
+                folderName={activeFolderName}
                 noteCount={notesViewModel.notes.length}
-                notes={notesViewModel.notes}
-                onCollapse={() => setInspectorCollapsed(true)}
-                onSelectNote={handleSelectNote}
-                pendingOperations={syncViewModel.pendingOperations}
+                onChangeProperties={activeNoteViewModel.updateProperties}
+                onCollapse={() => isNarrow ? setMobileTab('editor') : setInspectorCollapsed(true)}
+                pendingOperations={visiblePendingOperations}
                 syncStatus={syncViewModel.status}
               />
             </aside>
           )}
         </section>
+        {isNarrow ? (
+          <MobileTabBar
+            activeTab={mobileTab}
+            notes={allNotesViewModel.notes}
+            onTabChange={setMobileTab}
+            pendingOperations={visiblePendingOperations}
+            syncStatus={syncViewModel.status}
+          />
+        ) : null}
       </div>
+
+      {isQuickSwitcherOpen ? (
+        <QuickSwitcher
+          notes={allNotesViewModel.notes}
+          onClose={() => setIsQuickSwitcherOpen(false)}
+          onCreateBlank={() => handleCreateNote()}
+          onOpenSettings={() => {
+            setIsQuickSwitcherOpen(false)
+            setIsSettingsOpen(true)
+          }}
+          onOpenTemplates={handleOpenTemplates}
+          onOpenTrash={() => {
+            setIsQuickSwitcherOpen(false)
+            handleOpenTrash()
+          }}
+          onSelectNote={(noteId) => {
+            setIsQuickSwitcherOpen(false)
+            const note = allNotesViewModel.notes.find((candidate) => candidate.id === noteId)
+            if (note?.isLocked) {
+              setMobileTab('editor')
+              notesViewModel.openLockModal(noteId)
+            } else {
+              handleSelectNote(noteId)
+            }
+          }}
+        />
+      ) : null}
+
+      {isTemplatePickerOpen ? (
+        <TemplatePicker
+          onClose={() => setIsTemplatePickerOpen(false)}
+          onSelect={handleSelectTemplate}
+          templates={noteTemplates}
+        />
+      ) : null}
 
       {lockModalViewModel.isOpen && lockModalViewModel.noteId ? (
         <LockModal

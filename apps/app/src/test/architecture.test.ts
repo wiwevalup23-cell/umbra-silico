@@ -18,9 +18,20 @@ describe('phase 0 architecture scaffold', () => {
   })
 })
 
+function findImportViolations(
+  files: Record<string, string>,
+  forbiddenImports: string[],
+): string[] {
+  return Object.entries(files).flatMap(([file, source]) =>
+    forbiddenImports
+      .filter((forbiddenImport) => source.includes(forbiddenImport))
+      .map((forbiddenImport) => `${file}: ${forbiddenImport}`),
+  )
+}
+
 describe('phase 5 UI shell boundaries', () => {
-  it('keeps UI components presentational', () => {
-    const uiFiles = import.meta.glob<string>('/src/ui/**/*.tsx', {
+  it('keeps UI components and editor helpers presentational', () => {
+    const uiFiles = import.meta.glob<string>('/src/ui/**/*.{ts,tsx}', {
       eager: true,
       import: 'default',
       query: '?raw',
@@ -36,13 +47,99 @@ describe('phase 5 UI shell boundaries', () => {
       'supabase',
     ]
 
-    const violations = Object.entries(uiFiles).flatMap(([file, source]) =>
-      forbiddenImports
-        .filter((forbiddenImport) => source.includes(forbiddenImport))
-        .map((forbiddenImport) => `${file}: ${forbiddenImport}`),
-    )
+    expect(findImportViolations(uiFiles, forbiddenImports)).toEqual([])
+  })
+})
 
-    expect(violations).toEqual([])
+describe('cross-layer boundary discipline', () => {
+  it('keeps ViewModel free of data, crypto, platform and infra internals', () => {
+    const files = import.meta.glob<string>('/src/viewmodel/**/*.{ts,tsx}', {
+      eager: true,
+      import: 'default',
+      query: '?raw',
+    })
+
+    // ViewModel may reference only the Repository/SyncEngine public contracts
+    // (`@/repository/contracts`, `@/sync` barrel), never the implementations,
+    // adapters or remote/runtime dependencies.
+    expect(
+      findImportViolations(files, [
+        '@/local-store',
+        '@/crypto',
+        '@/platform',
+        '@/sync/',
+        '@/repository/note-repository',
+        '@supabase',
+        'dexie',
+        '@tauri-apps',
+      ]),
+    ).toEqual([])
+  })
+
+  it('keeps Repository free of UI, ViewModel, sync and remote/runtime deps', () => {
+    const files = import.meta.glob<string>('/src/repository/**/*.{ts,tsx}', {
+      eager: true,
+      import: 'default',
+      query: '?raw',
+    })
+
+    expect(
+      findImportViolations(files, [
+        '@/ui',
+        '@/viewmodel',
+        '@/sync',
+        "from 'react'",
+        'zustand',
+        '@supabase',
+        'dexie',
+        '@tauri-apps',
+      ]),
+    ).toEqual([])
+  })
+
+  it('keeps Sync Engine free of UI, ViewModel and React runtime', () => {
+    const files = import.meta.glob<string>('/src/sync/**/*.{ts,tsx}', {
+      eager: true,
+      import: 'default',
+      query: '?raw',
+    })
+
+    // Sync legitimately owns the Supabase remote gateway, so `@supabase` is allowed
+    // here, but it must reach note data only through the Repository contract.
+    expect(
+      findImportViolations(files, [
+        '@/ui',
+        '@/viewmodel',
+        '@/crypto',
+        '@/local-store',
+        '@/platform',
+        "from 'react'",
+        'zustand',
+        '@tauri-apps',
+      ]),
+    ).toEqual([])
+  })
+
+  it('keeps Crypto Service self-contained', () => {
+    const files = import.meta.glob<string>('/src/crypto/**/*.{ts,tsx}', {
+      eager: true,
+      import: 'default',
+      query: '?raw',
+    })
+
+    expect(
+      findImportViolations(files, [
+        '@/ui',
+        '@/viewmodel',
+        '@/sync',
+        '@/repository',
+        '@/local-store',
+        "from 'react'",
+        '@supabase',
+        'dexie',
+        '@tauri-apps',
+      ]),
+    ).toEqual([])
   })
 })
 

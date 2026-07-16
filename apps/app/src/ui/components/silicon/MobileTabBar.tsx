@@ -1,6 +1,6 @@
-import { PixelIcon } from '@/ui/components/silicon/PixelIcon'
+import { UiIcon } from '@/ui/icons/ui/UiIcon'
 
-export type MobileTab = 'notes' | 'editor' | 'signal'
+export type MobileTab = 'notes' | 'editor' | 'details'
 
 type NoteItem = { syncStatus: string }
 
@@ -19,9 +19,8 @@ export function MobileTabBar({
   pendingOperations,
   syncStatus,
 }: MobileTabBarProps) {
-  const unsavedCount = notes.filter(
-    (n) => n.syncStatus === 'dirty' || n.syncStatus === 'saving',
-  ).length
+  // 'dirty' notes are already persisted locally, so only transient saves count.
+  const unsavedCount = notes.filter((n) => n.syncStatus === 'saving').length
 
   const hasSyncIssue = syncStatus === 'error' || syncStatus === 'conflict'
 
@@ -35,7 +34,7 @@ export function MobileTabBar({
         type="button"
       >
         <span className="sn-tab-bar__icon" aria-hidden="true">
-          <PixelIcon name="note" size={20} />
+          <UiIcon height={20} name="document" width={20} />
         </span>
         <span className="sn-tab-bar__label">Notes</span>
         {unsavedCount > 0 && (
@@ -56,20 +55,20 @@ export function MobileTabBar({
         type="button"
       >
         <span className="sn-tab-bar__icon" aria-hidden="true">
-          <PixelIcon name="spark" size={20} />
+          <UiIcon height={20} name="edit" width={20} />
         </span>
         <span className="sn-tab-bar__label">Editor</span>
       </button>
 
       <button
-        aria-current={activeTab === 'signal' ? 'page' : undefined}
-        className={`sn-tab-bar__tab${activeTab === 'signal' ? ' sn-tab-bar__tab--active' : ''}`}
-        onClick={() => onTabChange('signal')}
+        aria-current={activeTab === 'details' ? 'page' : undefined}
+        className={`sn-tab-bar__tab${activeTab === 'details' ? ' sn-tab-bar__tab--active' : ''}`}
+        onClick={() => onTabChange('details')}
         title="Details"
         type="button"
       >
         <span className="sn-tab-bar__icon" aria-hidden="true">
-          <PixelIcon name="status" size={20} />
+          <UiIcon height={20} name="activity" width={20} />
         </span>
         <span className="sn-tab-bar__label">Details</span>
         {(pendingOperations > 0 || hasSyncIssue) && (

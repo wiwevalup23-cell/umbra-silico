@@ -6,6 +6,26 @@ import { createSyncEngine, type SyncEngine } from '@/sync'
 import { readSiliconSupabaseConfig } from '@/sync/supabase/supabase-config'
 import { RepositoryProvider, SyncEngineProvider } from '@/viewmodel'
 
+function ProviderState({ error }: { error?: string }) {
+  return (
+    <main className="sn-provider-state" role={error ? 'alert' : 'status'}>
+      <section className="sn-provider-state__window">
+        <img
+          alt=""
+          aria-hidden="true"
+          src="/assets/umbra-silico-eclipse-compass-u.svg"
+        />
+        <div>
+          <span>Umbra Silico</span>
+          <strong>{error ? 'Local notebook unavailable' : 'Opening local notebook'}</strong>
+          <p>{error ?? 'Preparing your private workspace…'}</p>
+        </div>
+        {!error ? <span className="sn-provider-state__pulse" aria-hidden="true" /> : null}
+      </section>
+    </main>
+  )
+}
+
 export function AppProviders({ children }: PropsWithChildren) {
   const [repository, setRepository] = useState<NoteRepository | null>(null)
   const [syncEngine, setSyncEngine] = useState<SyncEngine | null>(null)
@@ -64,11 +84,11 @@ export function AppProviders({ children }: PropsWithChildren) {
   }, [])
 
   if (error) {
-    return <div className="sn-provider-state">Repository error: {error}</div>
+    return <ProviderState error={error} />
   }
 
   if (!repository) {
-    return <div className="sn-provider-state">Loading local store...</div>
+    return <ProviderState />
   }
 
   return (

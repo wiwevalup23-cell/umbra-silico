@@ -6,6 +6,7 @@ export type StoredNoteRow = {
   preview: string | null
   isLocked: 0 | 1
   document: string | null
+  properties?: string | null
   encryptedPayload: string | null
   encryption: string | null
   createdAt: string

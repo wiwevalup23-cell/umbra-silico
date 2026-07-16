@@ -23,7 +23,7 @@ type NoteListProps = {
 
 const syncStatusLabels: Record<string, string> = {
   conflict: 'Review needed',
-  dirty: 'Unsaved changes',
+  dirty: 'Saved locally',
   error: 'Review needed',
   idle: 'Saved locally',
   saving: 'Saving',
