@@ -9,6 +9,7 @@ type NoteCardProps = {
   note: NoteListItem
   onDelete?: (noteId: NoteId) => void
   onDragStart?: (noteId: NoteId, event: DragEvent<HTMLDivElement>) => void
+  onMove?: (noteId: NoteId) => void
   onSelect?: () => void
 }
 
@@ -48,6 +49,7 @@ export function NoteCard({
   note,
   onDelete,
   onDragStart,
+  onMove,
   onSelect,
 }: NoteCardProps) {
   const actionsRef = useRef<HTMLDivElement>(null)
@@ -149,7 +151,21 @@ export function NoteCard({
           </button>
           {isActionsOpen ? (
             <div className="sn-note-card__menu" role="menu">
+              {onMove ? (
+                <button
+                  onClick={() => {
+                    setActionsOpen(false)
+                    onMove(note.id)
+                  }}
+                  role="menuitem"
+                  type="button"
+                >
+                  <UiIcon name="folder" />
+                  Move to folder
+                </button>
+              ) : null}
               <button
+                className="sn-note-card__menu-danger"
                 onClick={() => {
                   setActionsOpen(false)
                   onDelete(note.id)

@@ -342,11 +342,11 @@ describe('Silicon Nostalgia UI shell', () => {
         ?.click()
     })
 
-    expect(rendered.container.textContent).toContain('Tbl')
-    expect(rendered.container.textContent).toContain('M+')
-    expect(rendered.container.textContent).toContain('R+')
-    expect(rendered.container.textContent).toContain('72px')
-    expect(rendered.container.textContent).toContain('56px')
+    expect(rendered.container.textContent).toContain('Insert table')
+    expect(rendered.container.textContent).toContain('Add row')
+    expect(rendered.container.textContent).toContain('Numbered list')
+    expect(rendered.container.textContent).not.toContain('M+')
+    expect(rendered.container.textContent).not.toContain('72px')
   })
 
   it('debounces title autosave through editor callbacks', async () => {

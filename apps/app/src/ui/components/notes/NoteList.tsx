@@ -15,10 +15,12 @@ type NoteListProps = {
   onDragNoteStart?: (noteId: NoteId, event: DragEvent<HTMLDivElement>) => void
   onOpenLockedNote: (noteId: NoteId) => void
   onOpenTrash?: () => void
+  onMoveNote?: (noteId: NoteId) => void
   onSearchChange?: (value: string) => void
   onSelectNote: (noteId: NoteId) => void
   pendingOperations?: number
   searchQuery?: string
+  scopeLabel?: string
   syncStatus?: string
   trashCount?: number
 }
@@ -34,10 +36,12 @@ export function NoteList({
   onDragNoteStart,
   onOpenLockedNote,
   onOpenTrash,
+  onMoveNote,
   onSearchChange,
   onSelectNote,
   pendingOperations = 0,
   searchQuery = '',
+  scopeLabel = 'All notes',
   syncStatus = 'synced',
   trashCount = 0,
 }: NoteListProps) {
@@ -53,7 +57,7 @@ export function NoteList({
       <header className="sn-panel-heading">
         <div>
           <div className="sn-panel-heading__title-row">
-            <h2>Library</h2>
+            <h2 title={scopeLabel}>{scopeLabel === 'All notes' ? 'Library' : scopeLabel}</h2>
             <span className="sn-panel-heading__right">{noteCountLabel}</span>
           </div>
           <p className="sn-panel-status" aria-live="polite">
@@ -116,6 +120,7 @@ export function NoteList({
               note={note}
               onDelete={onDeleteNote}
               onDragStart={onDragNoteStart}
+              onMove={onMoveNote}
               onSelect={() => {
                 if (note.isLocked) {
                   onOpenLockedNote(note.id)

@@ -4,15 +4,17 @@ import { EditorShell } from '@/ui/components/notes/EditorShell'
 import { FolderTree } from '@/ui/components/notes/FolderTree'
 import { noteDragType } from '@/ui/components/notes/note-drag'
 import { LockModal } from '@/ui/components/notes/LockModal'
+import { MoveToFolderDialog } from '@/ui/components/notes/MoveToFolderDialog'
 import { NoteList } from '@/ui/components/notes/NoteList'
 import { QuickSwitcher } from '@/ui/components/notes/QuickSwitcher'
 import { TemplatePicker } from '@/ui/components/notes/TemplatePicker'
 import { TrashView } from '@/ui/components/notes/TrashView'
 import { WorkspaceInspector } from '@/ui/components/notes/WorkspaceInspector'
 import { SettingsModal } from '@/ui/components/silicon/SettingsModal'
+import { ConfirmationDialog, PromptDialog } from '@/ui/components/silicon'
 import { MobileTabBar, type MobileTab } from '@/ui/components/silicon/MobileTabBar'
 import { UiIcon } from '@/ui/icons/ui/UiIcon'
-import type { CreateNoteInput, FolderTreeNode, NoteId } from '@/shared/contracts'
+import type { CreateNoteInput, FolderId, FolderTreeNode, NoteId } from '@/shared/contracts'
 import {
   createNoteFromTemplate,
   noteTemplates,
@@ -29,6 +31,14 @@ import {
 import { useSettings } from '@/viewmodel/useSettings'
 
 type LibraryMode = 'notes' | 'trash'
+type FolderPromptState =
+  | { mode: 'create'; parentFolderId: FolderId | null }
+  | { folderId: FolderId; initialValue: string; mode: 'rename' }
+
+type FolderDeleteState = {
+  folderId: FolderId
+  name: string
+}
 
 export function App() {
   return (
@@ -71,6 +81,9 @@ function AppWorkspace() {
   const [isSettingsOpen, setIsSettingsOpen] = useState(false)
   const [isQuickSwitcherOpen, setIsQuickSwitcherOpen] = useState(false)
   const [isTemplatePickerOpen, setIsTemplatePickerOpen] = useState(false)
+  const [folderPrompt, setFolderPrompt] = useState<FolderPromptState | null>(null)
+  const [folderPendingDelete, setFolderPendingDelete] = useState<FolderDeleteState | null>(null)
+  const [notePendingMove, setNotePendingMove] = useState<NoteId | null>(null)
   const [mobileTab, setMobileTab] = useState<MobileTab>('notes')
 
   const foldersViewModel = useFoldersViewModel()
@@ -99,6 +112,9 @@ function AppWorkspace() {
     : isInspectorCollapsed
   const isFocusLayout = isLibraryCollapsed && isInspectorEffectivelyCollapsed
   const activeNote = isHomeView || libraryMode === 'trash' ? null : activeNoteViewModel.note
+  const noteToMove = notePendingMove
+    ? allNotesViewModel.notes.find((note) => note.id === notePendingMove) ?? null
+    : null
 
   useEffect(() => {
     if (!isCompactDesktop) {
@@ -166,8 +182,8 @@ function AppWorkspace() {
 
   const handleOpenTrash = useCallback(() => {
     setLibraryMode('trash')
-    setMobileTab('notes')
     setIsHomeView(false)
+    setMobileTab('notes')
     notesViewModel.selectNote(null)
   }, [notesViewModel])
 
@@ -184,13 +200,9 @@ function AppWorkspace() {
 
   const handleCreateFolder = useCallback(
     (parentFolderId: typeof foldersViewModel.activeFolderId) => {
-      const name = window.prompt('Folder name', 'New folder')?.trim()
-
-      if (name) {
-        void foldersViewModel.createFolder({ name, parentFolderId })
-      }
+      setFolderPrompt({ mode: 'create', parentFolderId })
     },
-    [foldersViewModel],
+    [],
   )
 
   const handleOpenTemplates = useCallback(() => {
@@ -215,6 +227,10 @@ function AppWorkspace() {
   const activeFolderName = activeNote
     ? findFolderName(foldersViewModel.folderTree, activeNote.parentFolderId)
     : 'All notes'
+  const selectedFolderName = findFolderName(
+    foldersViewModel.folderTree,
+    foldersViewModel.activeFolderId,
+  )
 
   const handleRestoreNote = useCallback(
     async (noteId: NoteId) => {
@@ -262,10 +278,10 @@ function AppWorkspace() {
 
           <div className="sn-topbar-actions">
             <button
-              aria-label="Open quick switcher"
+              aria-label="Open command menu"
               className="sn-icon-button"
               onClick={() => setIsQuickSwitcherOpen(true)}
-              title="Quick switcher (Ctrl/⌘ K)"
+              title="Command menu (Ctrl/⌘ K)"
               type="button"
             >
               <UiIcon name="search" />
@@ -354,7 +370,7 @@ function AppWorkspace() {
                 <TrashView
                   notes={trashViewModel.trashedNotes}
                   onBack={() => setLibraryMode('notes')}
-                  onCollapse={() => isNarrow ? setMobileTab('editor') : setLibraryCollapsed(true)}
+                  onCollapse={isNarrow ? undefined : () => setLibraryCollapsed(true)}
                   onPurge={(noteId) => {
                     void trashViewModel.purgeNote(noteId)
                   }}
@@ -372,21 +388,26 @@ function AppWorkspace() {
                       nodes={foldersViewModel.folderTree}
                       onCreateFolder={handleCreateFolder}
                       onDeleteFolder={(folderId) => {
-                        if (window.confirm('Delete this folder and move its contents up?')) {
-                          void foldersViewModel.deleteFolder(folderId)
-                        }
+                        setFolderPendingDelete({
+                          folderId,
+                          name: findFolderName(foldersViewModel.folderTree, folderId),
+                        })
                       }}
                       onMoveNoteToFolder={(noteId, folderId) => {
                         void foldersViewModel.moveNoteToFolder(noteId, folderId)
                       }}
-                      onRenameFolder={(folderId, name) => {
-                        void foldersViewModel.renameFolder(folderId, name)
+                      onRenameFolder={(folderId, currentName) => {
+                        setFolderPrompt({
+                          folderId,
+                          initialValue: currentName,
+                          mode: 'rename',
+                        })
                       }}
                       onSelectFolder={handleSelectFolder}
                     />
                   }
                   notes={notesViewModel.notes}
-                  onCollapse={() => isNarrow ? setMobileTab('editor') : setLibraryCollapsed(true)}
+                  onCollapse={isNarrow ? undefined : () => setLibraryCollapsed(true)}
                   onCreateNote={handleCreateNote}
                   onDeleteNote={(noteId) => {
                     void notesViewModel.deleteNote(noteId)
@@ -396,14 +417,17 @@ function AppWorkspace() {
                     event.dataTransfer.setData(noteDragType, noteId)
                   }}
                   onOpenLockedNote={(noteId) => {
+                    setIsHomeView(false)
                     setMobileTab('editor')
                     notesViewModel.openLockModal(noteId)
                   }}
                   onOpenTrash={handleOpenTrash}
+                  onMoveNote={setNotePendingMove}
                   onSearchChange={setSearchQuery}
                   onSelectNote={handleSelectNote}
                   pendingOperations={visiblePendingOperations}
                   searchQuery={searchQuery}
+                  scopeLabel={selectedFolderName}
                   syncStatus={syncViewModel.status}
                   trashCount={trashViewModel.trashedNotes.length}
                 />
@@ -450,15 +474,14 @@ function AppWorkspace() {
                 hasRemote={syncViewModel.hasRemote}
                 noteCount={notesViewModel.notes.length}
                 onChangeProperties={activeNoteViewModel.updateProperties}
-                onCollapse={() => {
-                  if (isNarrow) {
-                    setMobileTab('editor')
-                  } else if (isCompactDesktop) {
+                onCollapse={isNarrow ? undefined : () => {
+                  if (isCompactDesktop) {
                     setCompactInspectorOpen(false)
                   } else {
                     setInspectorCollapsed(true)
                   }
                 }}
+                onOpenSettings={isNarrow ? () => setIsSettingsOpen(true) : undefined}
                 pendingOperations={visiblePendingOperations}
                 syncStatus={syncViewModel.status}
               />
@@ -495,6 +518,7 @@ function AppWorkspace() {
             setIsQuickSwitcherOpen(false)
             const note = allNotesViewModel.notes.find((candidate) => candidate.id === noteId)
             if (note?.isLocked) {
+              setIsHomeView(false)
               setMobileTab('editor')
               notesViewModel.openLockModal(noteId)
             } else {
@@ -509,6 +533,59 @@ function AppWorkspace() {
           onClose={() => setIsTemplatePickerOpen(false)}
           onSelect={handleSelectTemplate}
           templates={noteTemplates}
+        />
+      ) : null}
+
+      {folderPrompt ? (
+        <PromptDialog
+          description={folderPrompt.mode === 'create'
+            ? 'Create a local folder for a smaller, easier-to-scan library.'
+            : 'Choose a clear name. Notes inside the folder will stay in place.'}
+          initialValue={folderPrompt.mode === 'create' ? 'New folder' : folderPrompt.initialValue}
+          key={folderPrompt.mode === 'create'
+            ? `create-${folderPrompt.parentFolderId ?? 'root'}`
+            : `rename-${folderPrompt.folderId}`}
+          label="Folder name"
+          onCancel={() => setFolderPrompt(null)}
+          onSubmit={(name) => {
+            if (folderPrompt.mode === 'create') {
+              void foldersViewModel.createFolder({
+                name,
+                parentFolderId: folderPrompt.parentFolderId,
+              })
+            } else {
+              void foldersViewModel.renameFolder(folderPrompt.folderId, name)
+            }
+            setFolderPrompt(null)
+          }}
+          submitLabel={folderPrompt.mode === 'create' ? 'Create folder' : 'Save name'}
+          title={folderPrompt.mode === 'create' ? 'Create folder' : 'Rename folder'}
+        />
+      ) : null}
+
+      {folderPendingDelete ? (
+        <ConfirmationDialog
+          confirmLabel="Delete folder"
+          description={`“${folderPendingDelete.name}” will be deleted. Its notes and subfolders will move up one level; no notes will be erased.`}
+          onCancel={() => setFolderPendingDelete(null)}
+          onConfirm={() => {
+            void foldersViewModel.deleteFolder(folderPendingDelete.folderId)
+            setFolderPendingDelete(null)
+          }}
+          title="Delete this folder?"
+        />
+      ) : null}
+
+      {noteToMove ? (
+        <MoveToFolderDialog
+          currentFolderId={noteToMove.parentFolderId}
+          folders={foldersViewModel.folderTree}
+          noteTitle={noteToMove.title}
+          onCancel={() => setNotePendingMove(null)}
+          onMove={(folderId) => {
+            void foldersViewModel.moveNoteToFolder(noteToMove.id, folderId)
+            setNotePendingMove(null)
+          }}
         />
       ) : null}
 

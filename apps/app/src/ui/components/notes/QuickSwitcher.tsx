@@ -1,6 +1,7 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useId, useMemo, useRef, useState, type KeyboardEvent } from 'react'
 import type { NoteId, NoteListItem } from '@/shared/contracts/note'
-import { UiIcon } from '@/ui/icons/ui/UiIcon'
+import { RetroDialogShell } from '@/ui/components/silicon'
+import { UiIcon, type UiIconName } from '@/ui/icons/ui/UiIcon'
 
 type QuickSwitcherProps = {
   notes: NoteListItem[]
@@ -12,6 +13,16 @@ type QuickSwitcherProps = {
   onSelectNote: (noteId: NoteId) => void
 }
 
+type SwitcherItem = {
+  description: string
+  group: 'Actions' | 'Notes'
+  icon: UiIconName
+  id: string
+  label: string
+  run: () => void
+  searchText: string
+}
+
 export function QuickSwitcher({
   notes,
   onClose,
@@ -21,31 +32,123 @@ export function QuickSwitcher({
   onOpenTrash,
   onSelectNote,
 }: QuickSwitcherProps) {
-  const [query, setQuery] = useState('')
+  const listboxId = useId()
   const inputRef = useRef<HTMLInputElement>(null)
+  const itemRefs = useRef<Array<HTMLButtonElement | null>>([])
+  const [activeIndex, setActiveIndex] = useState(0)
+  const [query, setQuery] = useState('')
+  const search = query.trim().toLocaleLowerCase()
+
+  const items = useMemo<SwitcherItem[]>(() => {
+    const noteItems = notes.map((note) => ({
+      description: note.isLocked
+        ? 'Encrypted note'
+        : note.preview || (note.tags?.length ? note.tags.join(' · ') : 'Empty note'),
+      group: 'Notes' as const,
+      icon: note.isLocked ? 'lock' as const : 'document' as const,
+      id: `note-${note.id}`,
+      label: note.title || 'Untitled',
+      run: () => onSelectNote(note.id),
+      searchText: `${note.title} ${note.preview} ${(note.tags ?? []).join(' ')}`.toLocaleLowerCase(),
+    }))
+    const actionItems: SwitcherItem[] = [
+      {
+        description: 'Start with a clean page',
+        group: 'Actions',
+        icon: 'plus',
+        id: 'action-new',
+        label: 'New blank note',
+        run: onCreateBlank,
+        searchText: 'new blank note create page',
+      },
+      {
+        description: 'Daily, meeting or project',
+        group: 'Actions',
+        icon: 'template',
+        id: 'action-template',
+        label: 'New from template',
+        run: onOpenTemplates,
+        searchText: 'new template daily meeting project',
+      },
+      {
+        description: 'Restore or permanently remove notes',
+        group: 'Actions',
+        icon: 'trash',
+        id: 'action-trash',
+        label: 'Open trash',
+        run: onOpenTrash,
+        searchText: 'open trash deleted restore remove',
+      },
+      {
+        description: 'Empty screen background',
+        group: 'Actions',
+        icon: 'settings',
+        id: 'action-settings',
+        label: 'Settings',
+        run: onOpenSettings,
+        searchText: 'settings preferences background appearance',
+      },
+    ]
+
+    const filteredNotes = noteItems
+      .filter((item) => !search || item.searchText.includes(search))
+      .slice(0, 7)
+    const filteredActions = actionItems.filter(
+      (item) => !search || item.searchText.includes(search),
+    )
+    return [...filteredNotes, ...filteredActions]
+  }, [notes, onCreateBlank, onOpenSettings, onOpenTemplates, onOpenTrash, onSelectNote, search])
 
   useEffect(() => {
-    inputRef.current?.focus()
-  }, [])
+    setActiveIndex(0)
+  }, [query])
 
-  const matches = useMemo(() => {
-    const search = query.trim().toLocaleLowerCase()
-    const available = notes
-    if (!search) return available.slice(0, 7)
-    return available
-      .filter((note) => `${note.title} ${note.preview} ${(note.tags ?? []).join(' ')}`.toLocaleLowerCase().includes(search))
-      .slice(0, 7)
-  }, [notes, query])
+  useEffect(() => {
+    const item = itemRefs.current[activeIndex]
+    if (typeof item?.scrollIntoView === 'function') {
+      item.scrollIntoView({ block: 'nearest' })
+    }
+  }, [activeIndex])
+
+  function handleKeyboardNavigation(event: KeyboardEvent<HTMLInputElement>) {
+    if (event.key === 'Escape') {
+      event.preventDefault()
+      onClose()
+      return
+    }
+
+    if (items.length === 0) return
+
+    if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
+      event.preventDefault()
+      const direction = event.key === 'ArrowDown' ? 1 : -1
+      setActiveIndex((index) => (index + direction + items.length) % items.length)
+      return
+    }
+
+    if (event.key === 'Home' || event.key === 'End') {
+      event.preventDefault()
+      setActiveIndex(event.key === 'Home' ? 0 : items.length - 1)
+      return
+    }
+
+    if (event.key === 'Enter') {
+      event.preventDefault()
+      items[activeIndex]?.run()
+    }
+  }
+
+  let renderedGroup: SwitcherItem['group'] | null = null
 
   return (
-    <div
-      aria-labelledby="quick-switcher-title"
-      aria-modal="true"
-      className="sn-overlay"
-      onMouseDown={(event) => {
-        if (event.target === event.currentTarget) onClose()
-      }}
-      role="dialog"
+    <RetroDialogShell
+      className="sn-modal--command"
+      describedBy="quick-switcher-hint"
+      initialFocusRef={inputRef}
+      labelledBy="quick-switcher-title"
+      onClose={onClose}
+      showTitlebar={false}
+      title="Quick switcher"
     >
       <section className="sn-command-window sn-quick-switcher">
         <header className="sn-command-window__header sn-command-window__header--search">
@@ -54,57 +157,68 @@ export function QuickSwitcher({
             Quick switcher
           </label>
           <input
+            aria-activedescendant={items[activeIndex] ? `${listboxId}-${items[activeIndex].id}` : undefined}
+            aria-controls={listboxId}
+            aria-describedby="quick-switcher-hint"
+            autoComplete="off"
             id="quick-switcher-search"
             onChange={(event) => setQuery(event.target.value)}
+            onKeyDown={handleKeyboardNavigation}
             placeholder="Find a note or choose an action…"
             ref={inputRef}
+            role="combobox"
             type="search"
             value={query}
           />
-          <kbd>Esc</kbd>
+          <kbd className="sn-command-window__desktop-hint" id="quick-switcher-hint">Esc</kbd>
+          <button
+            aria-label="Close quick switcher"
+            className="sn-command-window__mobile-close"
+            onClick={onClose}
+            type="button"
+          >
+            Close
+          </button>
         </header>
 
-        <div className="sn-command-list">
-          <span className="sn-command-list__label">{query ? 'Results' : 'Recent notes'}</span>
-          {matches.length > 0 ? matches.map((note) => (
-            <button
-              className="sn-command-item"
-              key={note.id}
-              onClick={() => onSelectNote(note.id)}
-              type="button"
-            >
-              <UiIcon name={note.isLocked ? 'lock' : 'document'} />
-              <span>
-                <strong>{note.title || 'Untitled'}</strong>
-                <small>{note.isLocked ? 'Encrypted note' : note.preview || (note.tags?.length ? note.tags.join(' · ') : 'Empty note')}</small>
-              </span>
-              <UiIcon name="chevronRight" />
-            </button>
-          )) : (
-            <p className="sn-command-empty">
-              {query ? `No notes match “${query}”.` : 'No notes yet. Create one from the actions below.'}
-            </p>
+        <div className="sn-command-list" id={listboxId} role="listbox">
+          {items.length > 0 ? items.map((item, index) => {
+            const showGroup = renderedGroup !== item.group
+            renderedGroup = item.group
+            return (
+              <div className="sn-command-result" key={item.id}>
+                {showGroup ? (
+                  <span className="sn-command-list__label">
+                    {item.group === 'Notes' && !query ? 'Recent notes' : item.group}
+                  </span>
+                ) : null}
+                <button
+                  aria-selected={index === activeIndex}
+                  className="sn-command-item"
+                  data-active={index === activeIndex}
+                  id={`${listboxId}-${item.id}`}
+                  onClick={item.run}
+                  onMouseMove={() => setActiveIndex(index)}
+                  ref={(element) => {
+                    itemRefs.current[index] = element
+                  }}
+                  role="option"
+                  type="button"
+                >
+                  <UiIcon name={item.icon} />
+                  <span>
+                    <strong>{item.label}</strong>
+                    <small>{item.description}</small>
+                  </span>
+                  <UiIcon name="chevronRight" />
+                </button>
+              </div>
+            )
+          }) : (
+            <p className="sn-command-empty">No notes or actions match “{query}”.</p>
           )}
-
-          {!query ? (
-            <>
-              <span className="sn-command-list__label">Actions</span>
-              <button className="sn-command-item" onClick={onCreateBlank} type="button">
-                <UiIcon name="plus" /><span><strong>New blank note</strong><small>Start with a clean page</small></span>
-              </button>
-              <button className="sn-command-item" onClick={onOpenTemplates} type="button">
-                <UiIcon name="template" /><span><strong>New from template</strong><small>Daily, meeting or project</small></span>
-              </button>
-              <button className="sn-command-item" onClick={onOpenTrash} type="button">
-                <UiIcon name="trash" /><span><strong>Open trash</strong><small>Restore or permanently remove notes</small></span>
-              </button>
-              <button className="sn-command-item" onClick={onOpenSettings} type="button">
-                <UiIcon name="settings" /><span><strong>Settings</strong><small>Scale and visual background</small></span>
-              </button>
-            </>
-          ) : null}
         </div>
       </section>
-    </div>
+    </RetroDialogShell>
   )
 }

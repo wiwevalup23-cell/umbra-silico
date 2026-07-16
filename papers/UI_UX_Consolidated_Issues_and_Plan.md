@@ -4,7 +4,7 @@
 
 Область: `apps/app`
 
-Статус: P0 реализован и проверен; P1–P2 остаются в backlog
+Статус: P0 и P1 реализованы и проверены; P2 остаётся в backlog
 
 ## Цель
 
@@ -95,6 +95,61 @@
 
 ### P1 — ключевые рабочие сценарии
 
+P1 поставляется двумя самостоятельными частями:
+
+- **P1-A (`UX-011`–`UX-023`)** — плеер и фоны, Properties/Inspector,
+  контекст папки, empty editor и основные mobile editor actions;
+- **P1-B (`UX-024`–`UX-035`)** — More menu surface, Quick switcher,
+  доступность остальных dialog, mobile navigation и folder workflows.
+
+Такое разделение не смешивает геометрию редактора с навигацией и заменой
+оставшихся системных окон.
+
+Статус на 2026-07-16: **P1-A (`UX-011`–`UX-023`) реализован**.
+
+- player copy выровнен как единая container-aware группа и не обрезается в
+  compact desktop;
+- backgrounds получили различимые preview, осмысленные имена и честный scope
+  `Empty screen background`;
+- Properties собраны по одной сетке, native status select заменён доступным
+  `StatusPicker`, а header Details больше не сталкивает линии со статусом;
+- `Root` заменён на `All notes`, active folder усилен, его имя отражается в
+  заголовке Library;
+- пустой mobile editor показывает placeholder и получает initial caret при
+  создании заметки;
+- mobile toolbar оставляет частые действия в одной строке, вторичные действия
+  находятся в More, а block actions доступны через явную 44 px кнопку;
+- из More удалены произвольные margins, indent-сокращения и page pixel offsets;
+  оставшиеся команды получили полные названия.
+
+Визуально проверены 390×844, 960×900 и 1280×900, включая выбранный фон,
+StatusPicker, empty document, More sheet и block menu. На 390 px toolbar имеет
+одинаковые `clientWidth` и `scrollWidth` (368 px), горизонтального overflow нет.
+
+Статус на 2026-07-16: **P1-B (`UX-024`–`UX-035`) реализован**.
+
+- More использует непрозрачную поверхность, полные названия и 44 px mobile
+  controls; иконка открытия заменена на ellipsis;
+- Quick switcher поддерживает Arrow Up/Down, Home/End, Enter и ищет одновременно
+  notes и actions; на mobile показывает Close вместо ложной подсказки `Esc`;
+- Quick switcher и Template picker переведены на общий native-dialog foundation,
+  получают правильный initial focus и возвращают его после закрытия;
+- Settings доступны из mobile Details, а ложные mobile collapse controls удалены;
+- note action menu содержит `Move to folder` и открывает touch-safe folder picker;
+- folder rows больше не показывают пустой twisty, используют единый overflow с
+  New subfolder, Rename и Delete, а Rename обозначен карандашом;
+- browser prompt/confirm для папок заменены на `PromptDialog` и
+  `ConfirmationDialog` в стиле lock-window;
+- логотип снова открывает фирменный Home/empty-player; на mobile переход сразу
+  переводит интерфейс во вкладку Editor, чтобы состояние было видимо;
+- responsive collapse продолжает храниться отдельно от пользовательского
+  состояния панелей.
+
+На 390×844 проверены Command search, mobile Close, focus restore, Template
+initial focus, folder prompt, note menu, Move picker, Details Settings и
+отсутствие ложных Collapse. Save и Lock имеют одинаковую геометрию 38×38 px и
+одинаковые glyph 16 px; display Garamond возвращён к тонкому весу 300.
+
 | ID | Проблема | Что делаем |
 | --- | --- | --- |
 | UX-011 | Текст внутри плеера оптически собран неверно (`troubles/7.png`): subtitle слишком близко к `Ready to record`, группа выглядит зажатой и нецентрированной. | Центрируем copy как единую группу по доступной области экрана, задаём независимый адаптивный gap и опускаем subtitle. Проверяем 821, 1121 и mobile. |
@@ -121,7 +176,7 @@
 | UX-032 | Перемещение заметки в папку на mobile возможно только через drag-and-drop. | Добавляем `Move to folder` в меню заметки и touch-friendly picker папки. Drag остаётся ускорителем на desktop. |
 | UX-033 | Folder controls по 24 px тесны для touch; gear означает Rename; пустая папка показывает бледную неактивную стрелку. | На touch скрываем вторичные действия в overflow, используем pencil для Rename, не рисуем twisty без children, обеспечиваем 40–44 px hit area. |
 | UX-034 | Создание папки использует `window.prompt`, удаление папки — browser confirm. | Используем `PromptDialog` и `ConfirmDialog` на базе lock-window. Добавляем inline validation и описываем, что произойдёт с вложенными заметками. |
-| UX-035 | Нажатие на логотип открывает Home внутри активной вкладки Editor; название вкладки перестаёт соответствовать содержимому. | Либо Home становится явным состоянием навигации, либо логотип ведёт в Notes/последнюю заметку. Для первой версии предпочтителен второй, более простой вариант. |
+| UX-035 | Нажатие на логотип должно открывать фирменный Home, но состояние обязано быть видимым и предсказуемым на любом breakpoint. | Сохраняем Home/empty-player как осознанное состояние: логотип очищает выбор заметки, сбрасывает папку и на mobile открывает вкладку Editor. Выбор заметки, папки или создание документа выводят из Home. |
 
 ### P2 — визуальная система, доступность и бренд
 

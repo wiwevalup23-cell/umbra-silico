@@ -1,4 +1,6 @@
+import { useRef } from 'react'
 import type { NoteTemplateId, NoteTemplateSummary } from '@/shared/note-templates'
+import { RetroDialogShell } from '@/ui/components/silicon'
 import { UiIcon } from '@/ui/icons/ui/UiIcon'
 
 type TemplatePickerProps = {
@@ -8,15 +10,16 @@ type TemplatePickerProps = {
 }
 
 export function TemplatePicker({ onClose, onSelect, templates }: TemplatePickerProps) {
+  const firstTemplateRef = useRef<HTMLButtonElement>(null)
+
   return (
-    <div
-      aria-labelledby="template-picker-title"
-      aria-modal="true"
-      className="sn-overlay"
-      onMouseDown={(event) => {
-        if (event.target === event.currentTarget) onClose()
-      }}
-      role="dialog"
+    <RetroDialogShell
+      className="sn-modal--command"
+      initialFocusRef={firstTemplateRef}
+      labelledBy="template-picker-title"
+      onClose={onClose}
+      showTitlebar={false}
+      title="Choose a starting point"
     >
       <section className="sn-command-window sn-template-picker">
         <header className="sn-command-window__header">
@@ -24,17 +27,23 @@ export function TemplatePicker({ onClose, onSelect, templates }: TemplatePickerP
             <span className="sn-command-window__eyebrow">New page</span>
             <h2 id="template-picker-title">Choose a starting point</h2>
           </div>
-          <button aria-label="Close templates" className="sn-icon-button" onClick={onClose} type="button">
+          <button
+            aria-label="Close templates"
+            className="sn-icon-button"
+            onClick={onClose}
+            type="button"
+          >
             <UiIcon name="close" />
           </button>
         </header>
 
         <div className="sn-template-grid">
-          {templates.map((template) => (
+          {templates.map((template, index) => (
             <button
               className="sn-template-card"
               key={template.id}
               onClick={() => onSelect(template.id)}
+              ref={index === 0 ? firstTemplateRef : undefined}
               type="button"
             >
               <span className="sn-template-card__icon" aria-hidden="true">
@@ -49,6 +58,6 @@ export function TemplatePicker({ onClose, onSelect, templates }: TemplatePickerP
           ))}
         </div>
       </section>
-    </div>
+    </RetroDialogShell>
   )
 }

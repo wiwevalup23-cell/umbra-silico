@@ -16,13 +16,22 @@ export const backgroundImageFiles = [
 
 export const backgroundImageOptions = [
   {
-    label: 'None',
+    label: 'None · clean grid',
     value: null,
   },
-  ...backgroundImageFiles.map((fileName, index) => ({
-    label: `Fon ${String(index + 1).padStart(2, '0')}`,
-    value: `/assets/fons/${fileName}`,
-  })),
+  { label: 'Rose mineral', value: `/assets/fons/${backgroundImageFiles[0]}` },
+  { label: 'Sand contour', value: `/assets/fons/${backgroundImageFiles[1]}` },
+  { label: 'Pressed botanicals', value: `/assets/fons/${backgroundImageFiles[2]}` },
+  { label: 'Umber cloud', value: `/assets/fons/${backgroundImageFiles[3]}` },
+  { label: 'Copper petals', value: `/assets/fons/${backgroundImageFiles[4]}` },
+  { label: 'Burnished paper', value: `/assets/fons/${backgroundImageFiles[5]}` },
+  { label: 'Soft focus', value: `/assets/fons/${backgroundImageFiles[6]}` },
+  { label: 'Warped checker', value: `/assets/fons/${backgroundImageFiles[7]}` },
+  { label: 'Signal field', value: `/assets/fons/${backgroundImageFiles[8]}` },
+  { label: 'Signal cross', value: `/assets/fons/${backgroundImageFiles[9]}` },
+  { label: 'Amber current', value: `/assets/fons/${backgroundImageFiles[10]}` },
+  { label: 'Copper veil', value: `/assets/fons/${backgroundImageFiles[11]}` },
+  { label: 'Solar bloom', value: `/assets/fons/${backgroundImageFiles[12]}` },
 ] satisfies Array<{ label: string; value: string | null }>
 
 export const allowedBackgroundImages = new Set(

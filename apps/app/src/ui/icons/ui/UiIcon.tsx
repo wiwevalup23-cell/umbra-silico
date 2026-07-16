@@ -4,7 +4,9 @@ export type UiIconName =
   | 'activity'
   | 'arrowDown'
   | 'arrowUp'
+  | 'check'
   | 'edit'
+  | 'chevronDown'
   | 'chevronLeft'
   | 'chevronRight'
   | 'cloud'
@@ -37,7 +39,9 @@ const paths: Record<UiIconName, string[]> = {
   activity: ['M3 12h4l2.5-7 5 14 2.5-7h4'],
   arrowDown: ['M12 5v14', 'M19 12l-7 7-7-7'],
   arrowUp: ['M12 19V5', 'M5 12l7-7 7 7'],
+  check: ['M5 12.5l4 4L19 6.5'],
   edit: ['M12 20h9', 'M16.4 3.6a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z'],
+  chevronDown: ['M6 9l6 6 6-6'],
   chevronLeft: ['M15 18l-6-6 6-6'],
   chevronRight: ['M9 18l6-6-6-6'],
   cloud: ['M17.5 19H8a5 5 0 1 1 1.1-9.9A6 6 0 0 1 20 12.5 3.5 3.5 0 0 1 17.5 19z'],

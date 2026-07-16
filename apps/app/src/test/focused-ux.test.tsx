@@ -136,12 +136,18 @@ describe('focused product UX', () => {
     )
     cleanupTasks.push(rendered.cleanup)
 
-    const select = rendered.container.querySelector<HTMLSelectElement>('select[aria-label="Page status"]')
+    const statusTrigger = rendered.container.querySelector<HTMLButtonElement>(
+      'button[aria-label="Page status"]',
+    )
     await act(async () => {
-      if (select) {
-        select.value = 'done'
-        select.dispatchEvent(new Event('change', { bubbles: true }))
-      }
+      statusTrigger?.click()
+      await Promise.resolve()
+    })
+    const doneOption = Array.from(rendered.container.querySelectorAll<HTMLButtonElement>(
+      '[role="option"]',
+    )).find((option) => option.textContent?.includes('Done'))
+    await act(async () => {
+      doneOption?.click()
       await Promise.resolve()
     })
     expect(onChangeProperties).toHaveBeenCalledWith(noteId, {

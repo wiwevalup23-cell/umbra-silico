@@ -5,10 +5,10 @@ import {
   notePropertiesSchema,
   type NoteDetail,
   type NoteProperties,
-  type NotePropertyStatus,
 } from '@/shared/contracts'
 import { UiIcon } from '@/ui/icons/ui/UiIcon'
 import { getPersistencePresentation } from '@/ui/note-presentation'
+import { StatusPicker } from './StatusPicker'
 
 type WorkspaceInspectorProps = {
   activeNote: NoteDetail | null
@@ -17,6 +17,7 @@ type WorkspaceInspectorProps = {
   noteCount: number
   onChangeProperties?: (noteId: NoteDetail['id'], properties: NoteProperties) => Promise<void>
   onCollapse?: () => void
+  onOpenSettings?: () => void
   pendingOperations: number
   syncStatus: string
 }
@@ -33,13 +34,6 @@ const timeFormatter = new Intl.DateTimeFormat(undefined, {
   hour: '2-digit',
   minute: '2-digit',
 })
-
-const propertyStatusLabels: Record<NotePropertyStatus, string> = {
-  none: 'No status',
-  idea: 'Idea',
-  active: 'In progress',
-  done: 'Done',
-}
 
 function formatDate(iso: string): string {
   const time = Date.parse(iso)
@@ -63,6 +57,7 @@ export function WorkspaceInspector({
   noteCount,
   onChangeProperties,
   onCollapse,
+  onOpenSettings,
 }: WorkspaceInspectorProps) {
   const [activeTab, setActiveTab] = useState<InspectorTab>('properties')
   const [tagDraft, setTagDraft] = useState('')
@@ -115,17 +110,30 @@ export function WorkspaceInspector({
           </div>
           <p>{activeTitle(activeNote)}</p>
         </div>
-        {onCollapse ? (
+        {onCollapse || onOpenSettings ? (
           <div className="sn-panel-heading__actions">
-            <button
-              aria-label="Collapse details panel"
-              className="sn-icon-button"
-              onClick={onCollapse}
-              title="Collapse details panel"
-              type="button"
-            >
-              <UiIcon name="chevronRight" />
-            </button>
+            {onOpenSettings ? (
+              <button
+                aria-label="Open settings"
+                className="sn-icon-button"
+                onClick={onOpenSettings}
+                title="Settings"
+                type="button"
+              >
+                <UiIcon name="settings" />
+              </button>
+            ) : null}
+            {onCollapse ? (
+              <button
+                aria-label="Collapse details panel"
+                className="sn-icon-button"
+                onClick={onCollapse}
+                title="Collapse details panel"
+                type="button"
+              >
+                <UiIcon name="chevronRight" />
+              </button>
+            ) : null}
           </div>
         ) : null}
       </header>
@@ -171,21 +179,16 @@ export function WorkspaceInspector({
             </div>
           ) : (
             <>
-              <label className="sn-property-field">
+              <div className="sn-property-field">
                 <span><UiIcon name="info" /> Status</span>
-                <select
-                  aria-label="Page status"
-                  onChange={(event) => void saveProperties({
+                <StatusPicker
+                  onChange={(status) => void saveProperties({
                     ...properties,
-                    status: event.target.value as NotePropertyStatus,
+                    status,
                   })}
                   value={properties.status}
-                >
-                  {Object.entries(propertyStatusLabels).map(([value, label]) => (
-                    <option key={value} value={value}>{label}</option>
-                  ))}
-                </select>
-              </label>
+                />
+              </div>
 
               <section className="sn-tags-section" aria-label="Page tags">
                 <div className="sn-property-heading">

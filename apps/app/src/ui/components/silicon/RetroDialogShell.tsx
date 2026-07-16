@@ -9,6 +9,7 @@ type RetroDialogShellProps = {
   initialFocusRef?: RefObject<HTMLElement | null>
   labelledBy: string
   onClose: () => void
+  showTitlebar?: boolean
   title: string
 }
 
@@ -20,6 +21,7 @@ export function RetroDialogShell({
   initialFocusRef,
   labelledBy,
   onClose,
+  showTitlebar = true,
   title,
 }: RetroDialogShellProps) {
   const dialogRef = useRef<HTMLDialogElement>(null)
@@ -83,20 +85,22 @@ export function RetroDialogShell({
       ref={dialogRef}
     >
       <div className="sn-modal__surface">
-        <header className="sn-lock-titlebar">
-          <span aria-hidden="true" />
-          <h2 id={labelledBy}>{title}</h2>
-          <span aria-hidden="true" />
-          <button
-            aria-label={`Close ${title.toLocaleLowerCase()}`}
-            disabled={closeDisabled}
-            onClick={onClose}
-            title="Close"
-            type="button"
-          >
-            <UiIcon name="close" />
-          </button>
-        </header>
+        {showTitlebar ? (
+          <header className="sn-lock-titlebar">
+            <span aria-hidden="true" />
+            <h2 id={labelledBy}>{title}</h2>
+            <span aria-hidden="true" />
+            <button
+              aria-label={`Close ${title.toLocaleLowerCase()}`}
+              disabled={closeDisabled}
+              onClick={onClose}
+              title="Close"
+              type="button"
+            >
+              <UiIcon name="close" />
+            </button>
+          </header>
+        ) : null}
         {children}
       </div>
     </dialog>

@@ -98,7 +98,6 @@ const blockLayoutNodeTypes = ['paragraph', 'heading'] as const
 const blockMarginValues = ['tight', 'normal', 'wide'] as const
 const pageOffsetMin = 8
 const pageOffsetMax = 132
-const pageOffsetStep = 8
 
 type BlockMarginValue = (typeof blockMarginValues)[number]
 
@@ -532,26 +531,6 @@ function EditorToolbar({ editor }: EditorToolbarProps) {
     command()
   }
 
-  function setPageHeaderOffsetFromInput(value: string) {
-    const nextOffset = Number(value)
-
-    if (!Number.isFinite(nextOffset) || value.trim() === '') {
-      return
-    }
-
-    runCommand(() => editor?.commands.setPageHeaderOffset(nextOffset))
-  }
-
-  function setPageFooterOffsetFromInput(value: string) {
-    const nextOffset = Number(value)
-
-    if (!Number.isFinite(nextOffset) || value.trim() === '') {
-      return
-    }
-
-    runCommand(() => editor?.commands.setPageFooterOffset(nextOffset))
-  }
-
   return (
     <div className="sn-editor-toolbar" aria-label="Editor toolbar" role="toolbar">
       <div className="sn-editor-toolbar__group" aria-label="Text formatting" role="group">
@@ -668,10 +647,56 @@ function EditorToolbar({ editor }: EditorToolbarProps) {
           }}
           pressed={isMoreMenuOpen}
         >
-          <UiIcon name="settings" />
+          <UiIcon name="moreHorizontal" />
         </ToolbarButton>
         {isMoreMenuOpen ? (
           <div className="sn-editor-tools-menu" role="menu">
+            <div className="sn-editor-tools-menu__section" role="group">
+              <span className="sn-editor-tools-menu__label">Formatting</span>
+              <div className="sn-editor-tools-menu__row">
+                <MenuButton
+                  disabled={!editor}
+                  label="Strike"
+                  onPress={() => runCommand(() => editor?.chain().focus().toggleStrike().run())}
+                  pressed={toolbarState.isStrike}
+                >
+                  Strike
+                </MenuButton>
+                <MenuButton
+                  disabled={!editor}
+                  label="Inline code"
+                  onPress={() => runCommand(() => editor?.chain().focus().toggleCode().run())}
+                  pressed={toolbarState.isCode}
+                >
+                  Inline code
+                </MenuButton>
+                <MenuButton
+                  disabled={!editor}
+                  label="Heading 2"
+                  onPress={() => runCommand(() => editor?.chain().focus().toggleHeading({ level: 2 }).run())}
+                  pressed={toolbarState.isHeading2}
+                >
+                  Heading 2
+                </MenuButton>
+                <MenuButton
+                  disabled={!editor}
+                  label="Blockquote"
+                  onPress={() => runCommand(() => editor?.chain().focus().toggleBlockquote().run())}
+                  pressed={toolbarState.isBlockquote}
+                >
+                  Quote
+                </MenuButton>
+                <MenuButton
+                  disabled={!editor}
+                  label="Ordered list"
+                  onPress={() => runCommand(() => editor?.chain().focus().toggleOrderedList().run())}
+                  pressed={toolbarState.isOrderedList}
+                >
+                  Numbered list
+                </MenuButton>
+              </div>
+            </div>
+
             <div className="sn-editor-tools-menu__section" role="group">
               <span className="sn-editor-tools-menu__label">Blocks</span>
               <div className="sn-editor-tools-menu__row">
@@ -682,7 +707,7 @@ function EditorToolbar({ editor }: EditorToolbarProps) {
                     runCommand(() => editor?.chain().focus().setHorizontalRule().run())
                   }}
                 >
-                  Div
+                  Divider
                 </MenuButton>
                 <MenuButton
                   disabled={!editor}
@@ -718,7 +743,7 @@ function EditorToolbar({ editor }: EditorToolbarProps) {
                   }}
                   pressed={toolbarState.isDetails}
                 >
-                  Tog
+                  Toggle
                 </MenuButton>
                 <MenuButton
                   disabled={!editor}
@@ -730,75 +755,7 @@ function EditorToolbar({ editor }: EditorToolbarProps) {
                   }}
                   pressed={toolbarState.isCallout}
                 >
-                  Call
-                </MenuButton>
-              </div>
-            </div>
-
-            <div className="sn-editor-tools-menu__section" role="group">
-              <span className="sn-editor-tools-menu__label">Margins</span>
-              <div className="sn-editor-tools-menu__row">
-                <MenuButton
-                  disabled={!editor}
-                  label="Tight margins"
-                  onPress={() => {
-                    runCommand(() => editor?.chain().focus().setBlockMargin('tight').run())
-                  }}
-                  pressed={toolbarState.blockLayout.blockMargin === 'tight'}
-                >
-                  M-
-                </MenuButton>
-                <MenuButton
-                  disabled={!editor}
-                  label="Normal margins"
-                  onPress={() => {
-                    runCommand(() => editor?.chain().focus().setBlockMargin('normal').run())
-                  }}
-                  pressed={toolbarState.blockLayout.blockMargin === 'normal'}
-                >
-                  M
-                </MenuButton>
-                <MenuButton
-                  disabled={!editor}
-                  label="Wide margins"
-                  onPress={() => {
-                    runCommand(() => editor?.chain().focus().setBlockMargin('wide').run())
-                  }}
-                  pressed={toolbarState.blockLayout.blockMargin === 'wide'}
-                >
-                  M+
-                </MenuButton>
-              </div>
-            </div>
-
-            <div className="sn-editor-tools-menu__section" role="group">
-              <span className="sn-editor-tools-menu__label">Indent</span>
-              <div className="sn-editor-tools-menu__row">
-                <MenuButton
-                  disabled={
-                    !editor || toolbarState.blockLayout.blockIndent <= blockIndentMin
-                  }
-                  label="Decrease indent"
-                  onPress={() => {
-                    runCommand(() =>
-                      editor?.chain().focus().decreaseBlockIndent().run(),
-                    )
-                  }}
-                >
-                  Out
-                </MenuButton>
-                <MenuButton
-                  disabled={
-                    !editor || toolbarState.blockLayout.blockIndent >= blockIndentMax
-                  }
-                  label="Increase indent"
-                  onPress={() => {
-                    runCommand(() =>
-                      editor?.chain().focus().increaseBlockIndent().run(),
-                    )
-                  }}
-                >
-                  In
+                  Callout
                 </MenuButton>
               </div>
             </div>
@@ -819,7 +776,7 @@ function EditorToolbar({ editor }: EditorToolbarProps) {
                     )
                   }}
                 >
-                  Tbl
+                  Insert table
                 </MenuButton>
                 <MenuButton
                   disabled={!editor || !toolbarState.canAddTableColumn}
@@ -828,7 +785,7 @@ function EditorToolbar({ editor }: EditorToolbarProps) {
                     runCommand(() => editor?.chain().focus().addColumnAfter().run())
                   }}
                 >
-                  C+
+                  Add column
                 </MenuButton>
                 <MenuButton
                   disabled={!editor || !toolbarState.canAddTableRow}
@@ -837,7 +794,7 @@ function EditorToolbar({ editor }: EditorToolbarProps) {
                     runCommand(() => editor?.chain().focus().addRowAfter().run())
                   }}
                 >
-                  R+
+                  Add row
                 </MenuButton>
                 <MenuButton
                   disabled={!editor || !toolbarState.isTable}
@@ -846,7 +803,7 @@ function EditorToolbar({ editor }: EditorToolbarProps) {
                     runCommand(() => editor?.chain().focus().toggleHeaderRow().run())
                   }}
                 >
-                  Hd
+                  Header row
                 </MenuButton>
                 <MenuButton
                   disabled={!editor || !toolbarState.canDeleteTable}
@@ -855,62 +812,31 @@ function EditorToolbar({ editor }: EditorToolbarProps) {
                     runCommand(() => editor?.chain().focus().deleteTable().run())
                   }}
                 >
-                  Del
+                  Delete table
                 </MenuButton>
               </div>
             </div>
 
-            <div
-              className="sn-editor-tools-menu__section sn-editor-tools-menu__section--page"
-              role="group"
-            >
-              <span className="sn-editor-tools-menu__label">Page</span>
-              <div className="sn-editor-page-settings">
-                <label className="sn-editor-page-settings__field">
-                  <span className="sn-editor-page-settings__name">Top</span>
-                  <input
-                    aria-label="Top page offset in pixels"
-                    className="sn-editor-tools-menu__number"
-                    disabled={!editor}
-                    inputMode="numeric"
-                    max={pageOffsetMax}
-                    min={pageOffsetMin}
-                    onChange={(event) => {
-                      setPageHeaderOffsetFromInput(event.currentTarget.value)
-                    }}
-                    step={pageOffsetStep}
-                    type="number"
-                    value={toolbarState.pageLayout.pageHeaderOffset}
-                  />
-                  <span className="sn-editor-page-settings__unit">px</span>
-                  <span className="sn-editor-tools-menu__value">
-                    {toolbarState.pageLayout.pageHeaderOffset}px
-                  </span>
-                </label>
-
-                <label className="sn-editor-page-settings__field">
-                  <span className="sn-editor-page-settings__name">Bottom</span>
-                  <input
-                    aria-label="Bottom page offset in pixels"
-                    className="sn-editor-tools-menu__number"
-                    disabled={!editor}
-                    inputMode="numeric"
-                    max={pageOffsetMax}
-                    min={pageOffsetMin}
-                    onChange={(event) => {
-                      setPageFooterOffsetFromInput(event.currentTarget.value)
-                    }}
-                    step={pageOffsetStep}
-                    type="number"
-                    value={toolbarState.pageLayout.pageFooterOffset}
-                  />
-                  <span className="sn-editor-page-settings__unit">px</span>
-                  <span className="sn-editor-tools-menu__value">
-                    {toolbarState.pageLayout.pageFooterOffset}px
-                  </span>
-                </label>
+            <div className="sn-editor-tools-menu__section" role="group">
+              <span className="sn-editor-tools-menu__label">History</span>
+              <div className="sn-editor-tools-menu__row">
+                <MenuButton
+                  disabled={!editor || !toolbarState.canUndo}
+                  label="Undo"
+                  onPress={() => runCommand(() => editor?.chain().focus().undo().run())}
+                >
+                  Undo
+                </MenuButton>
+                <MenuButton
+                  disabled={!editor || !toolbarState.canRedo}
+                  label="Redo"
+                  onPress={() => runCommand(() => editor?.chain().focus().redo().run())}
+                >
+                  Redo
+                </MenuButton>
               </div>
             </div>
+
           </div>
         ) : null}
       </div>
@@ -967,6 +893,7 @@ function EditableNoteEditor({
 }: EditableNoteEditorProps) {
   const [titleDraft, setTitleDraft] = useState(note.title)
   const [autosaveState, setAutosaveState] = useState<AutosaveState>('saved')
+  const didFocusEmptyNoteRef = useRef(false)
   const onChangeDocumentRef = useRef(onChangeDocument)
   const onChangeTitleRef = useRef(onChangeTitle)
   const documentAutosave = useMemo(
@@ -1011,6 +938,7 @@ function EditableNoteEditor({
         'aria-label': 'Note body',
         'aria-multiline': 'true',
         class: 'sn-tiptap-prosemirror',
+        'data-placeholder': 'Start writing…',
         role: 'textbox',
         spellcheck: 'true',
       },
@@ -1081,6 +1009,26 @@ function EditableNoteEditor({
   useEffect(() => {
     onChangeDocumentRef.current = onChangeDocument
   }, [onChangeDocument])
+
+  useEffect(() => {
+    if (
+      !editor
+      || didFocusEmptyNoteRef.current
+      || !editor.isEmpty
+      || typeof window === 'undefined'
+      || typeof window.matchMedia !== 'function'
+      || !window.matchMedia('(max-width: 959px)').matches
+    ) {
+      return
+    }
+
+    didFocusEmptyNoteRef.current = true
+    const focusFrame = window.requestAnimationFrame(() => {
+      editor.commands.focus('start')
+    })
+
+    return () => window.cancelAnimationFrame(focusFrame)
+  }, [editor])
 
   useEffect(() => {
     onChangeTitleRef.current = onChangeTitle

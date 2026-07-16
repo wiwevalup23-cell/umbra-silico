@@ -1,4 +1,4 @@
-import { useState, type CSSProperties, type DragEvent } from 'react'
+import { useEffect, useRef, useState, type CSSProperties, type DragEvent } from 'react'
 import type { FolderId, FolderTreeNode, NoteId } from '@/shared/contracts'
 import { noteDragType } from '@/ui/components/notes/note-drag'
 import { UiIcon } from '@/ui/icons/ui/UiIcon'
@@ -9,7 +9,7 @@ type FolderTreeProps = {
   onCreateFolder: (parentFolderId: FolderId | null) => void
   onDeleteFolder: (folderId: FolderId) => void
   onMoveNoteToFolder: (noteId: NoteId, folderId: FolderId | null) => void
-  onRenameFolder: (folderId: FolderId, name: string) => void
+  onRenameFolder: (folderId: FolderId, currentName: string) => void
   onSelectFolder: (folderId: FolderId | null) => void
 }
 
@@ -34,22 +34,27 @@ function FolderNode({
   onSelectFolder,
 }: FolderNodeProps) {
   const [isExpanded, setExpanded] = useState(true)
-  const [isRenaming, setRenaming] = useState(false)
-  const [draftName, setDraftName] = useState(node.folder.name)
+  const [isActionsOpen, setActionsOpen] = useState(false)
+  const actionsRef = useRef<HTMLDivElement>(null)
   const isActive = activeFolderId === node.folder.id
   const hasChildren = node.children.length > 0
 
-  function commitRename() {
-    const nextName = draftName.trim()
+  useEffect(() => {
+    if (!isActionsOpen) return
 
-    setRenaming(false)
-
-    if (nextName && nextName !== node.folder.name) {
-      onRenameFolder(node.folder.id, nextName)
-    } else {
-      setDraftName(node.folder.name)
+    const handlePointerDown = (event: PointerEvent) => {
+      if (!actionsRef.current?.contains(event.target as Node)) setActionsOpen(false)
     }
-  }
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setActionsOpen(false)
+    }
+    document.addEventListener('pointerdown', handlePointerDown)
+    document.addEventListener('keydown', handleKeyDown)
+    return () => {
+      document.removeEventListener('pointerdown', handlePointerDown)
+      document.removeEventListener('keydown', handleKeyDown)
+    }
+  }, [isActionsOpen])
 
   return (
     <li>
@@ -68,68 +73,59 @@ function FolderNode({
         }}
         style={{ '--sn-folder-level': level } as CSSProperties}
       >
-        <button
-          aria-label={hasChildren ? 'Toggle folder' : 'Folder'}
-          className="sn-folder-tree__twisty"
-          disabled={!hasChildren}
-          onClick={() => setExpanded((expanded) => !expanded)}
-          type="button"
-        >
-          <UiIcon name={isExpanded ? 'chevronRight' : 'chevronRight'} />
-        </button>
+        {hasChildren ? (
+          <button
+            aria-label={isExpanded ? 'Collapse folder' : 'Expand folder'}
+            className="sn-folder-tree__twisty"
+            onClick={() => setExpanded((expanded) => !expanded)}
+            type="button"
+          >
+            <UiIcon name="chevronRight" />
+          </button>
+        ) : <span className="sn-folder-tree__twisty-space" aria-hidden="true" />}
         <button
           className="sn-folder-tree__select"
           onClick={() => onSelectFolder(node.folder.id)}
           type="button"
         >
           <UiIcon name="folder" />
-          {isRenaming ? (
-            <input
-              aria-label="Folder name"
-              autoFocus
-              onBlur={commitRename}
-              onChange={(event) => setDraftName(event.target.value)}
-              onClick={(event) => event.stopPropagation()}
-              onKeyDown={(event) => {
-                if (event.key === 'Enter') {
-                  commitRename()
-                }
-                if (event.key === 'Escape') {
-                  setDraftName(node.folder.name)
-                  setRenaming(false)
-                }
-              }}
-              value={draftName}
-            />
-          ) : (
-            <span>{node.folder.name}</span>
-          )}
+          <span>{node.folder.name}</span>
         </button>
         <span className="sn-folder-tree__count">{node.noteCount}</span>
-        <button
-          aria-label="New subfolder"
-          className="sn-folder-tree__icon"
-          onClick={() => onCreateFolder(node.folder.id)}
-          type="button"
-        >
-          <UiIcon name="plus" />
-        </button>
-        <button
-          aria-label="Rename folder"
-          className="sn-folder-tree__icon"
-          onClick={() => setRenaming(true)}
-          type="button"
-        >
-          <UiIcon name="settings" />
-        </button>
-        <button
-          aria-label="Delete folder"
-          className="sn-folder-tree__icon"
-          onClick={() => onDeleteFolder(node.folder.id)}
-          type="button"
-        >
-          <UiIcon name="trash" />
-        </button>
+        <div className="sn-folder-tree__actions" ref={actionsRef}>
+          <button
+            aria-expanded={isActionsOpen}
+            aria-haspopup="menu"
+            aria-label={`Actions for ${node.folder.name}`}
+            className="sn-folder-tree__icon"
+            onClick={() => setActionsOpen((open) => !open)}
+            type="button"
+          >
+            <UiIcon name="moreHorizontal" />
+          </button>
+          {isActionsOpen ? (
+            <div className="sn-folder-tree__menu" role="menu">
+              <button onClick={() => {
+                setActionsOpen(false)
+                onCreateFolder(node.folder.id)
+              }} role="menuitem" type="button">
+                <UiIcon name="plus" /> New subfolder
+              </button>
+              <button onClick={() => {
+                setActionsOpen(false)
+                onRenameFolder(node.folder.id, node.folder.name)
+              }} role="menuitem" type="button">
+                <UiIcon name="edit" /> Rename
+              </button>
+              <button className="sn-folder-tree__menu-danger" onClick={() => {
+                setActionsOpen(false)
+                onDeleteFolder(node.folder.id)
+              }} role="menuitem" type="button">
+                <UiIcon name="trash" /> Delete folder
+              </button>
+            </div>
+          ) : null}
+        </div>
       </div>
 
       {hasChildren && isExpanded ? (
@@ -171,7 +167,7 @@ export function FolderTree(props: FolderTreeProps) {
       >
         <button onClick={() => props.onSelectFolder(null)} type="button">
           <UiIcon name="home" />
-          Root
+          All notes
         </button>
         <button
           aria-label="New root folder"

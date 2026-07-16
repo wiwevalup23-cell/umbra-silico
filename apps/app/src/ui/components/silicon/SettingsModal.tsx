@@ -79,9 +79,12 @@ export function SettingsModal({ onClose, settings, updateSetting }: SettingsModa
 
         <section className="sn-settings-section">
           <div className="sn-settings-section__label" id="sn-background-picker-label">
-            Background
-            <strong>{backgroundImageOptions.find((option) => option.value === settings.backgroundImage)?.label ?? 'None'}</strong>
+            Empty screen background
+            <strong>{backgroundImageOptions.find((option) => option.value === settings.backgroundImage)?.label ?? 'None · clean grid'}</strong>
           </div>
+          <p className="sn-settings-section__hint">
+            Used behind the player before a note is selected.
+          </p>
           <div
             aria-labelledby="sn-background-picker-label"
             className="sn-background-picker"
