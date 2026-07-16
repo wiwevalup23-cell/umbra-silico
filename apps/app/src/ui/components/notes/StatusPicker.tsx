@@ -1,17 +1,7 @@
 import { useEffect, useId, useRef, useState, type KeyboardEvent } from 'react'
 import type { NotePropertyStatus } from '@/shared/contracts'
 import { UiIcon } from '@/ui/icons/ui/UiIcon'
-
-const propertyStatusOptions: Array<{
-  label: string
-  tone: NotePropertyStatus
-  value: NotePropertyStatus
-}> = [
-  { label: 'No status', tone: 'none', value: 'none' },
-  { label: 'Idea', tone: 'idea', value: 'idea' },
-  { label: 'In progress', tone: 'active', value: 'active' },
-  { label: 'Done', tone: 'done', value: 'done' },
-]
+import { propertyStatusOptions } from '@/ui/note-property-presentation'
 
 type StatusPickerProps = {
   disabled?: boolean
@@ -122,7 +112,7 @@ export function StatusPicker({ disabled = false, onChange, value }: StatusPicker
         ref={triggerRef}
         type="button"
       >
-        <span className="sn-property-status-dot" data-tone={selectedOption.tone} />
+        <span className="sn-property-status-dot" data-tone={selectedOption.value} />
         <span>{selectedOption.label}</span>
         <UiIcon name="chevronDown" />
       </button>
@@ -150,7 +140,7 @@ export function StatusPicker({ disabled = false, onChange, value }: StatusPicker
               tabIndex={index === activeIndex ? 0 : -1}
               type="button"
             >
-              <span className="sn-property-status-dot" data-tone={option.tone} />
+              <span className="sn-property-status-dot" data-tone={option.value} />
               <span>{option.label}</span>
               {option.value === value ? <UiIcon name="check" /> : null}
             </button>

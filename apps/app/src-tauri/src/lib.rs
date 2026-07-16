@@ -10,12 +10,12 @@ pub fn run() {
                         b"silicon-nostalgia-stronghold-v1",
                         &mut key,
                     )
-                    .expect("failed to derive Silicon Nostalgia stronghold key");
+                    .expect("failed to derive Umbra Silico stronghold key");
                 key.to_vec()
             })
             .build(),
         )
         .plugin(tauri_plugin_sql::Builder::default().build())
         .run(tauri::generate_context!())
-        .expect("error while running Silicon Nostalgia");
+        .expect("error while running Umbra Silico");
 }

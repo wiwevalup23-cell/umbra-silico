@@ -156,10 +156,10 @@ describe('PWA readiness', () => {
     }
 
     expect(manifest).toMatchObject({
-      name: 'Silicon Nostalgia',
+      name: 'Umbra Silico',
       start_url: '/',
       display: 'standalone',
-      theme_color: '#050505',
+      theme_color: '#f8f5ed',
     })
     expect(manifest.icons).toEqual(
       expect.arrayContaining([

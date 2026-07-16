@@ -65,8 +65,8 @@ export function NoteList({
             <span>{libraryStatus.label}</span>
           </p>
         </div>
-        <div className="sn-panel-heading__actions">
-          {onCollapse ? (
+        {onCollapse ? (
+          <div className="sn-panel-heading__actions">
             <button
               aria-label="Collapse notes panel"
               className="sn-icon-button"
@@ -76,17 +76,8 @@ export function NoteList({
             >
               <UiIcon name="chevronLeft" />
             </button>
-          ) : null}
-          <button
-            aria-label="Create note"
-            className="sn-icon-button sn-icon-button--primary"
-            onClick={onCreateNote}
-            title="Create note"
-            type="button"
-          >
-            <UiIcon name="plus" />
-          </button>
-        </div>
+          </div>
+        ) : null}
       </header>
 
       <label className="sn-search-field">
@@ -106,7 +97,12 @@ export function NoteList({
         <div className="sn-empty-list">
           <UiIcon name="document" />
           <strong>{searchQuery ? 'No matching notes' : 'No notes yet'}</strong>
-          <p>{searchQuery ? 'Try a different search.' : 'Start with a blank local note.'}</p>
+          <p>{searchQuery ? 'Try a different search.' : 'Your local library is ready for its first page.'}</p>
+          {!searchQuery ? (
+            <button className="sn-empty-list__action" onClick={onCreateNote} type="button">
+              New blank note
+            </button>
+          ) : null}
         </div>
       ) : null}
 

@@ -1,6 +1,6 @@
 # Phase 13 Verification Report
 
-Phase 13 is the first-pass final verification gate for Silicon Nostalgia.
+Phase 13 is the first-pass final verification gate for Umbra Silico.
 It proves that the architecture and product requirements from the phased plan
 are still true after PWA and Ubuntu desktop packaging.
 
@@ -35,16 +35,16 @@ Desktop verification uses the Ubuntu builder documented in
 `src-tauri/PHASE_12_RELEASE_CHECKLIST.md`:
 
 ```bash
-docker build -f apps/app/src-tauri/docker/ubuntu-builder.Dockerfile -t silicon-nostalgia-tauri-builder:24.04 apps/app/src-tauri/docker
-docker run --rm -v "$PWD:/workspace" -w /workspace/apps/app silicon-nostalgia-tauri-builder:24.04 npm run build:tauri
-docker run --rm -v "$PWD:/workspace" -w /workspace/apps/app silicon-nostalgia-tauri-builder:24.04 bash -lc 'rm -rf /tmp/sn-home /tmp/sn-smoke.log; mkdir -p /tmp/sn-home; export HOME=/tmp/sn-home XDG_CONFIG_HOME=/tmp/sn-home/.config XDG_DATA_HOME=/tmp/sn-home/.local/share WEBKIT_DISABLE_DMABUF_RENDERER=1; timeout 8s dbus-run-session -- xvfb-run -a ./src-tauri/target/release/silicon-nostalgia > /tmp/sn-smoke.log 2>&1; status=$?; cat /tmp/sn-smoke.log; find /tmp/sn-home -maxdepth 8 -type f -printf "%p\t%s bytes\n"; test "$status" = 124'
+docker build -f apps/app/src-tauri/docker/ubuntu-builder.Dockerfile -t umbra-silico-tauri-builder:24.04 apps/app/src-tauri/docker
+docker run --rm -v "$PWD:/workspace" -w /workspace/apps/app umbra-silico-tauri-builder:24.04 npm run build:tauri
+docker run --rm -v "$PWD:/workspace" -w /workspace/apps/app umbra-silico-tauri-builder:24.04 bash -lc 'rm -rf /tmp/sn-home /tmp/sn-smoke.log; mkdir -p /tmp/sn-home; export HOME=/tmp/sn-home XDG_CONFIG_HOME=/tmp/sn-home/.config XDG_DATA_HOME=/tmp/sn-home/.local/share WEBKIT_DISABLE_DMABUF_RENDERER=1; timeout 8s dbus-run-session -- xvfb-run -a ./src-tauri/target/release/umbra-silico > /tmp/sn-smoke.log 2>&1; status=$?; cat /tmp/sn-smoke.log; find /tmp/sn-home -maxdepth 8 -type f -printf "%p\t%s bytes\n"; test "$status" = 124'
 ```
 
 Expected desktop artifacts:
 
 ```text
-src-tauri/target/release/bundle/deb/Silicon Nostalgia_0.0.0_amd64.deb
-src-tauri/target/release/bundle/appimage/Silicon Nostalgia_0.0.0_amd64.AppImage
+src-tauri/target/release/bundle/deb/Umbra Silico_0.0.0_amd64.deb
+src-tauri/target/release/bundle/appimage/Umbra Silico_0.0.0_amd64.AppImage
 ```
 
 ## Verified Results

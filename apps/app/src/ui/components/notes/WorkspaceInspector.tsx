@@ -7,19 +7,15 @@ import {
   type NoteProperties,
 } from '@/shared/contracts'
 import { UiIcon } from '@/ui/icons/ui/UiIcon'
-import { getPersistencePresentation } from '@/ui/note-presentation'
 import { StatusPicker } from './StatusPicker'
 
 type WorkspaceInspectorProps = {
   activeNote: NoteDetail | null
   folderName?: string
-  hasRemote?: boolean
   noteCount: number
   onChangeProperties?: (noteId: NoteDetail['id'], properties: NoteProperties) => Promise<void>
   onCollapse?: () => void
   onOpenSettings?: () => void
-  pendingOperations: number
-  syncStatus: string
 }
 
 type InspectorTab = 'properties' | 'info'
@@ -53,7 +49,6 @@ function activeTitle(note: NoteDetail | null): string {
 export function WorkspaceInspector({
   activeNote,
   folderName = 'All notes',
-  hasRemote = false,
   noteCount,
   onChangeProperties,
   onCollapse,
@@ -65,9 +60,6 @@ export function WorkspaceInspector({
   const properties = activeNote && !activeNote.isLocked
     ? notePropertiesSchema.parse(activeNote.properties ?? emptyNoteProperties)
     : emptyNoteProperties
-  const noteState = activeNote
-    ? getPersistencePresentation({ hasRemote, status: activeNote.syncStatus })
-    : null
 
   useEffect(() => {
     setTagDraft('')
@@ -105,7 +97,7 @@ export function WorkspaceInspector({
           <div className="sn-panel-heading__title-row">
             <h2>Details</h2>
             <span className="sn-panel-heading__right">
-              {noteState ? noteState.label : `${noteCount} total`}
+              {noteCount === 1 ? '1 note' : `${noteCount} notes`}
             </span>
           </div>
           <p>{activeTitle(activeNote)}</p>
@@ -238,10 +230,8 @@ export function WorkspaceInspector({
           <dl className="sn-inspector-list">
             <div><dt>Folder</dt><dd><UiIcon name="folder" />{folderName}</dd></div>
             <div><dt>Updated</dt><dd>{formatDate(activeNote.updatedAt)} at {formatTime(activeNote.updatedAt)}</dd></div>
-            <div><dt>State</dt><dd><span className="sn-status-dot" data-tone={noteState?.tone} />{noteState?.label}</dd></div>
             <div><dt>Privacy</dt><dd><UiIcon name={activeNote.isLocked ? 'lock' : 'shield'} />{activeNote.isLocked ? 'Encrypted and locked' : 'Local only · not encrypted'}</dd></div>
             <div><dt>Created</dt><dd>{formatDate(activeNote.createdAt)}</dd></div>
-            <div><dt>Local revision</dt><dd>r{activeNote.localRevision}</dd></div>
           </dl>
         </div>
       ) : null}

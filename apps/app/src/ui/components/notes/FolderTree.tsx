@@ -175,7 +175,7 @@ export function FolderTree(props: FolderTreeProps) {
           onClick={() => props.onCreateFolder(null)}
           type="button"
         >
-          <UiIcon name="plus" />
+          <UiIcon name="folderPlus" />
         </button>
       </div>
       <ul className="sn-folder-tree__list">

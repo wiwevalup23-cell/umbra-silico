@@ -65,7 +65,7 @@ function setInputValue(input: HTMLInputElement, value: string) {
   input.dispatchEvent(new Event('input', { bubbles: true }))
 }
 
-describe('Silicon Nostalgia UI shell', () => {
+describe('Umbra Silico UI shell', () => {
   it('allows every visible background option to be selected', () => {
     const updateSetting = vi.fn<ComponentProps<typeof SettingsModal>['updateSetting']>()
     const rendered = renderUi(

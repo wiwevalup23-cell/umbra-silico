@@ -4,7 +4,7 @@
 
 Область: `apps/app`
 
-Статус: P0 и P1 реализованы и проверены; P2 остаётся в backlog
+Статус: P0, P1 и P2 реализованы и проверены
 
 ## Цель
 
@@ -180,12 +180,37 @@ initial focus, folder prompt, note menu, Move picker, Details Settings и
 
 ### P2 — визуальная система, доступность и бренд
 
+Статус на 2026-07-17: **P2 (`UX-036`–`UX-047`) реализован**.
+
+- внутренние пустые карточки и диагностическая рамочность ослаблены; ретро-рамка
+  остаётся у app chrome, editor paper, контролов и dialog;
+- функциональная microtype поднята до 11.5–12 px, mobile tab labels — до 12 px,
+  inactive tabs используют контрастный `--sn-muted`;
+- введены роли `selection`, `success`, `pending`, `danger`; декоративная
+  calibration strip приглушена и не обозначает состояние;
+- небезопасный UI scale из P0 не возвращён, мёртвый native-range удалён из CSS;
+- Inspector Info оставляет Folder, Updated, Privacy и Created, без повторного
+  saved-state и `Local revision`;
+- Library показывает page status, два первых тега и явный `+N`; empty state
+  получил текстовую CTA, а дублирующая кнопка создания в Library удалена;
+- Blank, Daily, Meeting и Project получили разные структурные пиктограммы;
+- web title, PWA, npm/Cargo/Tauri package metadata и window title унифицированы
+  как Umbra Silico; PWA использует кремовые theme/background colors и
+  `orientation: any`;
+- Cormorant Garamond self-hosted, внешние Google Fonts requests удалены, WOFF2
+  входит в offline precache; системных prompt/confirm/alert в UI нет.
+
+В Chromium проверены 320×844, 390×844, 768×844, 960×900, 1280×900 и
+1440×900. На всех ширинах `scrollWidth === clientWidth` у viewport/workspace;
+на mobile видна одна панель, на compact desktop — Library + Editor, на full
+desktop — все три панели. В runtime нет внешних font resources.
+
 | ID | Проблема | Что делаем |
 | --- | --- | --- |
 | UX-036 | Слишком много вложенных рамок, сеток и одинаково весомых поверхностей. | Сохраняем ретро-рамку только для значимых объектов: app chrome, editor paper и dialog. Уменьшаем количество границ внутри Library/Inspector. |
 | UX-037 | Функциональный текст 10–11 px слишком мелок; inactive mobile tabs имеют контраст около 3.2:1. | Поднимаем минимальный функциональный размер, усиливаем контраст интерактивных muted-состояний и отдельно проверяем 90% scale. |
 | UX-038 | Синий active note, синий range, синий Play, зелёный local и янтарный dirty не образуют ясной семантики. | Фиксируем короткую semantic palette: selection, success, pending, danger. Декоративная calibration strip не диктует состояния. |
-| UX-039 | Нативный range в Settings визуально не принадлежит системе. | Стилизуем track/thumb и focus-state; после исправления scale показываем ясные 90/100/115 и Reset. |
+| UX-039 | Нативный range в Settings визуально не принадлежит системе. | Не возвращаем небезопасный `body zoom`: настройка scale остаётся исключённой из первой версии, а мёртвый CSS native-range удалён. |
 | UX-040 | Inspector повторяет saved-state, но большая часть панели пуста и содержит технический local revision. | В Properties оставляем действия, в Info — только полезные человеку метаданные. Диагностические поля скрываем из основной версии. |
 | UX-041 | Note card показывает максимум два тега без `+N`; status страницы в Library не виден. | Добавляем `+N` и компактный, ненавязчивый status marker, если он улучшает сканирование и не перегружает карточку. |
 | UX-042 | Empty Library на mobile сообщает «Start with a blank local note», но не содержит CTA; одновременно выше есть две кнопки `+`. | Оставляем одну устойчивую primary action в header и текстовую CTA в empty state либо убираем дублирование. |

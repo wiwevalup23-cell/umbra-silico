@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, type CSSProperties, type DragEvent } from 'react'
 import type { NoteId, NoteListItem } from '@/shared/contracts/note'
 import { UiIcon } from '@/ui/icons/ui/UiIcon'
+import { getPropertyStatusPresentation } from '@/ui/note-property-presentation'
 
 type NoteCardProps = {
   active?: boolean
@@ -62,6 +63,10 @@ export function NoteCard({
   const shouldShowSyncStatus = syncStatus.length > 0
   const preview = note.isLocked ? 'Encrypted local note' : note.preview.trim()
   const shouldShowPreview = preview.length > 0
+  const pageStatus = getPropertyStatusPresentation(note.propertyStatus)
+  const shouldShowPageStatus = !note.isLocked && pageStatus.value !== 'none'
+  const visibleTags = note.isLocked ? [] : note.tags?.slice(0, 2) ?? []
+  const hiddenTagCount = Math.max(0, (note.tags?.length ?? 0) - visibleTags.length)
 
   useEffect(() => {
     if (!isActionsOpen) {
@@ -127,9 +132,26 @@ export function NoteCard({
         {shouldShowPreview ? (
           <span className="sn-note-card__preview">{preview}</span>
         ) : null}
-        {!note.isLocked && note.tags?.length ? (
-          <span className="sn-note-card__tags" aria-label="Tags">
-            {note.tags.slice(0, 2).map((tag) => <span key={tag}>{tag}</span>)}
+        {shouldShowPageStatus || visibleTags.length > 0 ? (
+          <span className="sn-note-card__properties">
+            {shouldShowPageStatus ? (
+              <span
+                className="sn-note-card__page-status"
+                data-tone={pageStatus.value}
+                title={`Status: ${pageStatus.label}`}
+              >
+                <span className="sn-property-status-dot" data-tone={pageStatus.value} />
+                {pageStatus.label}
+              </span>
+            ) : null}
+            {visibleTags.length > 0 ? (
+              <span className="sn-note-card__tags" aria-label="Tags">
+                {visibleTags.map((tag) => <span key={tag}>{tag}</span>)}
+                {hiddenTagCount > 0 ? (
+                  <span className="sn-note-card__tag-overflow">+{hiddenTagCount}</span>
+                ) : null}
+              </span>
+            ) : null}
           </span>
         ) : null}
         {shouldShowSyncStatus ? (

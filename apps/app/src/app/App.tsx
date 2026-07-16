@@ -471,7 +471,6 @@ function AppWorkspace() {
               <WorkspaceInspector
                 activeNote={activeNote}
                 folderName={activeFolderName}
-                hasRemote={syncViewModel.hasRemote}
                 noteCount={notesViewModel.notes.length}
                 onChangeProperties={activeNoteViewModel.updateProperties}
                 onCollapse={isNarrow ? undefined : () => {
@@ -482,8 +481,6 @@ function AppWorkspace() {
                   }
                 }}
                 onOpenSettings={isNarrow ? () => setIsSettingsOpen(true) : undefined}
-                pendingOperations={visiblePendingOperations}
-                syncStatus={syncViewModel.status}
               />
             </aside>
           )}

@@ -3,6 +3,13 @@ import type { NoteTemplateId, NoteTemplateSummary } from '@/shared/note-template
 import { RetroDialogShell } from '@/ui/components/silicon'
 import { UiIcon } from '@/ui/icons/ui/UiIcon'
 
+const templateIcons = {
+  blank: 'document',
+  daily: 'calendar',
+  meeting: 'users',
+  project: 'briefcase',
+} as const
+
 type TemplatePickerProps = {
   onClose: () => void
   onSelect: (templateId: NoteTemplateId) => void
@@ -41,13 +48,14 @@ export function TemplatePicker({ onClose, onSelect, templates }: TemplatePickerP
           {templates.map((template, index) => (
             <button
               className="sn-template-card"
+              data-template={template.id}
               key={template.id}
               onClick={() => onSelect(template.id)}
               ref={index === 0 ? firstTemplateRef : undefined}
               type="button"
             >
               <span className="sn-template-card__icon" aria-hidden="true">
-                <UiIcon name={template.id === 'blank' ? 'document' : 'template'} />
+                <UiIcon name={templateIcons[template.id]} />
               </span>
               <span>
                 <strong>{template.label}</strong>

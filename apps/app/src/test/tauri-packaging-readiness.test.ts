@@ -36,8 +36,8 @@ describe('phase 12 Tauri desktop packaging readiness', () => {
       minHeight: 640,
       minWidth: 920,
       resizable: true,
-      theme: 'Dark',
-      title: 'Silicon Nostalgia',
+      theme: 'Light',
+      title: 'Umbra Silico',
       width: 1200,
     })
     expect(tauriConfig.bundle).toMatchObject({

@@ -4,6 +4,8 @@ export type UiIconName =
   | 'activity'
   | 'arrowDown'
   | 'arrowUp'
+  | 'briefcase'
+  | 'calendar'
   | 'check'
   | 'edit'
   | 'chevronDown'
@@ -14,6 +16,7 @@ export type UiIconName =
   | 'copy'
   | 'document'
   | 'folder'
+  | 'folderPlus'
   | 'focus'
   | 'gripVertical'
   | 'history'
@@ -33,12 +36,15 @@ export type UiIconName =
   | 'tag'
   | 'template'
   | 'trash'
-  | 'unlock';
+  | 'unlock'
+  | 'users';
 
 const paths: Record<UiIconName, string[]> = {
   activity: ['M3 12h4l2.5-7 5 14 2.5-7h4'],
   arrowDown: ['M12 5v14', 'M19 12l-7 7-7-7'],
   arrowUp: ['M12 19V5', 'M5 12l7-7 7 7'],
+  briefcase: ['M9 6V4h6v2', 'M4 6h16v13H4z', 'M4 11h16', 'M10 11v2h4v-2'],
+  calendar: ['M5 4h14a2 2 0 0 1 2 2v14H3V6a2 2 0 0 1 2-2z', 'M8 2v4', 'M16 2v4', 'M3 9h18', 'M8 13h.01', 'M12 13h.01', 'M16 13h.01', 'M8 17h.01', 'M12 17h.01'],
   check: ['M5 12.5l4 4L19 6.5'],
   edit: ['M12 20h9', 'M16.4 3.6a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z'],
   chevronDown: ['M6 9l6 6 6-6'],
@@ -49,6 +55,7 @@ const paths: Record<UiIconName, string[]> = {
   copy: ['M8 8h10v10H8z', 'M6 16H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1'],
   document: ['M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z', 'M14 2v6h6', 'M8 13h8', 'M8 17h6'],
   folder: ['M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8.5A2.5 2.5 0 0 1 18.5 20h-13A2.5 2.5 0 0 1 3 17.5z'],
+  folderPlus: ['M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8.5A2.5 2.5 0 0 1 18.5 20h-13A2.5 2.5 0 0 1 3 17.5z', 'M12 11v6', 'M9 14h6'],
   focus: ['M8 3H5a2 2 0 0 0-2 2v3', 'M16 3h3a2 2 0 0 1 2 2v3', 'M21 16v3a2 2 0 0 1-2 2h-3', 'M8 21H5a2 2 0 0 1-2-2v-3'],
   gripVertical: ['M9 5h.01', 'M9 12h.01', 'M9 19h.01', 'M15 5h.01', 'M15 12h.01', 'M15 19h.01'],
   history: ['M3 12a9 9 0 1 0 3-6.7', 'M3 4v5h5', 'M12 7v5l3 2'],
@@ -69,6 +76,7 @@ const paths: Record<UiIconName, string[]> = {
   template: ['M4 4h16v16H4z', 'M4 9h16', 'M10 9v11'],
   trash: ['M3 6h18', 'M8 6V4h8v2', 'M19 6l-1 14H6L5 6', 'M10 11v5', 'M14 11v5'],
   unlock: ['M7 11V8a5 5 0 0 1 8.8-3.2', 'M6 11h12v9H6z'],
+  users: ['M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2', 'M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8', 'M22 21v-2a4 4 0 0 0-3-3.9', 'M16 3.1a4 4 0 0 1 0 7.8'],
 };
 
 type UiIconProps = SVGProps<SVGSVGElement> & {

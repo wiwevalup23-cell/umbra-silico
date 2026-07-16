@@ -1,7 +1,7 @@
 {
   "$schema": "../gen/schemas/desktop-schema.json",
   "identifier": "default",
-  "description": "Desktop capability set for the Silicon Nostalgia Ubuntu shell.",
+  "description": "Desktop capability set for the Umbra Silico Ubuntu shell.",
   "windows": ["main"],
   "permissions": [
     "core:default",

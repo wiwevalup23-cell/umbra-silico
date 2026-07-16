@@ -1,15 +1,15 @@
 {
-  "name": "Silicon Nostalgia",
-  "short_name": "Umbra",
+  "name": "Umbra Silico",
+  "short_name": "Umbra Silico",
   "description": "A local-first notebook with offline editing, sync, encryption and automation foundations.",
   "id": "/",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
   "display_override": ["window-controls-overlay", "standalone", "minimal-ui"],
-  "orientation": "portrait",
-  "background_color": "#e5e5e5",
-  "theme_color": "#050505",
+  "orientation": "any",
+  "background_color": "#edeae2",
+  "theme_color": "#f8f5ed",
   "categories": ["productivity", "utilities"],
   "icons": [
     {

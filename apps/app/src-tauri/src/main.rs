@@ -1,3 +1,3 @@
 fn main() {
-    silicon_nostalgia_lib::run();
+    umbra_silico_lib::run();
 }

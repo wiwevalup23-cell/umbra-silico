@@ -23,7 +23,7 @@ export default defineConfig({
       workbox: {
         cleanupOutdatedCaches: true,
         clientsClaim: true,
-        globPatterns: ['**/*.{css,html,ico,js,png,svg,webmanifest,webp,woff}'],
+        globPatterns: ['**/*.{css,html,ico,js,png,svg,webmanifest,webp,woff,woff2}'],
         navigateFallback: '/index.html',
         navigateFallbackDenylist: [/^\/api\//, /^\/supabase\//],
         runtimeCaching: [
@@ -32,7 +32,7 @@ export default defineConfig({
               request.destination === 'font' || request.destination === 'image',
             handler: 'CacheFirst',
             options: {
-              cacheName: 'silicon-nostalgia-static-assets',
+              cacheName: 'umbra-silico-static-assets',
               expiration: {
                 maxAgeSeconds: 60 * 60 * 24 * 30,
                 maxEntries: 96,

@@ -1,6 +1,6 @@
-# Silicon Nostalgia App
+# Umbra Silico App
 
-Local-first notes app with a Silicon Nostalgia interface: glassmorphism,
+Local-first notes app with an Umbra Silico interface: warm paper surfaces,
 Old Mac/Web 1.0 structure and Y2K chrome accents.
 
 ## Stack
@@ -52,7 +52,7 @@ Completed:
 - TypeScript build check
 - Vitest runner
 - ESLint architectural boundary rules
-- Silicon Nostalgia UI shell
+- Umbra Silico UI shell
 - Tauri config skeleton
 
 ## Phase 1 Status
@@ -110,7 +110,7 @@ Completed:
 
 Completed:
 
-- premium Silicon Nostalgia workspace shell
+- focused Umbra Silico workspace shell
 - Old Mac dithering background and hard 1px black UI borders
 - glass panels with `backdrop-filter` surfaces and neo-brutalist shadows
 - Y2K chrome titlebar, window controls and industrial status strip
@@ -131,7 +131,7 @@ Implemented:
 - runtime Tauri/SQLite database name aligned with SQL preload
 - Stronghold plugin wiring for secure local secret storage
 - explicit desktop capabilities for SQL and Stronghold commands
-- generated Tauri desktop icons from the Silicon Nostalgia app icon
+- generated Tauri desktop icons from the Umbra Silico app icon
 - phase 12 readiness tests for config, capabilities, plugins, icons and local
   API default-off behavior
 - reproducible Ubuntu builder Dockerfile for machines without local Tauri

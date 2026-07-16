@@ -130,8 +130,6 @@ describe('focused product UX', () => {
         folderName="Notebook"
         noteCount={1}
         onChangeProperties={onChangeProperties}
-        pendingOperations={0}
-        syncStatus="idle"
       />,
     )
     cleanupTasks.push(rendered.cleanup)
