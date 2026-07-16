@@ -1,0 +1,54 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 320" role="img">
+  <defs>
+    <linearGradient id="outerBevel" x1="44" x2="276" y1="24" y2="296" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#b9b4ac" />
+      <stop offset="0.55" stop-color="#7d7a74" />
+      <stop offset="1" stop-color="#9a968e" />
+    </linearGradient>
+    <radialGradient id="innerBevel" cx="0" cy="0" r="1" gradientTransform="matrix(360 360 -360 360 102 76)" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#fbf7ee" />
+      <stop offset="0.46" stop-color="#f3ece0" />
+      <stop offset="1" stop-color="#e6dccb" />
+    </radialGradient>
+    <filter id="innerInset" x="9" y="9" width="302" height="302" color-interpolation-filters="sRGB" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="2" stdDeviation="1.5" flood-color="#fff" flood-opacity="0.85" />
+      <feDropShadow dx="0" dy="-10" stdDeviation="11" flood-color="#968a76" flood-opacity="0.35" />
+    </filter>
+    <clipPath id="diskClip">
+      <circle cx="240" cy="250" r="158" />
+    </clipPath>
+    <mask id="legMask" x="0" y="0" width="480" height="480" maskUnits="userSpaceOnUse">
+      <rect width="480" height="480" fill="#000" />
+      <line x1="240" x2="147.9" y1="150" y2="378.6" stroke="#fff" stroke-width="12" />
+      <line x1="240" x2="332" y1="150" y2="378.7" stroke="#fff" stroke-width="12" />
+    </mask>
+  </defs>
+
+  <rect width="320" height="320" rx="64" fill="url(#outerBevel)" />
+  <rect x="9" y="9" width="302" height="302" rx="56" fill="url(#innerBevel)" filter="url(#innerInset)" />
+
+  <svg x="10" y="10" width="300" height="300" viewBox="0 0 480 480" aria-hidden="true">
+    <polygon points="240.0,18.0 262.5,93.6 305.4,27.4 305.6,106.3 365.4,54.8 343.5,130.6 415.3,98.1 372.9,164.6 451.0,153.6 391.6,205.5 469.6,217.0 398.0,250.0 469.6,283.0 391.6,294.5 451.0,346.4 372.9,335.4 415.3,401.9 343.5,369.4 365.4,445.2 305.6,393.7 305.4,472.6 262.5,406.4 240.0,482.0 217.5,406.4 174.6,472.6 174.4,393.7 114.6,445.2 136.5,369.4 64.7,401.9 107.1,335.4 29.0,346.4 88.4,294.5 10.4,283.0 82.0,250.0 10.4,217.0 88.4,205.5 29.0,153.6 107.1,164.6 64.7,98.1 136.5,130.6 114.6,54.8 174.4,106.3 174.6,27.4 217.5,93.6" fill="#141414" />
+    <circle cx="240" cy="250" r="158" fill="#f4ecdf" />
+    <circle cx="262.3" cy="238.1" r="158" fill="#141414" clip-path="url(#diskClip)" />
+
+    <line x1="240" x2="147.9" y1="150" y2="378.6" stroke="#f4ecdf" stroke-linecap="round" stroke-width="4.5" />
+    <line x1="240" x2="332" y1="150" y2="378.7" stroke="#f4ecdf" stroke-linecap="round" stroke-width="4.5" />
+
+    <g mask="url(#legMask)">
+      <path d="M 843,820 Q 843,831 835,840.5 Q 827,850 812,850 L 649,850 Q 632,850 624,840.5 Q 616,831 616,820 Q 616,809 624,799.5 Q 632,790 649,790 L 698,790 L 698,277 Q 698,221 676.5,176.5 Q 655,132 618,101.5 Q 581,71 533,54.5 Q 485,38 433,38 Q 397,38 366,44 L 366,790 L 419,790 Q 436,790 444,799.5 Q 452,809 452,820 Q 452,831 444,840.5 Q 436,850 419,850 L 56,850 Q 40,850 32,840.5 Q 24,831 24,820 Q 24,809 32,799.5 Q 40,790 56,790 L 107,790 L 107,277 Q 107,209 133.5,153.5 Q 160,98 205,58.5 Q 250,19 309,-2.5 Q 368,-24 433,-24 Q 498,-24 557,-2.5 Q 616,19 661,58.5 Q 706,98 732.5,153.5 Q 759,209 759,277 L 759,790 L 812,790 Q 827,790 835,799.5 Q 843,809 843,820 Z" transform="translate(142.8,387.29) scale(0.2242,-0.2242)" fill="none" stroke="#141414" stroke-width="24" />
+    </g>
+
+    <line x1="159" x2="147.9" y1="351" y2="378.6" stroke="#141414" stroke-linecap="round" stroke-width="8.5" />
+    <circle cx="147.9" cy="378.6" r="10.5" fill="#141414" />
+    <line x1="159" x2="147.9" y1="351" y2="378.6" stroke="#f4ecdf" stroke-linecap="round" stroke-width="4.5" />
+    <circle cx="147.9" cy="378.6" r="8" fill="#f4ecdf" />
+    <circle cx="332" cy="378.7" r="8" fill="#f4ecdf" />
+
+    <path d="M 843,820 Q 843,831 835,840.5 Q 827,850 812,850 L 649,850 Q 632,850 624,840.5 Q 616,831 616,820 Q 616,809 624,799.5 Q 632,790 649,790 L 698,790 L 698,277 Q 698,221 676.5,176.5 Q 655,132 618,101.5 Q 581,71 533,54.5 Q 485,38 433,38 Q 397,38 366,44 L 366,790 L 419,790 Q 436,790 444,799.5 Q 452,809 452,820 Q 452,831 444,840.5 Q 436,850 419,850 L 56,850 Q 40,850 32,840.5 Q 24,831 24,820 Q 24,809 32,799.5 Q 40,790 56,790 L 107,790 L 107,277 Q 107,209 133.5,153.5 Q 160,98 205,58.5 Q 250,19 309,-2.5 Q 368,-24 433,-24 Q 498,-24 557,-2.5 Q 616,19 661,58.5 Q 706,98 732.5,153.5 Q 759,209 759,277 L 759,790 L 812,790 Q 827,790 835,799.5 Q 843,809 843,820 Z M 213,137 Q 192,166 180,200.5 Q 168,235 168,277 L 168,790 L 213,790 L 213,137 Z" transform="translate(142.8,387.29) scale(0.2242,-0.2242)" fill="#f4ecdf" />
+    <rect x="237.5" y="118" width="5" height="34" fill="#f4ecdf" />
+    <circle cx="240" cy="114" r="6.5" fill="#f4ecdf" />
+    <circle cx="240" cy="150" r="25" fill="#f4ecdf" />
+    <circle cx="240" cy="150" r="13" fill="#141414" />
+  </svg>
+</svg>

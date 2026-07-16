@@ -1,0 +1,41 @@
+# Dependencies and generated application output
+**/node_modules/
+**/dist/
+**/dist-ssr/
+**/target/
+*.log
+*.local
+.env
+.env.*
+!.env.example
+
+# Local IDE and operating-system files
+.DS_Store
+.idea/
+.vscode/
+*.suo
+*.swp
+
+# Workspace-only materials: backups, design references and exported archives
+/backups/
+/actual/
+/based_ui/
+/design-taste/
+/elements/
+/fons/
+/hello/
+/imagegen/
+/refrenses/
+/troubles/
+/variants/
+/.claude/
+/.skills/
+/Анализ дизайна записной книжки/
+/Анализ дизайна записной книжки_элементы/
+/Иконка затмения с циркулем и буквой U_final/
+/архивы/
+/проверить/
+*.zip
+
+# Unused source asset retained only in the local design workspace
+/apps/app/src/assets/hero.png
