@@ -8,10 +8,12 @@ import {
   type NotePropertyStatus,
 } from '@/shared/contracts'
 import { UiIcon } from '@/ui/icons/ui/UiIcon'
+import { getPersistencePresentation } from '@/ui/note-presentation'
 
 type WorkspaceInspectorProps = {
   activeNote: NoteDetail | null
   folderName?: string
+  hasRemote?: boolean
   noteCount: number
   onChangeProperties?: (noteId: NoteDetail['id'], properties: NoteProperties) => Promise<void>
   onCollapse?: () => void
@@ -32,18 +34,6 @@ const timeFormatter = new Intl.DateTimeFormat(undefined, {
   minute: '2-digit',
 })
 
-const statusLabels: Record<string, string> = {
-  conflict: 'Review needed',
-  // 'dirty' notes are persisted on disk; the flag only marks them as not
-  // replicated to a remote yet, which is the norm in the local-only build.
-  dirty: 'Saved locally',
-  error: 'Review needed',
-  idle: 'Saved locally',
-  saving: 'Saving',
-  synced: 'Saved locally',
-  syncing: 'Saving',
-}
-
 const propertyStatusLabels: Record<NotePropertyStatus, string> = {
   none: 'No status',
   idea: 'Idea',
@@ -61,10 +51,6 @@ function formatTime(iso: string): string {
   return Number.isNaN(time) ? '-' : timeFormatter.format(time)
 }
 
-function formatStatus(status: string): string {
-  return statusLabels[status] ?? 'Local note'
-}
-
 function activeTitle(note: NoteDetail | null): string {
   if (!note) return 'No note selected'
   return note.isLocked ? 'Locked note' : note.title
@@ -73,6 +59,7 @@ function activeTitle(note: NoteDetail | null): string {
 export function WorkspaceInspector({
   activeNote,
   folderName = 'All notes',
+  hasRemote = false,
   noteCount,
   onChangeProperties,
   onCollapse,
@@ -83,6 +70,9 @@ export function WorkspaceInspector({
   const properties = activeNote && !activeNote.isLocked
     ? notePropertiesSchema.parse(activeNote.properties ?? emptyNoteProperties)
     : emptyNoteProperties
+  const noteState = activeNote
+    ? getPersistencePresentation({ hasRemote, status: activeNote.syncStatus })
+    : null
 
   useEffect(() => {
     setTagDraft('')
@@ -120,7 +110,7 @@ export function WorkspaceInspector({
           <div className="sn-panel-heading__title-row">
             <h2>Details</h2>
             <span className="sn-panel-heading__right">
-              {activeNote ? formatStatus(activeNote.syncStatus) : `${noteCount} total`}
+              {noteState ? noteState.label : `${noteCount} total`}
             </span>
           </div>
           <p>{activeTitle(activeNote)}</p>
@@ -245,8 +235,8 @@ export function WorkspaceInspector({
           <dl className="sn-inspector-list">
             <div><dt>Folder</dt><dd><UiIcon name="folder" />{folderName}</dd></div>
             <div><dt>Updated</dt><dd>{formatDate(activeNote.updatedAt)} at {formatTime(activeNote.updatedAt)}</dd></div>
-            <div><dt>State</dt><dd><span className="sn-status-dot" data-tone={activeNote.syncStatus} />{formatStatus(activeNote.syncStatus)}</dd></div>
-            <div><dt>Privacy</dt><dd><UiIcon name={activeNote.isLocked ? 'lock' : 'shield'} />{activeNote.isLocked ? 'Locked note' : 'Private local note'}</dd></div>
+            <div><dt>State</dt><dd><span className="sn-status-dot" data-tone={noteState?.tone} />{noteState?.label}</dd></div>
+            <div><dt>Privacy</dt><dd><UiIcon name={activeNote.isLocked ? 'lock' : 'shield'} />{activeNote.isLocked ? 'Encrypted and locked' : 'Local only · not encrypted'}</dd></div>
             <div><dt>Created</dt><dd>{formatDate(activeNote.createdAt)}</dd></div>
             <div><dt>Local revision</dt><dd>r{activeNote.localRevision}</dd></div>
           </dl>

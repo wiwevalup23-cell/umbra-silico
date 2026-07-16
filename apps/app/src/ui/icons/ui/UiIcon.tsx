@@ -19,6 +19,7 @@ export type UiIconName =
   | 'info'
   | 'link'
   | 'lock'
+  | 'moreHorizontal'
   | 'panelLeft'
   | 'panelRight'
   | 'plus'
@@ -51,6 +52,7 @@ const paths: Record<UiIconName, string[]> = {
   info: ['M12 17v-5', 'M12 8h.01', 'M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0'],
   link: ['M10 13a5 5 0 0 0 7.1 0l2-2a5 5 0 0 0-7.1-7.1l-1.1 1.1', 'M14 11a5 5 0 0 0-7.1 0l-2 2A5 5 0 0 0 12 20.1l1.1-1.1'],
   lock: ['M7 11V8a5 5 0 0 1 10 0v3', 'M6 11h12v9H6z'],
+  moreHorizontal: ['M5 12h.01', 'M12 12h.01', 'M19 12h.01'],
   panelLeft: ['M4 5a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2z', 'M9 3v18'],
   panelRight: ['M4 5a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2z', 'M15 3v18'],
   plus: ['M12 5v14', 'M5 12h14'],

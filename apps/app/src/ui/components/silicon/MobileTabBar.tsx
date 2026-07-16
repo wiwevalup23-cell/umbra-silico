@@ -6,6 +6,7 @@ type NoteItem = { syncStatus: string }
 
 type MobileTabBarProps = {
   activeTab: MobileTab
+  hasRemote?: boolean
   notes: NoteItem[]
   onTabChange: (tab: MobileTab) => void
   pendingOperations: number
@@ -14,6 +15,7 @@ type MobileTabBarProps = {
 
 export function MobileTabBar({
   activeTab,
+  hasRemote = false,
   notes,
   onTabChange,
   pendingOperations,
@@ -22,7 +24,8 @@ export function MobileTabBar({
   // 'dirty' notes are already persisted locally, so only transient saves count.
   const unsavedCount = notes.filter((n) => n.syncStatus === 'saving').length
 
-  const hasSyncIssue = syncStatus === 'error' || syncStatus === 'conflict'
+  const hasSyncIssue = hasRemote && (syncStatus === 'error' || syncStatus === 'conflict')
+  const visiblePendingOperations = hasRemote ? pendingOperations : 0
 
   return (
     <nav className="sn-tab-bar" aria-label="Main navigation">
@@ -71,12 +74,12 @@ export function MobileTabBar({
           <UiIcon height={20} name="activity" width={20} />
         </span>
         <span className="sn-tab-bar__label">Details</span>
-        {(pendingOperations > 0 || hasSyncIssue) && (
+        {(visiblePendingOperations > 0 || hasSyncIssue) && (
           <span
-            aria-label={hasSyncIssue ? 'Sync issue' : `${pendingOperations} pending`}
+            aria-label={hasSyncIssue ? 'Sync issue' : `${visiblePendingOperations} pending`}
             className={`sn-tab-bar__badge${hasSyncIssue ? ' sn-tab-bar__badge--error' : ''}`}
           >
-            {hasSyncIssue ? '!' : pendingOperations > 99 ? '99+' : pendingOperations}
+            {hasSyncIssue ? '!' : visiblePendingOperations > 99 ? '99+' : visiblePendingOperations}
           </span>
         )}
       </button>

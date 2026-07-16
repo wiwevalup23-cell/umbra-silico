@@ -1,4 +1,4 @@
-import type { CSSProperties, DragEvent } from 'react'
+import { useEffect, useRef, useState, type CSSProperties, type DragEvent } from 'react'
 import type { NoteId, NoteListItem } from '@/shared/contracts/note'
 import { UiIcon } from '@/ui/icons/ui/UiIcon'
 
@@ -50,6 +50,8 @@ export function NoteCard({
   onDragStart,
   onSelect,
 }: NoteCardProps) {
+  const actionsRef = useRef<HTMLDivElement>(null)
+  const [isActionsOpen, setActionsOpen] = useState(false)
   const title = note.title.trim()
   const isUntitled = title.length === 0 || title.toLocaleLowerCase() === 'untitled'
   const displayTitle = isUntitled ? 'Untitled' : title
@@ -58,6 +60,31 @@ export function NoteCard({
   const shouldShowSyncStatus = syncStatus.length > 0
   const preview = note.isLocked ? 'Encrypted local note' : note.preview.trim()
   const shouldShowPreview = preview.length > 0
+
+  useEffect(() => {
+    if (!isActionsOpen) {
+      return
+    }
+
+    const handlePointerDown = (event: PointerEvent) => {
+      if (!actionsRef.current?.contains(event.target as Node)) {
+        setActionsOpen(false)
+      }
+    }
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        setActionsOpen(false)
+      }
+    }
+
+    document.addEventListener('pointerdown', handlePointerDown)
+    document.addEventListener('keydown', handleKeyDown)
+
+    return () => {
+      document.removeEventListener('pointerdown', handlePointerDown)
+      document.removeEventListener('keydown', handleKeyDown)
+    }
+  }, [isActionsOpen])
 
   return (
     <div
@@ -108,18 +135,34 @@ export function NoteCard({
         ) : null}
       </button>
       {onDelete ? (
-        <button
-          aria-label={`Move ${displayTitle} to trash`}
-          className="sn-note-card__delete"
-          onClick={(event) => {
-            event.stopPropagation()
-            onDelete(note.id)
-          }}
-          title="Move to trash"
-          type="button"
-        >
-          <UiIcon name="trash" />
-        </button>
+        <div className="sn-note-card__actions" ref={actionsRef}>
+          <button
+            aria-expanded={isActionsOpen}
+            aria-haspopup="menu"
+            aria-label={`Note actions for ${displayTitle}`}
+            className="sn-note-card__actions-trigger"
+            onClick={() => setActionsOpen((open) => !open)}
+            title="Note actions"
+            type="button"
+          >
+            <UiIcon name="moreHorizontal" />
+          </button>
+          {isActionsOpen ? (
+            <div className="sn-note-card__menu" role="menu">
+              <button
+                onClick={() => {
+                  setActionsOpen(false)
+                  onDelete(note.id)
+                }}
+                role="menuitem"
+                type="button"
+              >
+                <UiIcon name="trash" />
+                Move to trash
+              </button>
+            </div>
+          ) : null}
+        </div>
       ) : null}
     </div>
   )

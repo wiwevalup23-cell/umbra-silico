@@ -1,4 +1,5 @@
-import { useEffect, useRef, useState } from 'react'
+import { useRef, useState } from 'react'
+import { RetroDialogShell } from '@/ui/components/silicon'
 import { UiIcon } from '@/ui/icons/ui/UiIcon'
 
 type LockModalProps = {
@@ -18,11 +19,13 @@ export function LockModal({
   onClose,
   onSubmit,
 }: LockModalProps) {
-  const dialogRef = useRef<HTMLDialogElement>(null)
+  const passwordInputRef = useRef<HTMLInputElement>(null)
   const [masterPassword, setMasterPassword] = useState('')
+  const [confirmPassword, setConfirmPassword] = useState('')
+  const [showPassword, setShowPassword] = useState(false)
   const noteFingerprint =
     noteId.length > 18 ? `${noteId.slice(0, 3)}...${noteId.slice(-6)}` : noteId
-  const noteCipherLabel = `NOTE_${noteFingerprint.replace('...', '...').toUpperCase()} · AES-GCM · NEVER LEAVES DEVICE`
+  const noteCipherLabel = `NOTE_${noteFingerprint.toUpperCase()} · AES-GCM · NEVER LEAVES DEVICE`
   const isLocking = mode === 'lock'
   const title = isLocking ? 'Lock note' : 'Unlock note'
   const actionLabel = isLocking ? 'Lock' : 'Unlock'
@@ -30,126 +33,130 @@ export function LockModal({
   const helpText = isLocking
     ? 'Title, preview and body are sealed before the note leaves memory. There is no recovery: a forgotten master password means locked notes stay locked forever.'
     : 'Decrypt for a short local editing session. Plaintext stays out of storage.'
-  const passwordDescription = error ? 'sn-lock-help sn-lock-error' : 'sn-lock-help'
-
-  useEffect(() => {
-    const dialog = dialogRef.current
-
-    if (!dialog) {
-      return
-    }
-
-    if (typeof dialog.showModal === 'function') {
-      if (!dialog.open) {
-        dialog.showModal()
-      }
-    } else {
-      dialog.setAttribute('open', '')
-    }
-
-    return () => {
-      if (dialog.open) {
-        dialog.close()
-      }
-    }
-  }, [])
+  const passwordsDoNotMatch = isLocking
+    && confirmPassword.length > 0
+    && masterPassword !== confirmPassword
+  const canSubmit = Boolean(
+    onSubmit
+      && masterPassword.length >= 8
+      && (!isLocking || masterPassword === confirmPassword)
+      && !isPending,
+  )
+  const describedBy = [
+    'sn-lock-help',
+    'sn-lock-note-fingerprint',
+    error ? 'sn-lock-error' : '',
+    passwordsDoNotMatch ? 'sn-lock-password-mismatch' : '',
+  ].filter(Boolean).join(' ')
 
   return (
-    <dialog
-      aria-describedby="sn-lock-help sn-lock-note-fingerprint"
-      aria-labelledby="sn-lock-modal-title"
-      aria-modal="true"
-      className="sn-modal sn-modal--lock"
-      onCancel={onClose}
-      onClick={(event) => {
-        if (event.target === event.currentTarget) {
-          onClose()
-        }
-      }}
-      ref={dialogRef}
+    <RetroDialogShell
+      className="sn-modal--lock"
+      closeDisabled={isPending}
+      describedBy={describedBy}
+      initialFocusRef={passwordInputRef}
+      labelledBy="sn-lock-modal-title"
+      onClose={onClose}
+      title={title}
     >
-      <div className="sn-modal__surface">
-        <header className="sn-lock-titlebar">
-          <span aria-hidden="true" />
-          <h2 id="sn-lock-modal-title">{title}</h2>
-          <span aria-hidden="true" />
+      <form
+        className="sn-lock-form"
+        onSubmit={(event) => {
+          event.preventDefault()
+          if (canSubmit) {
+            onSubmit?.(masterPassword)
+          }
+        }}
+      >
+        <div className="sn-lock-form__intro">
+          <span className="sn-modal-icon">
+            <UiIcon name={isLocking ? 'lock' : 'unlock'} />
+          </span>
+          <div>
+            <h3>{actionHeading}</h3>
+            <p className="sn-lock-form__help" id="sn-lock-help">
+              {helpText}
+            </p>
+          </div>
+        </div>
+
+        <div className="sn-lock-form__field">
+          <label htmlFor="sn-lock-password">Master password</label>
+          <div className="sn-password-input">
+            <input
+              aria-describedby={describedBy}
+              aria-invalid={error || passwordsDoNotMatch ? true : undefined}
+              autoComplete={isLocking ? 'new-password' : 'current-password'}
+              disabled={isPending}
+              id="sn-lock-password"
+              onChange={(event) => setMasterPassword(event.target.value)}
+              placeholder="At least 8 characters"
+              ref={passwordInputRef}
+              type={showPassword ? 'text' : 'password'}
+              value={masterPassword}
+            />
+            <button
+              aria-pressed={showPassword}
+              disabled={isPending}
+              onClick={() => setShowPassword((visible) => !visible)}
+              type="button"
+            >
+              {showPassword ? 'Hide' : 'Show'}
+            </button>
+          </div>
+        </div>
+        {isLocking ? (
+          <div className="sn-lock-form__field">
+            <label htmlFor="sn-lock-password-confirmation">Repeat master password</label>
+            <input
+              aria-describedby={passwordsDoNotMatch ? 'sn-lock-password-mismatch' : undefined}
+              aria-invalid={passwordsDoNotMatch || undefined}
+              autoComplete="new-password"
+              disabled={isPending}
+              id="sn-lock-password-confirmation"
+              onChange={(event) => setConfirmPassword(event.target.value)}
+              placeholder="Repeat the password"
+              type={showPassword ? 'text' : 'password'}
+              value={confirmPassword}
+            />
+          </div>
+        ) : null}
+        {passwordsDoNotMatch ? (
+          <p
+            aria-live="polite"
+            className="sn-lock-form__error"
+            id="sn-lock-password-mismatch"
+          >
+            Passwords do not match.
+          </p>
+        ) : null}
+        {error ? (
+          <p
+            aria-live="assertive"
+            className="sn-lock-form__error"
+            id="sn-lock-error"
+            role="alert"
+          >
+            {error}
+          </p>
+        ) : null}
+        <code className="sn-note-fingerprint" id="sn-lock-note-fingerprint">
+          {noteCipherLabel}
+        </code>
+        <div className="sn-modal-actions">
           <button
-            aria-label="Close"
             disabled={isPending}
             onClick={onClose}
             title="Close"
             type="button"
-          />
-        </header>
-
-        <form
-          className="sn-lock-form"
-          onSubmit={(event) => {
-            event.preventDefault()
-            onSubmit?.(masterPassword)
-          }}
-        >
-          <div className="sn-lock-form__intro">
-            <span className="sn-modal-icon">
-              <UiIcon name={isLocking ? 'lock' : 'unlock'} />
-            </span>
-            <div>
-              <h3>{actionHeading}</h3>
-              <p className="sn-lock-form__help" id="sn-lock-help">
-                {helpText}
-              </p>
-            </div>
-          </div>
-
-          <div className="sn-lock-form__field">
-            <label htmlFor="sn-lock-password">Master password</label>
-            <input
-              aria-describedby={passwordDescription}
-              aria-invalid={error ? true : undefined}
-              autoFocus
-              autoComplete="current-password"
-              disabled={isPending}
-              id="sn-lock-password"
-              onChange={(event) => {
-                setMasterPassword(event.target.value)
-              }}
-              placeholder="At least 8 characters"
-              type="password"
-              value={masterPassword}
-            />
-          </div>
-          {error ? (
-            <p
-              aria-live="assertive"
-              className="sn-lock-form__error"
-              id="sn-lock-error"
-              role="alert"
-            >
-              {error}
-            </p>
-          ) : null}
-          <code className="sn-note-fingerprint" id="sn-lock-note-fingerprint">
-            {noteCipherLabel}
-          </code>
-          <div className="sn-modal-actions">
-            <button
-              disabled={isPending}
-              onClick={onClose}
-              title="Close"
-              type="button"
-            >
-              Close
-            </button>
-            <button
-              disabled={!onSubmit || masterPassword.length < 8 || isPending}
-              title={title}
-              type="submit"
-            >
-              {isPending ? 'Working' : actionLabel}
-            </button>
-          </div>
-        </form>
-      </div>
-    </dialog>
+          >
+            Cancel
+          </button>
+          <button disabled={!canSubmit} title={title} type="submit">
+            {isPending ? 'Working' : actionLabel}
+          </button>
+        </div>
+      </form>
+    </RetroDialogShell>
   )
 }

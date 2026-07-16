@@ -60,15 +60,13 @@ function useMediaQuery(query: string): boolean {
 }
 
 function AppWorkspace() {
-  const isCompact = useMediaQuery('(max-width: 1120px)')
-  const isNarrow = useMediaQuery('(max-width: 820px)')
+  const isCompact = useMediaQuery('(max-width: 1279px)')
+  const isNarrow = useMediaQuery('(max-width: 959px)')
   const [searchQuery, setSearchQuery] = useState('')
   const [libraryMode, setLibraryMode] = useState<LibraryMode>('notes')
   const [isLibraryCollapsed, setLibraryCollapsed] = useState(false)
-  const [isInspectorCollapsed, setInspectorCollapsed] = useState(() => {
-    if (typeof window === 'undefined') return false
-    return window.matchMedia('(max-width: 1120px)').matches
-  })
+  const [isInspectorCollapsed, setInspectorCollapsed] = useState(false)
+  const [isCompactInspectorOpen, setCompactInspectorOpen] = useState(false)
   const [isHomeView, setIsHomeView] = useState(false)
   const [isSettingsOpen, setIsSettingsOpen] = useState(false)
   const [isQuickSwitcherOpen, setIsQuickSwitcherOpen] = useState(false)
@@ -95,21 +93,18 @@ function AppWorkspace() {
 
   const selectedNoteId = notesViewModel.activeNoteId
   const firstNoteId = notesViewModel.notes[0]?.id ?? null
-  const isFocusLayout = isLibraryCollapsed && isInspectorCollapsed
+  const isCompactDesktop = isCompact && !isNarrow
+  const isInspectorEffectivelyCollapsed = isCompactDesktop
+    ? !isCompactInspectorOpen
+    : isInspectorCollapsed
+  const isFocusLayout = isLibraryCollapsed && isInspectorEffectivelyCollapsed
   const activeNote = isHomeView || libraryMode === 'trash' ? null : activeNoteViewModel.note
 
   useEffect(() => {
-    if (isCompact) {
-      setInspectorCollapsed(true)
+    if (!isCompactDesktop) {
+      setCompactInspectorOpen(false)
     }
-  }, [isCompact])
-
-  useEffect(() => {
-    if (isNarrow) {
-      setLibraryCollapsed(true)
-      setInspectorCollapsed(true)
-    }
-  }, [isNarrow])
+  }, [isCompactDesktop])
 
   useEffect(() => {
     function handleGlobalKeyDown(event: KeyboardEvent) {
@@ -140,7 +135,7 @@ function AppWorkspace() {
   const handleCreateNote = useCallback((input: CreateNoteInput = {}) => {
     setLibraryMode('notes')
     setIsHomeView(false)
-    setInspectorCollapsed(true)
+    setCompactInspectorOpen(false)
     setMobileTab('editor')
     setIsQuickSwitcherOpen(false)
     setIsTemplatePickerOpen(false)
@@ -232,10 +227,14 @@ function AppWorkspace() {
   )
 
   const handleToggleFocus = useCallback(() => {
-    const shouldFocus = !(isLibraryCollapsed && isInspectorCollapsed)
+    const shouldFocus = !(isLibraryCollapsed && isInspectorEffectivelyCollapsed)
     setLibraryCollapsed(shouldFocus)
-    setInspectorCollapsed(shouldFocus)
-  }, [isInspectorCollapsed, isLibraryCollapsed])
+    if (isCompactDesktop) {
+      setCompactInspectorOpen(false)
+    } else {
+      setInspectorCollapsed(shouldFocus)
+    }
+  }, [isCompactDesktop, isInspectorEffectivelyCollapsed, isLibraryCollapsed])
 
   return (
     <main className="sn-app-shell">
@@ -294,17 +293,19 @@ function AppWorkspace() {
             >
               <UiIcon name="lock" />
             </button>
-            <button
-              aria-label="Refresh sync"
-              className="sn-icon-button"
-              onClick={() => {
-                void syncViewModel.refreshPendingOperations()
-              }}
-              title="Refresh sync"
-              type="button"
-            >
-              <UiIcon name="refresh" />
-            </button>
+            {syncViewModel.hasRemote ? (
+              <button
+                aria-label="Refresh sync"
+                className="sn-icon-button"
+                onClick={() => {
+                  void syncViewModel.refreshPendingOperations()
+                }}
+                title="Refresh sync"
+                type="button"
+              >
+                <UiIcon name="refresh" />
+              </button>
+            ) : null}
             <button
               aria-label="Toggle focused layout"
               className="sn-icon-button"
@@ -330,9 +331,10 @@ function AppWorkspace() {
         <section
           aria-label="Notes workspace"
           className="sn-workspace"
+          data-compact={isCompactDesktop}
           data-focus={isFocusLayout}
           data-left-collapsed={isLibraryCollapsed}
-          data-right-collapsed={isInspectorCollapsed}
+          data-right-collapsed={isInspectorEffectivelyCollapsed}
           data-mobile-tab={isNarrow ? mobileTab : undefined}
         >
           {!isNarrow && isLibraryCollapsed ? (
@@ -363,6 +365,7 @@ function AppWorkspace() {
               ) : (
                 <NoteList
                   activeNoteId={notesViewModel.activeNoteId}
+                  hasRemote={syncViewModel.hasRemote}
                   navigationSlot={
                     <FolderTree
                       activeFolderId={foldersViewModel.activeFolderId}
@@ -410,6 +413,7 @@ function AppWorkspace() {
 
           <section className="sn-editor-panel" aria-label="Editor">
             <EditorShell
+              hasRemote={syncViewModel.hasRemote}
               note={activeNote}
               onChangeDocument={activeNoteViewModel.updateDocument}
               onBrowseTemplates={handleOpenTemplates}
@@ -421,11 +425,17 @@ function AppWorkspace() {
             />
           </section>
 
-          {!isNarrow && isInspectorCollapsed ? (
+          {!isNarrow && isInspectorEffectivelyCollapsed ? (
             <button
               aria-label="Show note details"
               className="sn-rail sn-rail--inspector"
-              onClick={() => setInspectorCollapsed(false)}
+              onClick={() => {
+                if (isCompactDesktop) {
+                  setCompactInspectorOpen(true)
+                } else {
+                  setInspectorCollapsed(false)
+                }
+              }}
               title="Show note details"
               type="button"
             >
@@ -437,9 +447,18 @@ function AppWorkspace() {
               <WorkspaceInspector
                 activeNote={activeNote}
                 folderName={activeFolderName}
+                hasRemote={syncViewModel.hasRemote}
                 noteCount={notesViewModel.notes.length}
                 onChangeProperties={activeNoteViewModel.updateProperties}
-                onCollapse={() => isNarrow ? setMobileTab('editor') : setInspectorCollapsed(true)}
+                onCollapse={() => {
+                  if (isNarrow) {
+                    setMobileTab('editor')
+                  } else if (isCompactDesktop) {
+                    setCompactInspectorOpen(false)
+                  } else {
+                    setInspectorCollapsed(true)
+                  }
+                }}
                 pendingOperations={visiblePendingOperations}
                 syncStatus={syncViewModel.status}
               />
@@ -449,6 +468,7 @@ function AppWorkspace() {
         {isNarrow ? (
           <MobileTabBar
             activeTab={mobileTab}
+            hasRemote={syncViewModel.hasRemote}
             notes={allNotesViewModel.notes}
             onTabChange={setMobileTab}
             pendingOperations={visiblePendingOperations}

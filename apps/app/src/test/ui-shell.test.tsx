@@ -75,7 +75,6 @@ describe('Silicon Nostalgia UI shell', () => {
           backgroundImage: null,
           inspectorWidth: 240,
           sidebarWidth: 260,
-          zoomScale: 1,
         }}
         updateSetting={updateSetting}
       />,

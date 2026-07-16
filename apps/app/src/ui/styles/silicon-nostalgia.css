@@ -857,10 +857,14 @@ button {
   text-transform: uppercase;
 }
 
-.sn-note-card__delete {
+.sn-note-card__actions {
   position: absolute;
-  top: 50%;
+  top: 8px;
   right: 10px;
+  z-index: 3;
+}
+
+.sn-note-card__actions-trigger {
   width: 26px;
   height: 26px;
   display: inline-grid;
@@ -872,7 +876,8 @@ button {
   box-shadow: 0 4px 10px rgba(28, 27, 24, 0.08);
   cursor: pointer;
   opacity: 0;
-  transform: translateY(-50%) scale(0.96);
+  pointer-events: none;
+  transform: scale(0.96);
   transition:
     background-color 140ms ease,
     color 140ms ease,
@@ -880,15 +885,57 @@ button {
     transform 140ms ease;
 }
 
-.sn-note-card-wrap:hover .sn-note-card__delete,
-.sn-note-card__delete:focus-visible {
+.sn-note-card-wrap:hover .sn-note-card__actions-trigger,
+.sn-note-card-wrap:focus-within .sn-note-card__actions-trigger,
+.sn-note-card__actions-trigger[aria-expanded="true"] {
   opacity: 1;
-  transform: translateY(-50%) scale(1);
+  pointer-events: auto;
+  transform: scale(1);
 }
 
-.sn-note-card__delete:hover {
+.sn-note-card__actions-trigger:hover {
   color: #8f2f26;
   background: rgba(255, 246, 242, 0.92);
+}
+
+.sn-note-card__menu {
+  position: absolute;
+  top: 31px;
+  right: 0;
+  min-width: 150px;
+  padding: 5px;
+  border: 1px solid var(--sn-border-control);
+  border-radius: 8px;
+  background: var(--sn-surface-solid);
+  box-shadow: 0 12px 26px rgba(28, 27, 24, 0.18);
+}
+
+.sn-note-card__menu button {
+  width: 100%;
+  min-height: 34px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 9px;
+  border: 0;
+  border-radius: 5px;
+  color: #8f2f26;
+  background: transparent;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.sn-note-card__menu button:hover,
+.sn-note-card__menu button:focus-visible {
+  background: rgba(143, 47, 38, 0.09);
+}
+
+@media (hover: none), (max-width: 959px) {
+  .sn-note-card__actions-trigger {
+    opacity: 1;
+    pointer-events: auto;
+    transform: scale(1);
+  }
 }
 
 .sn-library-footer {
@@ -1585,7 +1632,7 @@ button {
 
 /* Narrow editor columns have no gutter for the insert button; the grip alone
    fits inside the text padding without covering the first characters. */
-@media (max-width: 1120px) {
+@media (max-width: 1279px) {
   .sn-block-handle__button--insert {
     display: none;
   }
@@ -2498,10 +2545,14 @@ button {
   background: #f6f3ea;
 }
 
+.sn-modal--retro .sn-modal__surface {
+  background: #f6f3ea;
+}
+
 .sn-lock-titlebar {
   min-height: 50px;
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr) 16px;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr) 28px;
   align-items: center;
   gap: 16px;
   padding: 0 14px;
@@ -2525,14 +2576,21 @@ button {
 }
 
 .sn-lock-titlebar button {
-  width: 16px;
-  height: 16px;
+  width: 28px;
+  height: 28px;
+  display: grid;
+  place-items: center;
   padding: 0;
   border: 1px solid rgba(28, 27, 24, 0.55);
-  border-radius: 0;
+  border-radius: 6px;
   background: linear-gradient(180deg, #ffffff, #e4dfd2);
   box-shadow: inset 0 1px 0 #ffffff;
   cursor: pointer;
+}
+
+.sn-lock-titlebar button svg {
+  width: 14px;
+  height: 14px;
 }
 
 .sn-lock-titlebar button:disabled {
@@ -2577,6 +2635,11 @@ button {
   color: var(--sn-ink);
   background: var(--sn-bevel-bg);
   box-shadow: var(--sn-bevel-shadow);
+}
+
+.sn-modal-icon--danger {
+  color: #8f2f26;
+  background: linear-gradient(180deg, #fffaf7, #f0dfd8);
 }
 
 .sn-kicker {
@@ -2681,6 +2744,33 @@ button {
   box-shadow: 0 0 0 2px var(--sn-paper-bg), 0 0 0 4px var(--sn-focus);
 }
 
+.sn-password-input {
+  position: relative;
+}
+
+.sn-password-input input {
+  padding-right: 72px;
+}
+
+.sn-password-input button {
+  position: absolute;
+  top: 5px;
+  right: 5px;
+  min-width: 58px;
+  min-height: 34px;
+  padding: 0 10px;
+  border: 1px solid rgba(28, 27, 24, 0.26);
+  border-radius: 5px;
+  color: var(--sn-ink-soft);
+  background: linear-gradient(180deg, #ffffff, #ebe7dc);
+  cursor: pointer;
+}
+
+.sn-password-input button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
 .sn-note-fingerprint {
   overflow: hidden;
   color: #8a877c;
@@ -2718,6 +2808,41 @@ button {
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.18);
   outline: 2px solid var(--sn-ink);
   outline-offset: 2px;
+}
+
+.sn-modal-actions .sn-danger-button {
+  border-color: #7d2e28;
+  color: #fffaf7;
+  background: linear-gradient(180deg, #a94b40, #7d2e28);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.25);
+}
+
+.sn-confirm-dialog {
+  display: grid;
+  grid-template-columns: 56px minmax(0, 1fr);
+  gap: 18px;
+  align-items: start;
+  padding: 28px 30px 10px;
+}
+
+.sn-confirm-dialog h3 {
+  margin: 1px 0 7px;
+  color: var(--sn-ink);
+  font-family: var(--sn-serif-font);
+  font-size: 24px;
+  font-weight: 400;
+  line-height: 1.08;
+}
+
+.sn-confirm-dialog p {
+  margin: 0;
+  color: #55534b;
+  font-size: 14px;
+  line-height: 1.45;
+}
+
+.sn-confirm-dialog__actions {
+  padding: 0 30px 28px;
 }
 
 .sn-modal--lock .sn-modal-actions button[type="submit"] {
@@ -2810,7 +2935,7 @@ button {
   }
 }
 
-@media (max-width: 1120px) {
+@media (max-width: 1279px) {
   :root {
     --sidebar-width: 292px;
     --inspector-width: 276px;
@@ -2822,7 +2947,7 @@ button {
   }
 }
 
-@media (max-width: 820px) {
+@media (max-width: 959px) {
   .sn-block-handle {
     display: none;
   }
@@ -3165,7 +3290,7 @@ button {
 
 /* The -8px optical shift belongs to the wide-topbar calibration only; on
    compact topbars it pushed the emblem outside its tile. */
-@media (min-width: 821px) {
+@media (min-width: 960px) {
   .sn-brand-emblem {
     transform: translateX(-8px);
   }
@@ -3271,7 +3396,7 @@ button {
   padding: 12px 20px !important;
 }
 
-@media (max-width: 820px) {
+@media (max-width: 959px) {
   .sn-brand-emblem {
     width: 42px !important;
     height: 42px !important;
@@ -3811,11 +3936,39 @@ button {
   to { box-shadow: 0 0 0 9px rgba(79, 140, 99, 0); }
 }
 
+/* Compact desktop keeps the editor width stable. Details open as a deliberate
+   overlay while the 60px rail continues to reserve a predictable edge. */
+@media (min-width: 960px) and (max-width: 1279px) {
+  .sn-workspace[data-compact="true"],
+  .sn-workspace[data-compact="true"][data-right-collapsed="true"] {
+    position: relative;
+    grid-template-columns:
+      minmax(300px, var(--sidebar-width))
+      minmax(0, 1fr)
+      60px !important;
+  }
+
+  .sn-workspace[data-compact="true"][data-left-collapsed="true"],
+  .sn-workspace[data-compact="true"][data-left-collapsed="true"][data-right-collapsed="true"] {
+    grid-template-columns: 60px minmax(0, 1fr) 60px !important;
+  }
+
+  .sn-workspace[data-compact="true"] > .sn-inspector-panel {
+    position: absolute;
+    z-index: 40;
+    top: 14px;
+    right: 0;
+    bottom: 14px;
+    width: min(344px, calc(100% - 28px));
+    box-shadow: 0 20px 44px rgba(28, 27, 24, 0.24);
+  }
+}
+
 /* ── Mobile toolbar: one compact scrollable row ─────────────────────────────
    On narrow screens the wrapped toolbar ballooned to three tall rows; a single
    slim row with horizontal scroll keeps every tool reachable without eating
    the writing space. Placed last so it wins over the scale overrides above. */
-@media (max-width: 820px) {
+@media (max-width: 959px) {
   .sn-editor-toolbar {
     flex-wrap: nowrap;
     overflow-x: auto;

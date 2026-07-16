@@ -2,22 +2,18 @@ import { useState, useEffect, useCallback } from 'react'
 import { allowedBackgroundImages } from '@/shared/backgrounds'
 
 type AppSettings = {
-  zoomScale: number
   backgroundImage: string | null
   sidebarWidth: number
   inspectorWidth: number
 }
 
 const DEFAULT_SETTINGS: AppSettings = {
-  zoomScale: 1,
   backgroundImage: null,
   sidebarWidth: 260,
   inspectorWidth: 240,
 }
 
 const SETTINGS_KEY = 'umbra-silico-settings'
-const MIN_ZOOM_SCALE = 0.9
-const MAX_ZOOM_SCALE = 1.15
 const MIN_SIDEBAR_WIDTH = 250
 const MAX_SIDEBAR_WIDTH = 350
 const MIN_INSPECTOR_WIDTH = 200
@@ -47,11 +43,6 @@ function normalizeSettings(value: Partial<AppSettings>): AppSettings {
       MIN_SIDEBAR_WIDTH,
       MAX_SIDEBAR_WIDTH,
     ),
-    zoomScale: clamp(
-      Number(value.zoomScale ?? DEFAULT_SETTINGS.zoomScale),
-      MIN_ZOOM_SCALE,
-      MAX_ZOOM_SCALE,
-    ),
   }
 }
 
@@ -75,8 +66,6 @@ export function useSettings() {
   useEffect(() => {
     const root = document.documentElement
 
-    // Zoom scale applied to body
-    document.body.style.zoom = String(settings.zoomScale)
     if (settings.backgroundImage) {
       root.style.setProperty('--sn-user-background-image', `url("${settings.backgroundImage}")`)
     } else {

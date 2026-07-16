@@ -1,4 +1,6 @@
+import { useState } from 'react'
 import type { NoteId, NoteListItem } from '@/shared/contracts/note'
+import { ConfirmationDialog } from '@/ui/components/silicon'
 import { UiIcon } from '@/ui/icons/ui/UiIcon'
 
 type TrashViewProps = {
@@ -27,10 +29,12 @@ export function TrashView({
   onPurge,
   onRestore,
 }: TrashViewProps) {
+  const [notePendingPurge, setNotePendingPurge] = useState<NoteListItem | null>(null)
   const noteCountLabel = notes.length === 1 ? '1 item' : `${notes.length} items`
 
   return (
-    <section className="sn-note-list-shell" aria-label="Trash">
+    <>
+      <section className="sn-note-list-shell" aria-label="Trash">
       <header className="sn-panel-heading">
         <div>
           <div className="sn-panel-heading__title-row">
@@ -92,11 +96,7 @@ export function TrashView({
               </button>
               <button
                 className="sn-mini-button sn-mini-button--danger"
-                onClick={() => {
-                  if (window.confirm('Delete this note forever from local storage?')) {
-                    onPurge(note.id)
-                  }
-                }}
+                onClick={() => setNotePendingPurge(note)}
                 type="button"
               >
                 Delete forever
@@ -105,6 +105,19 @@ export function TrashView({
           </li>
         ))}
       </ul>
-    </section>
+      </section>
+      {notePendingPurge ? (
+        <ConfirmationDialog
+          confirmLabel="Delete forever"
+          description={`“${notePendingPurge.title.trim() || 'Untitled'}” will be removed permanently from this device. This action cannot be undone.`}
+          onCancel={() => setNotePendingPurge(null)}
+          onConfirm={() => {
+            onPurge(notePendingPurge.id)
+            setNotePendingPurge(null)
+          }}
+          title="Delete this note forever?"
+        />
+      ) : null}
+    </>
   )
 }

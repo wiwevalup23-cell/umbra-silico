@@ -32,8 +32,13 @@ import {
 import { BlockHandle } from '@/ui/components/notes/BlockHandle'
 import { EmptyStatePlayer } from '@/ui/components/notes/EmptyStatePlayer'
 import { UiIcon } from '@/ui/icons/ui/UiIcon'
+import {
+  getLocalSavePresentation,
+  getPersistencePresentation,
+} from '@/ui/note-presentation'
 
 type EditorShellProps = {
+  hasRemote?: boolean
   note: NoteDetail | null
   onChangeDocument: (noteId: NoteId, document: NoteDocument) => Promise<void>
   onChangeTitle: (noteId: NoteId, title: string) => Promise<void>
@@ -45,45 +50,6 @@ type EditorShellProps = {
 }
 
 type AutosaveState = 'saved' | 'queued' | 'saving' | 'error'
-
-const autosaveLabels: Record<AutosaveState, string> = {
-  error: 'Needs review',
-  queued: 'Unsaved locally',
-  saved: 'Saved locally',
-  saving: 'Saving',
-}
-
-const syncStatusLabels: Record<string, string> = {
-  conflict: 'Review needed',
-  dirty: 'Unsaved locally',
-  error: 'Needs review',
-  saving: 'Saving',
-  synced: 'Saved locally',
-  syncing: 'Saving',
-}
-
-function formatAutosaveState(state: AutosaveState): string {
-  return autosaveLabels[state]
-}
-
-function formatSyncStatus(status: string): string {
-  return syncStatusLabels[status] ?? status
-}
-
-function formatAutosaveBadge(state: AutosaveState): string {
-  if (state === 'saved') return 'Saved'
-  if (state === 'saving') return 'Saving'
-  if (state === 'queued') return 'Unsaved'
-  return 'Review'
-}
-
-function formatSyncBadge(status: string): string {
-  if (status === 'synced' || status === 'idle') return 'Saved'
-  if (status === 'saving' || status === 'syncing') return 'Saving'
-  if (status === 'dirty') return 'Unsaved'
-  if (status === 'conflict' || status === 'error') return 'Review'
-  return 'Local'
-}
 
 type DocumentAutosavePayload = {
   document: NoteDocument
@@ -1098,16 +1064,17 @@ function EditableNoteEditor({
         ? getPageLayout(currentEditor.state)
         : { pageFooterOffset: 40, pageHeaderOffset: 40 },
   }) ?? { pageFooterOffset: 40, pageHeaderOffset: 40 }
+  const savePresentation = getLocalSavePresentation(autosaveState)
   const statusBadges = [
     {
-      icon: 'cloud' as const,
-      label: formatAutosaveBadge(autosaveState),
-      title: `Save: ${formatAutosaveState(autosaveState)}`,
+      icon: savePresentation.icon,
+      label: savePresentation.badge,
+      title: `Save: ${savePresentation.label}`,
     },
     {
-      icon: 'lock' as const,
-      label: 'Private',
-      title: 'Privacy: Private local note',
+      icon: 'shield' as const,
+      label: 'Local only',
+      title: 'Privacy: Local note · not encrypted',
     },
   ]
 
@@ -1282,6 +1249,7 @@ function EditableNoteEditor({
 }
 
 export function EditorShell({
+  hasRemote = false,
   note,
   onChangeDocument,
   onChangeTitle,
@@ -1318,6 +1286,11 @@ export function EditorShell({
       </article>
     )
   }
+  const lockedPersistence = getPersistencePresentation({
+    hasRemote,
+    pendingOperations,
+    status: note.syncStatus,
+  })
   const lockedStatusBadges = [
     {
       icon: 'lock' as const,
@@ -1325,9 +1298,9 @@ export function EditorShell({
       title: 'Privacy: Locked note',
     },
     {
-      icon: 'cloud' as const,
-      label: formatSyncBadge(note.syncStatus),
-      title: `State: ${formatSyncStatus(note.syncStatus)}`,
+      icon: lockedPersistence.icon,
+      label: lockedPersistence.badge,
+      title: `State: ${lockedPersistence.label}`,
     },
   ]
 

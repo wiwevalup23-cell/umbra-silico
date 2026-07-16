@@ -7,7 +7,6 @@ type SettingsValue = {
   backgroundImage: string | null
   inspectorWidth: number
   sidebarWidth: number
-  zoomScale: number
 }
 
 type SettingsModalProps = {
@@ -77,22 +76,6 @@ export function SettingsModal({ onClose, settings, updateSetting }: SettingsModa
             <UiIcon name="close" />
           </button>
         </header>
-
-        <section className="sn-settings-section">
-          <label className="sn-settings-section__label" htmlFor="sn-ui-zoom-scale">
-            UI scale <strong>{Math.round(settings.zoomScale * 100)}%</strong>
-          </label>
-          <input
-            className="sn-settings-range"
-            id="sn-ui-zoom-scale"
-            max="1.15"
-            min="0.9"
-            onChange={(event) => updateSetting('zoomScale', parseFloat(event.target.value))}
-            step="0.05"
-            type="range"
-            value={settings.zoomScale}
-          />
-        </section>
 
         <section className="sn-settings-section">
           <div className="sn-settings-section__label" id="sn-background-picker-label">

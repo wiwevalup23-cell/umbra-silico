@@ -2,9 +2,11 @@ import type { DragEvent, ReactNode } from 'react'
 import type { NoteId, NoteListItem } from '@/shared/contracts/note'
 import { NoteCard } from '@/ui/components/notes/NoteCard'
 import { UiIcon } from '@/ui/icons/ui/UiIcon'
+import { getPersistencePresentation } from '@/ui/note-presentation'
 
 type NoteListProps = {
   activeNoteId: NoteId | null
+  hasRemote?: boolean
   navigationSlot?: ReactNode
   notes: NoteListItem[]
   onCollapse?: () => void
@@ -21,26 +23,9 @@ type NoteListProps = {
   trashCount?: number
 }
 
-const syncStatusLabels: Record<string, string> = {
-  conflict: 'Review needed',
-  dirty: 'Saved locally',
-  error: 'Review needed',
-  idle: 'Saved locally',
-  saving: 'Saving',
-  synced: 'Saved locally',
-  syncing: 'Syncing',
-}
-
-function formatLibraryStatus(syncStatus: string, pendingOperations: number): string {
-  if (pendingOperations > 0 && syncStatus !== 'conflict' && syncStatus !== 'error') {
-    return `${pendingOperations} pending`
-  }
-
-  return syncStatusLabels[syncStatus] ?? 'Local notebook'
-}
-
 export function NoteList({
   activeNoteId,
+  hasRemote = false,
   navigationSlot,
   notes,
   onCollapse,
@@ -57,7 +42,11 @@ export function NoteList({
   trashCount = 0,
 }: NoteListProps) {
   const noteCountLabel = notes.length === 1 ? '1 note' : `${notes.length} notes`
-  const libraryStatus = formatLibraryStatus(syncStatus, pendingOperations)
+  const libraryStatus = getPersistencePresentation({
+    hasRemote,
+    pendingOperations,
+    status: syncStatus,
+  })
 
   return (
     <section className="sn-note-list-shell" aria-label="Notes">
@@ -68,8 +57,8 @@ export function NoteList({
             <span className="sn-panel-heading__right">{noteCountLabel}</span>
           </div>
           <p className="sn-panel-status" aria-live="polite">
-            <span className="sn-status-dot" data-tone={syncStatus} />
-            <span>{libraryStatus}</span>
+            <span className="sn-status-dot" data-tone={libraryStatus.tone} />
+            <span>{libraryStatus.label}</span>
           </p>
         </div>
         <div className="sn-panel-heading__actions">

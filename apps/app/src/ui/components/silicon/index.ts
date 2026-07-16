@@ -1,5 +1,7 @@
 export { ChromeTitlebar } from './ChromeTitlebar'
+export { ConfirmationDialog } from './ConfirmationDialog'
 export { GlassPanel } from './GlassPanel'
 export { MobileTabBar, type MobileTab } from './MobileTabBar'
 export { PixelIcon } from './PixelIcon'
 export { RetroButton } from './RetroButton'
+export { RetroDialogShell } from './RetroDialogShell'
