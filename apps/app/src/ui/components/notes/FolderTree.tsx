@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type CSSProperties, type DragEvent } from 'react'
+import { useEffect, useId, useRef, useState, type CSSProperties, type DragEvent } from 'react'
 import type { FolderId, FolderTreeNode, NoteId } from '@/shared/contracts'
 import { noteDragType } from '@/ui/components/notes/note-drag'
 import { UiIcon } from '@/ui/icons/ui/UiIcon'
@@ -150,11 +150,16 @@ function FolderNode({
 }
 
 export function FolderTree(props: FolderTreeProps) {
+  const folderListId = useId()
+  const [isFolderListExpanded, setFolderListExpanded] = useState(true)
+  const hasFolders = props.nodes.length > 0
+
   return (
     <nav className="sn-folder-tree" aria-label="Folders">
       <div
         className="sn-folder-tree__root"
         data-active={props.activeFolderId === null}
+        data-expanded={isFolderListExpanded}
         onDragOver={(event) => event.preventDefault()}
         onDrop={(event) => {
           const noteId = readDraggedNoteId(event)
@@ -165,8 +170,24 @@ export function FolderTree(props: FolderTreeProps) {
           }
         }}
       >
-        <button onClick={() => props.onSelectFolder(null)} type="button">
-          <UiIcon name="home" />
+        {hasFolders ? (
+          <button
+            aria-controls={folderListId}
+            aria-expanded={isFolderListExpanded}
+            aria-label={isFolderListExpanded ? 'Collapse folders' : 'Expand folders'}
+            className="sn-folder-tree__twisty"
+            onClick={() => setFolderListExpanded((expanded) => !expanded)}
+            type="button"
+          >
+            <UiIcon name="chevronRight" />
+          </button>
+        ) : <span className="sn-folder-tree__twisty-space" aria-hidden="true" />}
+        <button
+          className="sn-folder-tree__root-select"
+          onClick={() => props.onSelectFolder(null)}
+          type="button"
+        >
+          <UiIcon name="library" />
           All notes
         </button>
         <button
@@ -178,7 +199,7 @@ export function FolderTree(props: FolderTreeProps) {
           <UiIcon name="folderPlus" />
         </button>
       </div>
-      <ul className="sn-folder-tree__list">
+      <ul className="sn-folder-tree__list" hidden={!isFolderListExpanded} id={folderListId}>
         {props.nodes.map((node) => (
           <FolderNode
             {...props}

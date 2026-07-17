@@ -1,12 +1,34 @@
 import { useEffect, useRef, type CSSProperties } from 'react'
 import { createPortal } from 'react-dom'
-import { backgroundImageOptions } from '@/shared/backgrounds'
+import {
+  backgroundImageOptions,
+  backgroundPatternOptions,
+  type BackgroundPattern,
+} from '@/shared/backgrounds'
 import { UiIcon } from '@/ui/icons/ui/UiIcon'
 
 type SettingsValue = {
   backgroundImage: string | null
+  backgroundPattern: BackgroundPattern
+  backgroundOpacity: number
   inspectorWidth: number
   sidebarWidth: number
+}
+
+const PATTERN_PREVIEWS: Record<BackgroundPattern, CSSProperties> = {
+  grid: {
+    '--sn-background-preview':
+      'linear-gradient(rgba(28, 27, 24, 0.32) 1px, transparent 1px), linear-gradient(90deg, rgba(28, 27, 24, 0.22) 1px, transparent 1px)',
+    '--sn-background-preview-size': '10px 10px, 10px 10px',
+  } as CSSProperties,
+  scanlines: {
+    '--sn-background-preview': 'linear-gradient(rgba(28, 27, 24, 0.4) 1px, transparent 1px)',
+    '--sn-background-preview-size': '100% 3px',
+  } as CSSProperties,
+  none: {
+    '--sn-background-preview': 'none',
+    '--sn-background-preview-size': 'auto',
+  } as CSSProperties,
 }
 
 type SettingsModalProps = {
@@ -20,6 +42,8 @@ type SettingsModalProps = {
 
 export function SettingsModal({ onClose, settings, updateSetting }: SettingsModalProps) {
   const dialogRef = useRef<HTMLDialogElement>(null)
+  const currentPattern = settings.backgroundPattern
+  const currentOpacity = settings.backgroundOpacity
 
   useEffect(() => {
     const dialog = dialogRef.current
@@ -78,12 +102,64 @@ export function SettingsModal({ onClose, settings, updateSetting }: SettingsModa
         </header>
 
         <section className="sn-settings-section">
+          <div className="sn-settings-section__label" id="sn-background-pattern-label">
+            Background pattern
+            <strong>
+              {backgroundPatternOptions.find((option) => option.value === currentPattern)?.label ??
+                'Grid · graph paper'}
+            </strong>
+          </div>
+          <p className="sn-settings-section__hint">
+            The texture drawn behind the workspace panel.
+          </p>
+          <div
+            aria-labelledby="sn-background-pattern-label"
+            className="sn-background-picker sn-background-picker--pattern"
+            role="radiogroup"
+          >
+            {backgroundPatternOptions.map((option) => (
+              <button
+                aria-checked={currentPattern === option.value}
+                className="sn-pattern-option"
+                key={option.value}
+                onClick={() => updateSetting('backgroundPattern', option.value)}
+                role="radio"
+                style={PATTERN_PREVIEWS[option.value]}
+                type="button"
+              >
+                <span aria-hidden="true" className="sn-pattern-option__swatch" />
+                <span>{option.label}</span>
+              </button>
+            ))}
+          </div>
+        </section>
+
+        <section className="sn-settings-section">
+          <div className="sn-settings-section__label" id="sn-background-opacity-label">
+            Background opacity
+            <strong>{currentOpacity}%</strong>
+          </div>
+          <p className="sn-settings-section__hint">
+            Fades the pattern and image behind the player and the editor paper.
+          </p>
+          <input
+            aria-labelledby="sn-background-opacity-label"
+            className="sn-opacity-range"
+            max={100}
+            min={0}
+            onChange={(event) => updateSetting('backgroundOpacity', Number(event.target.value))}
+            type="range"
+            value={currentOpacity}
+          />
+        </section>
+
+        <section className="sn-settings-section">
           <div className="sn-settings-section__label" id="sn-background-picker-label">
-            Empty screen background
+            Workspace background
             <strong>{backgroundImageOptions.find((option) => option.value === settings.backgroundImage)?.label ?? 'None · clean grid'}</strong>
           </div>
           <p className="sn-settings-section__hint">
-            Used behind the player before a note is selected.
+            Used behind the player and the editor paper.
           </p>
           <div
             aria-labelledby="sn-background-picker-label"

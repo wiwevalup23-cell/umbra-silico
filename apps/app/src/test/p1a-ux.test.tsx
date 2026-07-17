@@ -90,6 +90,28 @@ describe('P1-A visual and interaction contract', () => {
     expect(rendered.container.textContent).toContain('All notes')
     expect(rendered.container.textContent).not.toContain('Root')
     expect(rendered.container.querySelector('button[aria-label="New root folder"]')).not.toBeNull()
+    const folderTreeSource = readFileSync(
+      `${process.cwd()}/src/ui/components/notes/FolderTree.tsx`,
+      'utf8',
+    )
+    expect(folderTreeSource).toContain('<UiIcon name="library" />')
+  })
+
+  it('uses the selected workspace background behind both player and editor paper', () => {
+    const css = readFileSync(
+      `${process.cwd()}/src/ui/styles/silicon-nostalgia.css`,
+      'utf8',
+    )
+    const settingsSource = readFileSync(
+      `${process.cwd()}/src/ui/components/silicon/SettingsModal.tsx`,
+      'utf8',
+    )
+    const editorPanelRule = css.match(/\.sn-editor-panel \{[\s\S]*?\n\}/)?.[0] ?? ''
+
+    expect(editorPanelRule).toContain('var(--sn-user-background-image)')
+    expect(editorPanelRule).toContain('var(--sn-background-wash)')
+    expect(settingsSource).toContain('Workspace background')
+    expect(settingsSource).toContain('Used behind the player and the editor paper.')
   })
 
   it('keeps block actions touch-visible and collapses mobile formatting into More', () => {

@@ -73,6 +73,8 @@ describe('Umbra Silico UI shell', () => {
         onClose={vi.fn()}
         settings={{
           backgroundImage: null,
+          backgroundOpacity: 100,
+          backgroundPattern: 'grid',
           inspectorWidth: 240,
           sidebarWidth: 260,
         }}

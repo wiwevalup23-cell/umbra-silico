@@ -177,6 +177,21 @@ describe('P1-B navigation and folder workflows', () => {
     )
     cleanupTasks.push(renderedTree.cleanup)
     expect(renderedTree.container.querySelector('button[aria-label="Collapse folder"]')).toBeNull()
+    const folderList = renderedTree.container.querySelector<HTMLUListElement>(
+      '.sn-folder-tree__list',
+    )
+    const folderToggle = renderedTree.container.querySelector<HTMLButtonElement>(
+      'button[aria-label="Collapse folders"]',
+    )
+    expect(folderToggle?.getAttribute('aria-expanded')).toBe('true')
+    expect(folderList?.hidden).toBe(false)
+    act(() => folderToggle?.click())
+    expect(folderList?.hidden).toBe(true)
+    expect(renderedTree.container.querySelector('button[aria-label="Expand folders"]'))
+      .not.toBeNull()
+    act(() => renderedTree.container.querySelector<HTMLButtonElement>(
+      'button[aria-label="Expand folders"]',
+    )?.click())
     act(() => renderedTree.container.querySelector<HTMLButtonElement>(
       'button[aria-label="Actions for Research"]',
     )?.click())

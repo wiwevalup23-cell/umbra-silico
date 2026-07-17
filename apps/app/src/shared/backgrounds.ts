@@ -1,3 +1,15 @@
+export type BackgroundPattern = 'grid' | 'scanlines' | 'none'
+
+export const backgroundPatternOptions: Array<{ label: string; value: BackgroundPattern }> = [
+  { label: 'Grid · graph paper', value: 'grid' },
+  { label: 'Scanlines · old screen', value: 'scanlines' },
+  { label: 'Flat · no pattern', value: 'none' },
+]
+
+export const allowedBackgroundPatterns = new Set<BackgroundPattern>(
+  backgroundPatternOptions.map((option) => option.value),
+)
+
 export const backgroundImageFiles = [
   '42370b16dc83b7cc813f2af68ef9ebca.webp',
   '57193110209ccde092dd7e46cb5b5ce7.jpg',
@@ -12,6 +24,17 @@ export const backgroundImageFiles = [
   'cc3c30c420005c7422c16e55a2555917.jpg',
   'd3521815c2887fb0783efed667545e22.webp',
   'dae8ba8cc1c7d0ae3aef70c01db5cc13.jpg',
+] as const
+
+export const backgroundEffectFiles = [
+  '/assets/effects/colorful/1.jpg',
+  '/assets/effects/colorful/2.jpg',
+  '/assets/effects/colorful/3.jpg',
+  '/assets/effects/colorful/4.jpg',
+  '/assets/effects/mono/1.jpg',
+  '/assets/effects/mono/2.jpg',
+  '/assets/effects/mono/3.jpg',
+  '/assets/effects/mono/4.jpg',
 ] as const
 
 export const backgroundImageOptions = [
@@ -32,6 +55,14 @@ export const backgroundImageOptions = [
   { label: 'Amber current', value: `/assets/fons/${backgroundImageFiles[10]}` },
   { label: 'Copper veil', value: `/assets/fons/${backgroundImageFiles[11]}` },
   { label: 'Solar bloom', value: `/assets/fons/${backgroundImageFiles[12]}` },
+  { label: 'Ripple weave · azure', value: backgroundEffectFiles[0] },
+  { label: 'Halftone dots · crimson', value: backgroundEffectFiles[1] },
+  { label: 'Triangle static · neon', value: backgroundEffectFiles[2] },
+  { label: 'Ripple weave · verdant', value: backgroundEffectFiles[3] },
+  { label: 'Ripple weave · mono', value: backgroundEffectFiles[4] },
+  { label: 'Halftone dots · mono', value: backgroundEffectFiles[5] },
+  { label: 'Triangle static · mono', value: backgroundEffectFiles[6] },
+  { label: 'Ripple weave · concentric', value: backgroundEffectFiles[7] },
 ] satisfies Array<{ label: string; value: string | null }>
 
 export const allowedBackgroundImages = new Set(

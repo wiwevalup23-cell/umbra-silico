@@ -40,6 +40,10 @@
   --sn-background-grid-y: linear-gradient(rgba(255, 255, 255, 0.32) 1px, transparent 1px);
   --sn-background-grid-x: linear-gradient(90deg, rgba(255, 255, 255, 0.2) 1px, transparent 1px);
   --sn-background-wash: linear-gradient(rgba(237, 234, 226, 0.42), rgba(237, 234, 226, 0.42));
+  --sn-background-pattern-y: linear-gradient(rgba(255, 255, 255, 0.32) 1px, transparent 1px);
+  --sn-background-pattern-x: linear-gradient(90deg, rgba(255, 255, 255, 0.2) 1px, transparent 1px);
+  --sn-background-pattern-size: 24px 24px;
+  --sn-background-scrim: linear-gradient(rgba(237, 234, 226, 0), rgba(237, 234, 226, 0));
   --sn-paper-bg: #fffefa;
   --sn-surface: rgba(248, 245, 237, 0.92);
   --sn-surface-solid: #f8f5ed;
@@ -452,14 +456,23 @@ button {
   border-radius: var(--sn-radius-md);
   background-color: var(--sn-bg);
   background-image:
-    var(--sn-background-grid-y),
-    var(--sn-background-grid-x);
+    var(--sn-background-pattern-y),
+    var(--sn-background-pattern-x),
+    var(--sn-background-wash),
+    var(--sn-user-background-image),
+    var(--sn-background-scrim);
   background-position:
     0 0,
+    0 0,
+    0 0,
+    center,
     0 0;
   background-size:
-    24px 24px,
-    24px 24px;
+    var(--sn-background-pattern-size),
+    var(--sn-background-pattern-size),
+    auto,
+    cover,
+    auto;
   box-shadow: var(--sn-shadow-panel);
 }
 
@@ -653,7 +666,7 @@ button {
 }
 
 .sn-folder-tree__root {
-  grid-template-columns: minmax(0, 1fr) 26px;
+  grid-template-columns: 24px minmax(0, 1fr) 26px;
 }
 
 .sn-folder-tree__row {
@@ -668,7 +681,7 @@ button {
   background: rgba(28, 27, 24, 0.07);
 }
 
-.sn-folder-tree__root[data-active="true"] > button:first-child,
+.sn-folder-tree__root[data-active="true"] > .sn-folder-tree__root-select,
 .sn-folder-tree__row[data-active="true"] .sn-folder-tree__select {
   font-weight: 650;
 }
@@ -690,7 +703,7 @@ button {
   border-radius: 0 6px 6px 0;
 }
 
-.sn-folder-tree__root > button:first-child,
+.sn-folder-tree__root > .sn-folder-tree__root-select,
 .sn-folder-tree__select {
   height: 30px;
   display: flex;
@@ -732,6 +745,10 @@ button {
 
 .sn-folder-tree__twisty:disabled {
   opacity: 0.24;
+  cursor: default;
+}
+
+.sn-folder-tree__twisty-space {
   cursor: default;
 }
 
@@ -794,6 +811,10 @@ button {
     height: 40px;
   }
 
+  .sn-folder-tree__root > .sn-folder-tree__root-select {
+    height: 40px;
+  }
+
   .sn-folder-tree__menu button {
     min-height: 44px;
   }
@@ -801,6 +822,14 @@ button {
 
 .sn-folder-tree__row[data-expanded="true"] .sn-folder-tree__twisty svg {
   transform: rotate(90deg);
+}
+
+.sn-folder-tree__root[data-expanded="true"] > .sn-folder-tree__twisty svg {
+  transform: rotate(90deg);
+}
+
+.sn-folder-tree__list[hidden] {
+  display: none;
 }
 
 .sn-folder-tree__icon:hover,
@@ -1198,20 +1227,23 @@ button {
   overflow: auto;
   padding: 46px;
   background-image:
-    var(--sn-background-grid-y),
-    var(--sn-background-grid-x),
+    var(--sn-background-pattern-y),
+    var(--sn-background-pattern-x),
     var(--sn-background-wash),
-    var(--sn-user-background-image);
+    var(--sn-user-background-image),
+    var(--sn-background-scrim);
   background-position:
     0 0,
     0 0,
     0 0,
-    center;
+    center,
+    0 0;
   background-size:
-    24px 24px,
-    24px 24px,
+    var(--sn-background-pattern-size),
+    var(--sn-background-pattern-size),
     auto,
-    cover;
+    cover,
+    auto;
 }
 
 .sn-editor-topbar {
@@ -3101,7 +3133,8 @@ button {
   scrollbar-width: thin;
 }
 
-.sn-background-option {
+.sn-background-option,
+.sn-pattern-option {
   min-width: 0;
   display: grid;
   gap: 7px;
@@ -3118,17 +3151,20 @@ button {
     transform 120ms ease;
 }
 
-.sn-background-option:hover {
+.sn-background-option:hover,
+.sn-pattern-option:hover {
   border-color: var(--sn-border-strong);
   transform: translateY(-1px);
 }
 
-.sn-background-option[aria-checked="true"] {
+.sn-background-option[aria-checked="true"],
+.sn-pattern-option[aria-checked="true"] {
   border-color: var(--sn-ink);
   box-shadow: var(--sn-shadow-control);
 }
 
-.sn-background-option__swatch {
+.sn-background-option__swatch,
+.sn-pattern-option__swatch {
   min-height: 56px;
   border: 1px solid rgba(35, 36, 40, 0.09);
   border-radius: var(--sn-radius-sm);
@@ -3140,6 +3176,12 @@ button {
   box-shadow: 0 1px 0 rgba(255, 255, 255, 0.74) inset;
 }
 
+.sn-pattern-option__swatch {
+  background-color: #f8f5ed;
+  background-repeat: repeat;
+  background-size: var(--sn-background-preview-size, auto);
+}
+
 .sn-settings-section__hint {
   margin: -4px 0 2px;
   color: var(--sn-muted);
@@ -3147,7 +3189,13 @@ button {
   line-height: 1.35;
 }
 
-.sn-background-option span:last-child {
+.sn-background-picker--pattern {
+  max-height: none;
+  overflow: visible;
+}
+
+.sn-background-option span:last-child,
+.sn-pattern-option span:last-child {
   overflow: hidden;
   color: var(--sn-muted);
   font-family: var(--sn-compact-font);
@@ -3158,6 +3206,51 @@ button {
   text-overflow: ellipsis;
   text-transform: uppercase;
   white-space: nowrap;
+}
+
+.sn-opacity-range {
+  width: 100%;
+  height: 22px;
+  margin: 2px 0 4px;
+  appearance: none;
+  background: transparent;
+  cursor: pointer;
+}
+
+.sn-opacity-range::-webkit-slider-runnable-track {
+  height: 6px;
+  border: 1px solid var(--sn-border-control);
+  border-radius: 4px;
+  background: var(--sn-bevel-bg);
+  box-shadow: var(--sn-field-shadow);
+}
+
+.sn-opacity-range::-moz-range-track {
+  height: 6px;
+  border: 1px solid var(--sn-border-control);
+  border-radius: 4px;
+  background: var(--sn-bevel-bg);
+  box-shadow: var(--sn-field-shadow);
+}
+
+.sn-opacity-range::-webkit-slider-thumb {
+  appearance: none;
+  width: 18px;
+  height: 18px;
+  margin-top: -7px;
+  border: 1px solid var(--sn-border-control);
+  border-radius: 50%;
+  background: var(--sn-bevel-bg-hover);
+  box-shadow: var(--sn-bevel-shadow);
+}
+
+.sn-opacity-range::-moz-range-thumb {
+  width: 18px;
+  height: 18px;
+  border: 1px solid var(--sn-border-control);
+  border-radius: 50%;
+  background: var(--sn-bevel-bg-hover);
+  box-shadow: var(--sn-bevel-shadow);
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -4559,6 +4652,7 @@ button {
 .sn-command-window__eyebrow,
 .sn-command-list__label,
 .sn-background-option span:last-child,
+.sn-pattern-option span:last-child,
 .sn-provider-state__window div > span {
   font-size: 11.5px;
   letter-spacing: 0.055em;

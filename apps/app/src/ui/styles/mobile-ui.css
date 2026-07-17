@@ -261,6 +261,15 @@
     min-height: 48px;
   }
 
+  .sn-folder-tree__root {
+    grid-template-columns: 40px minmax(0, 1fr) 40px;
+  }
+
+  .sn-folder-tree__root > .sn-folder-tree__icon {
+    width: 40px;
+    height: 40px;
+  }
+
   /* Note card icon: slightly bigger on touch */
   .sn-note-card__icon {
     width: 28px;
