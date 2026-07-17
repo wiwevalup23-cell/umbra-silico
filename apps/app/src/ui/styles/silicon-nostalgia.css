@@ -4960,3 +4960,23 @@ button {
 .sn-note-card[data-active="true"] {
   background-color: rgba(210, 180, 180, 0.15) !important;
 }
+
+/* Give the eclipse mark a touch more presence without crowding the wordmark. */
+.sn-brand-emblem {
+  width: 70px !important;
+  height: 70px !important;
+}
+
+@media (max-width: 959px) {
+  .sn-brand-emblem {
+    width: 46px !important;
+    height: 46px !important;
+  }
+}
+
+@media (max-width: 520px) {
+  .sn-brand-emblem {
+    width: 42px !important;
+    height: 42px !important;
+  }
+}
