@@ -171,7 +171,11 @@ export function NoteCard({
             title="Note actions"
             type="button"
           >
-            <UiIcon name="moreHorizontal" />
+            <span aria-hidden="true" className="sn-note-card__actions-dots">
+              <i />
+              <i />
+              <i />
+            </span>
           </button>
           {isActionsOpen ? (
             <div className="sn-note-card__menu" role="menu">

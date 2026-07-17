@@ -1010,6 +1010,22 @@ button {
     transform 140ms ease;
 }
 
+.sn-note-card__actions-dots {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  transform: translateY(-0.5px);
+}
+
+.sn-note-card__actions-dots i {
+  width: 3px;
+  height: 3px;
+  display: block;
+  border-radius: 50%;
+  background: currentColor;
+}
+
 .sn-note-card-wrap:hover .sn-note-card__actions-trigger,
 .sn-note-card-wrap:focus-within .sn-note-card__actions-trigger,
 .sn-note-card__actions-trigger[aria-expanded="true"] {
@@ -3840,31 +3856,11 @@ button {
 .sn-editor-shell--empty {
   position: relative !important;
   isolation: isolate !important;
-  background-image: none !important;
+  background: transparent !important;
 }
 
 .sn-editor-shell--empty::before {
-  content: "" !important;
-  position: absolute !important;
-  inset: 0 !important;
-  z-index: 0 !important;
-  pointer-events: none !important;
-  opacity: 0.78 !important;
-  background-image:
-    var(--sn-background-grid-y),
-    var(--sn-background-grid-x),
-    var(--sn-background-wash),
-    var(--sn-user-background-image) !important;
-  background-position:
-    0 0,
-    0 0,
-    0 0,
-    center !important;
-  background-size:
-    24px 24px,
-    24px 24px,
-    auto,
-    cover !important;
+  display: none !important;
 }
 
 @container (max-width: 480px) {
@@ -4288,8 +4284,8 @@ button {
   left: 0;
   right: 0;
   display: grid;
-  gap: 3px;
-  padding: 7px;
+  gap: 6px;
+  padding: 10px;
   border: 1px solid var(--sn-border-control);
   border-radius: 8px;
   background: #f6f3ea;
@@ -4297,10 +4293,10 @@ button {
 }
 
 .sn-status-picker__label {
-  padding: 4px 7px 6px;
+  padding: 5px 8px 7px;
   color: var(--sn-muted);
   font-family: var(--sn-compact-font);
-  font-size: 9px;
+  font-size: 10px;
   letter-spacing: 0.08em;
   text-transform: uppercase;
 }
@@ -4369,39 +4365,41 @@ button {
 
 .sn-status-creator {
   display: grid;
-  gap: 10px;
+  gap: 14px;
+  padding: 2px;
 }
 
 .sn-status-creator__name {
   display: grid;
-  gap: 5px;
-  padding-inline: 7px;
+  gap: 6px;
+  padding-inline: 8px;
   color: var(--sn-muted);
   font-family: var(--sn-compact-font);
-  font-size: 10px;
+  font-size: 11px;
   letter-spacing: 0.06em;
   text-transform: uppercase;
 }
 
 .sn-status-creator__name input {
   min-width: 0;
-  height: 34px;
-  padding: 0 8px;
+  height: 40px;
+  padding: 0 10px;
   border: 1px solid var(--sn-border-control);
   border-radius: 5px;
   color: var(--sn-ink);
   background: rgba(255, 255, 252, 0.86);
   box-shadow: var(--sn-field-shadow);
-  font: inherit;
+  font-family: var(--sn-compact-font);
+  font-size: 13px;
   letter-spacing: normal;
   text-transform: none;
 }
 
 .sn-status-symbols {
   display: grid;
-  gap: 6px;
+  gap: 7px;
   margin: 0;
-  padding: 0 7px;
+  padding: 0 8px;
   border: 0;
 }
 
@@ -4409,27 +4407,27 @@ button {
   padding: 0;
   color: var(--sn-muted);
   font-family: var(--sn-compact-font);
-  font-size: 10px;
+  font-size: 11px;
   letter-spacing: 0.06em;
   text-transform: uppercase;
 }
 
 .sn-status-symbols > div {
   display: grid;
-  grid-template-columns: repeat(8, minmax(0, 1fr));
-  gap: 4px;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 6px;
 }
 
 .sn-status-symbols button {
   min-width: 0;
-  height: 28px;
+  height: 38px;
   border: 1px solid var(--sn-border);
   border-radius: 4px;
   color: var(--sn-ink-soft);
   background: rgba(255, 255, 252, 0.58);
   cursor: pointer;
   font-family: var(--sn-compact-font);
-  font-size: 16px;
+  font-size: 19px;
 }
 
 .sn-status-symbols button[aria-pressed="true"],
@@ -4443,12 +4441,12 @@ button {
 .sn-status-creator__actions {
   display: grid;
   grid-template-columns: 1fr 1.35fr;
-  gap: 6px;
-  padding: 0 7px 2px;
+  gap: 8px;
+  padding: 0 8px 3px;
 }
 
 .sn-status-creator__actions button {
-  min-height: 32px;
+  min-height: 38px;
   border: 1px solid var(--sn-border-control);
   border-radius: 5px;
   color: var(--sn-ink-soft);
@@ -4456,7 +4454,7 @@ button {
   box-shadow: var(--sn-bevel-shadow);
   cursor: pointer;
   font-family: var(--sn-compact-font);
-  font-size: 11px;
+  font-size: 12px;
 }
 
 .sn-status-creator__actions button[type="submit"] {
