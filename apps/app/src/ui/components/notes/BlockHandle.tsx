@@ -67,7 +67,7 @@ export function BlockHandle({ editor }: BlockHandleProps) {
       const frame = currentEditor.view.dom.closest('.sn-page-layout-frame')
 
       if (!range || !(frame instanceof HTMLElement)) {
-        setTop(null)
+        setTop((currentTop) => currentTop ?? 48)
         return
       }
 
@@ -90,12 +90,15 @@ export function BlockHandle({ editor }: BlockHandleProps) {
     currentEditor.on('update', refreshPosition)
     currentEditor.on('focus', refreshPosition)
     window.addEventListener('resize', refreshPosition)
+    const scrollContainer = currentEditor.view.dom.closest('.sn-editor-panel')
+    scrollContainer?.addEventListener('scroll', refreshPosition, { passive: true })
 
     return () => {
       currentEditor.off('selectionUpdate', refreshPosition)
       currentEditor.off('update', refreshPosition)
       currentEditor.off('focus', refreshPosition)
       window.removeEventListener('resize', refreshPosition)
+      scrollContainer?.removeEventListener('scroll', refreshPosition)
     }
   }, [editor])
 
@@ -190,7 +193,7 @@ export function BlockHandle({ editor }: BlockHandleProps) {
     }
   }, [editor])
 
-  if (!editor || top === null) {
+  if (!editor) {
     return null
   }
 
@@ -203,7 +206,7 @@ export function BlockHandle({ editor }: BlockHandleProps) {
     <div
       className="sn-block-handle"
       ref={rootRef}
-      style={{ '--sn-block-handle-top': `${top}px` } as CSSProperties}
+      style={{ '--sn-block-handle-top': `${top ?? 48}px` } as CSSProperties}
     >
       <button
         aria-label="Insert block"

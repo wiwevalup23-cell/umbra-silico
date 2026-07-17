@@ -4921,12 +4921,12 @@ button {
 
 .sn-tiptap-prosemirror {
   min-height: 520px !important;
-  width: 100% !important;
-  max-width: 750px !important;
+  width: calc(100% - 60px) !important;
+  max-width: none !important;
   box-sizing: border-box !important;
-  /* 30px outer offset + 40px text padding = the 70px title text axis
-     (24px header inset + 34px icon + 12px gap). */
-  margin: 0 auto 0 30px !important;
+  /* 30px outer offset + 40px text padding retains the title's 70px axis,
+     with the same quiet 70px edge on the right. */
+  margin: 0 30px !important;
   margin-top: 24px !important;
   padding: 0 40px !important;
 }
@@ -4941,13 +4941,127 @@ button {
    controls immediately beyond its right edge rather than at the sheet edge. */
 .sn-block-handle {
   left: auto !important;
-  right: max(12px, calc(100% - 810px)) !important;
+  right: 12px !important;
   transform: translateY(-50%) !important;
+  opacity: 0.68 !important;
+}
+
+.sn-page-layout-frame:focus-within .sn-block-handle,
+.sn-block-handle:hover,
+.sn-block-handle:focus-within {
+  opacity: 1 !important;
 }
 
 .sn-block-handle-menu {
   right: 0 !important;
   left: auto !important;
+}
+
+/* Tasks align their control to the first text line, including when the item
+   wraps. The custom mark keeps the system's warm, restrained palette. */
+.sn-tiptap-prosemirror ul[data-type="taskList"] {
+  gap: 5px !important;
+  margin: 0 0 1em !important;
+}
+
+.sn-tiptap-prosemirror ul[data-type="taskList"] li {
+  grid-template-columns: 18px minmax(0, 1fr) !important;
+  gap: 8px !important;
+  align-items: start !important;
+}
+
+.sn-tiptap-prosemirror ul[data-type="taskList"] li > label {
+  min-height: 1.6em !important;
+  align-items: center !important;
+  justify-content: flex-start !important;
+  padding-top: 0 !important;
+}
+
+.sn-tiptap-prosemirror ul[data-type="taskList"] input[type="checkbox"] {
+  width: 15px !important;
+  height: 15px !important;
+  margin: 0 !important;
+  appearance: none;
+  border: 1px solid rgba(28, 27, 24, 0.42);
+  border-radius: 4px;
+  background: rgba(255, 255, 252, 0.82);
+  box-shadow: 0 1px 1px rgba(28, 27, 24, 0.08) inset;
+  cursor: pointer;
+}
+
+.sn-tiptap-prosemirror ul[data-type="taskList"] input[type="checkbox"]:checked {
+  border-color: #375f51;
+  background-color: #375f51;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='m3.2 8.1 3 3 6.6-6.4' fill='none' stroke='%23fffdf8' stroke-linecap='round' stroke-linejoin='round' stroke-width='2'/%3E%3C/svg%3E");
+}
+
+.sn-tiptap-prosemirror ul[data-type="taskList"] input[type="checkbox"]:focus-visible {
+  outline: 2px solid rgba(55, 95, 81, 0.35);
+  outline-offset: 2px;
+}
+
+/* Toggles follow Notion's quiet disclosure pattern: a compact caret and an
+   indented branch, rather than a second framed card inside the document. */
+.sn-tiptap-prosemirror div[data-type="details"],
+.sn-tiptap-prosemirror details {
+  margin: 0.55em 0 !important;
+  padding: 0 !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+}
+
+.sn-tiptap-prosemirror div[data-type="details"] > button {
+  width: 18px !important;
+  height: 1.6em !important;
+  margin: 0 5px 0 0 !important;
+  padding: 0 !important;
+  border: 0 !important;
+  border-radius: 4px !important;
+  color: var(--sn-muted) !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+.sn-tiptap-prosemirror div[data-type="details"] > button:hover,
+.sn-tiptap-prosemirror div[data-type="details"] > button:focus-visible {
+  color: var(--sn-ink) !important;
+  background: rgba(28, 27, 24, 0.06) !important;
+}
+
+.sn-tiptap-prosemirror div[data-type="details"] > button::before,
+.sn-tiptap-prosemirror summary::before {
+  font-size: 15px !important;
+  font-weight: 600;
+}
+
+.sn-tiptap-prosemirror div[data-type="details"] > div {
+  width: calc(100% - 23px) !important;
+  display: inline-block !important;
+}
+
+.sn-tiptap-prosemirror div[data-type="details"] [data-type="detailsSummary"],
+.sn-tiptap-prosemirror summary {
+  color: var(--sn-ink) !important;
+  font-weight: 500 !important;
+  line-height: 1.6;
+}
+
+.sn-tiptap-prosemirror summary {
+  display: flex;
+  align-items: baseline;
+  list-style: none;
+}
+
+.sn-tiptap-prosemirror summary::-webkit-details-marker {
+  display: none;
+}
+
+.sn-tiptap-prosemirror div[data-type="details"] [data-type="detailsContent"],
+.sn-tiptap-prosemirror details > :not(summary) {
+  margin: 0.25em 0 0 22px !important;
+  padding: 0.15em 0 0.15em 14px !important;
+  border-left: 1px solid rgba(28, 27, 24, 0.18);
 }
 
 /* Lift the status selector above the browser-default control treatment. */
