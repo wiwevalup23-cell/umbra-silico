@@ -10,21 +10,21 @@ export type PropertyStatusPresentation = {
 }
 
 export const propertyStatusOptions: readonly PropertyStatusPresentation[] = [
-  { icon: '○', label: 'No status', value: 'none' },
-  { icon: '✦', label: 'Idea', value: 'idea' },
-  { icon: '◒', label: 'In progress', value: 'active' },
-  { icon: '✓', label: 'Done', value: 'done' },
+  { icon: 'idle', label: 'No status', value: 'none' },
+  { icon: 'beacon', label: 'Idea', value: 'idea' },
+  { icon: 'orbit', label: 'In progress', value: 'active' },
+  { icon: 'seal', label: 'Done', value: 'done' },
 ]
 
 export const customStatusIconOptions = [
-  { icon: '✦', label: 'Spark' },
-  { icon: '◌', label: 'Orbit' },
-  { icon: '◒', label: 'Phase' },
-  { icon: '⌁', label: 'Wave' },
-  { icon: '✎', label: 'Mark' },
-  { icon: '⚑', label: 'Flag' },
-  { icon: '◎', label: 'Loop' },
-  { icon: '▣', label: 'Archive' },
+  { icon: 'beacon', label: 'Beacon' },
+  { icon: 'orbit', label: 'Orbit' },
+  { icon: 'eclipse', label: 'Eclipse' },
+  { icon: 'ripple', label: 'Ripple' },
+  { icon: 'cipher', label: 'Cipher' },
+  { icon: 'flag', label: 'Flag' },
+  { icon: 'loop', label: 'Loop' },
+  { icon: 'vault', label: 'Vault' },
 ] as const
 
 export function createCustomPropertyStatus(label: string, icon: string): NotePropertyStatus {

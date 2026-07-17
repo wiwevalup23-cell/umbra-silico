@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, type CSSProperties, type DragEvent } from 'react'
 import type { NoteId, NoteListItem } from '@/shared/contracts/note'
 import { UiIcon } from '@/ui/icons/ui/UiIcon'
+import { StatusGlyph } from '@/ui/icons/status/StatusGlyph'
 import { getPropertyStatusPresentation } from '@/ui/note-property-presentation'
 
 type NoteCardProps = {
@@ -141,7 +142,7 @@ export function NoteCard({
                 title={`Status: ${pageStatus.label}`}
               >
                 <span aria-hidden="true" className="sn-property-status-icon" data-tone={pageStatus.value}>
-                  {pageStatus.icon}
+                  <StatusGlyph symbol={pageStatus.icon} />
                 </span>
                 {pageStatus.label}
               </span>

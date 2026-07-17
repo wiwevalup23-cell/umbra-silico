@@ -4265,6 +4265,18 @@ button {
   line-height: 1;
 }
 
+.sn-property-status-icon > svg,
+.sn-property-status-icon > span {
+  width: 16px;
+  height: 16px;
+  display: block;
+}
+
+.sn-property-status-icon > span {
+  text-align: center;
+  line-height: 16px;
+}
+
 .sn-property-status-icon[data-tone="idea"] {
   color: var(--sn-pending);
 }
@@ -4428,6 +4440,14 @@ button {
   cursor: pointer;
   font-family: var(--sn-compact-font);
   font-size: 19px;
+}
+
+.sn-status-symbols button svg,
+.sn-status-symbols button span {
+  width: 20px;
+  height: 20px;
+  display: block;
+  margin: auto;
 }
 
 .sn-status-symbols button[aria-pressed="true"],

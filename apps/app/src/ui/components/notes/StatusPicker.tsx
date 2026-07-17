@@ -8,6 +8,7 @@ import {
   propertyStatusOptions,
   type PropertyStatusPresentation,
 } from '@/ui/note-property-presentation'
+import { StatusGlyph } from '@/ui/icons/status/StatusGlyph'
 import { UiIcon } from '@/ui/icons/ui/UiIcon'
 
 type StatusPickerProps = {
@@ -193,7 +194,7 @@ export function StatusPicker({ disabled = false, onChange, value }: StatusPicker
         type="button"
       >
         <span aria-hidden="true" className="sn-property-status-icon" data-tone={selectedOption.value}>
-          {selectedOption.icon}
+          <StatusGlyph symbol={selectedOption.icon} />
         </span>
         <span>{selectedOption.label}</span>
         <UiIcon name="chevronDown" />
@@ -226,7 +227,7 @@ export function StatusPicker({ disabled = false, onChange, value }: StatusPicker
                       title={option.label}
                       type="button"
                     >
-                      {option.icon}
+                      <StatusGlyph symbol={option.icon} />
                     </button>
                   ))}
                 </div>
@@ -261,7 +262,7 @@ export function StatusPicker({ disabled = false, onChange, value }: StatusPicker
                     type="button"
                   >
                     <span aria-hidden="true" className="sn-property-status-icon" data-tone={option.value}>
-                      {option.icon}
+                      <StatusGlyph symbol={option.icon} />
                     </span>
                     <span>{option.label}</span>
                     {option.value === value ? <UiIcon name="check" /> : null}
