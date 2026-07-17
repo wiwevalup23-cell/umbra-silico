@@ -1406,7 +1406,7 @@ button {
 
 .sn-editor-toolbar {
   position: relative;
-  width: 100% !important;
+  width: calc(100% - 30px) !important;
   display: flex !important;
   /* Narrow editor columns wrap tools onto extra rows instead of clipping them. */
   flex-wrap: wrap;
@@ -4923,22 +4923,24 @@ button {
   width: 100% !important;
   max-width: 750px !important;
   box-sizing: border-box !important;
-  margin: 0 auto !important;
+  /* 30px outer offset + 40px text padding = the 70px title text axis
+     (24px header inset + 34px icon + 12px gap). */
+  margin: 0 auto 0 30px !important;
   margin-top: 24px !important;
   padding: 0 40px !important;
 }
 
-/* The title text starts on the same reading axis as the document body. */
+/* Restore the title's original position; the body comes to this axis. */
 .sn-editor-title-group {
-  margin-left: max(0px, calc(50% - 381px)) !important;
+  margin-left: 0 !important;
 }
 
 /* The selection position is measured at the active line midpoint in React.
-   750px is the outer width of the reading column; -30px keeps the controls
-   immediately outside of its right edge rather than at the sheet edge. */
+   The reading column starts at 30px and is 750px wide; -30px keeps the
+   controls immediately beyond its right edge rather than at the sheet edge. */
 .sn-block-handle {
   left: auto !important;
-  right: max(12px, calc(50% - 405px)) !important;
+  right: max(12px, calc(100% - 810px)) !important;
   transform: translateY(-50%) !important;
 }
 
