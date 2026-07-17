@@ -3,6 +3,7 @@ import { act, type ReactNode } from 'react'
 import { createRoot } from 'react-dom/client'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { backgroundImageOptions } from '@/shared/backgrounds'
+import { notePropertiesSchema } from '@/shared/contracts'
 import { FolderTree, StatusPicker } from '@/ui/components/notes'
 
 ;(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true
@@ -24,7 +25,14 @@ function renderUi(children: ReactNode) {
   }
 }
 
+function setInputValue(input: HTMLInputElement, value: string) {
+  const setter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')?.set
+  setter?.call(input, value)
+  input.dispatchEvent(new Event('input', { bubbles: true }))
+}
+
 afterEach(() => {
+  window.localStorage.removeItem('umbra-silico-custom-statuses')
   while (cleanupTasks.length) cleanupTasks.pop()?.()
 })
 
@@ -71,6 +79,39 @@ describe('P1-A visual and interaction contract', () => {
       }))
     })
     expect(onChange).toHaveBeenCalledWith('active')
+  })
+
+  it('creates a named status with a selected retro symbol', () => {
+    const onChange = vi.fn()
+    const rendered = renderUi(
+      <StatusPicker onChange={onChange} value="none" />,
+    )
+    cleanupTasks.push(rendered.cleanup)
+
+    act(() => rendered.container.querySelector<HTMLButtonElement>(
+      'button[aria-label="Page status"]',
+    )?.click())
+    act(() => Array.from(rendered.container.querySelectorAll('button'))
+      .find((button) => button.textContent?.includes('Create status'))?.click())
+
+    const input = rendered.container.querySelector<HTMLInputElement>(
+      'input[placeholder="e.g. Waiting"]',
+    )
+    act(() => {
+      setInputValue(input!, 'Waiting on signal')
+      rendered.container.querySelector<HTMLButtonElement>('button[aria-label="Flag"]')?.click()
+    })
+    act(() => {
+      rendered.container.querySelector('form')?.dispatchEvent(
+        new Event('submit', { bubbles: true, cancelable: true }),
+      )
+    })
+
+    expect(onChange).toHaveBeenCalledWith('custom:%E2%9A%91:Waiting%20on%20signal')
+    expect(notePropertiesSchema.safeParse({
+      status: onChange.mock.calls[0]?.[0],
+      tags: [],
+    }).success).toBe(true)
   })
 
   it('names the root scope All notes and separates its create action', () => {

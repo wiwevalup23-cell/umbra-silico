@@ -81,6 +81,7 @@ export type {
 } from './folder'
 export {
   createDraftLocalNote,
+  customNotePropertyStatusPrefix,
   createNoteInputSchema,
   deviceIdSchema,
   encryptedLocalNoteSchema,
@@ -108,6 +109,7 @@ export {
 } from './note'
 export type {
   CreateNoteInput,
+  BuiltInNotePropertyStatus,
   DeviceId,
   EncryptedLocalNote,
   IsoDateTime,

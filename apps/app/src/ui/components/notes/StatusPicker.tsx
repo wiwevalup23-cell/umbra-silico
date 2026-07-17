@@ -1,7 +1,14 @@
-import { useEffect, useId, useRef, useState, type KeyboardEvent } from 'react'
+import { useEffect, useId, useMemo, useRef, useState, type FormEvent, type KeyboardEvent } from 'react'
 import type { NotePropertyStatus } from '@/shared/contracts'
+import {
+  createCustomPropertyStatus,
+  customStatusIconOptions,
+  getPropertyStatusPresentation,
+  parseCustomPropertyStatus,
+  propertyStatusOptions,
+  type PropertyStatusPresentation,
+} from '@/ui/note-property-presentation'
 import { UiIcon } from '@/ui/icons/ui/UiIcon'
-import { propertyStatusOptions } from '@/ui/note-property-presentation'
 
 type StatusPickerProps = {
   disabled?: boolean
@@ -9,25 +16,72 @@ type StatusPickerProps = {
   value: NotePropertyStatus
 }
 
+const CUSTOM_STATUSES_STORAGE_KEY = 'umbra-silico-custom-statuses'
+
+function readCustomStatuses(): PropertyStatusPresentation[] {
+  try {
+    const stored = window.localStorage.getItem(CUSTOM_STATUSES_STORAGE_KEY)
+    const values: unknown = stored ? JSON.parse(stored) : []
+    if (!Array.isArray(values)) return []
+
+    return values
+      .filter((value): value is NotePropertyStatus => typeof value === 'string')
+      .map((value) => parseCustomPropertyStatus(value))
+      .filter((option): option is PropertyStatusPresentation => option !== null)
+      .slice(0, 12)
+  } catch {
+    return []
+  }
+}
+
+function writeCustomStatuses(statuses: readonly PropertyStatusPresentation[]) {
+  try {
+    window.localStorage.setItem(
+      CUSTOM_STATUSES_STORAGE_KEY,
+      JSON.stringify(statuses.map((status) => status.value)),
+    )
+  } catch {
+    // A private browser context can deny storage. The status still remains on
+    // the note because its label and symbol are encoded in the status value.
+  }
+}
+
+function mergeCustomStatuses(
+  saved: readonly PropertyStatusPresentation[],
+  current: NotePropertyStatus,
+): PropertyStatusPresentation[] {
+  const selected = parseCustomPropertyStatus(current)
+  const merged = selected ? [selected, ...saved] : [...saved]
+  return merged.filter((option, index, items) =>
+    items.findIndex((candidate) => candidate.value === option.value) === index,
+  )
+}
+
 export function StatusPicker({ disabled = false, onChange, value }: StatusPickerProps) {
   const listboxId = useId()
   const rootRef = useRef<HTMLDivElement>(null)
   const triggerRef = useRef<HTMLButtonElement>(null)
+  const nameInputRef = useRef<HTMLInputElement>(null)
   const optionRefs = useRef<Array<HTMLButtonElement | null>>([])
-  const selectedIndex = Math.max(
-    0,
-    propertyStatusOptions.findIndex((option) => option.value === value),
-  )
-  const [activeIndex, setActiveIndex] = useState(selectedIndex)
+  const [customStatuses, setCustomStatuses] = useState(readCustomStatuses)
+  const [activeIndex, setActiveIndex] = useState(0)
+  const [isCreating, setIsCreating] = useState(false)
   const [isOpen, setIsOpen] = useState(false)
-  const selectedOption = propertyStatusOptions[selectedIndex]
+  const [newStatusIcon, setNewStatusIcon] = useState<string>(customStatusIconOptions[0].icon)
+  const [newStatusLabel, setNewStatusLabel] = useState('')
+  const options = useMemo(
+    () => [...propertyStatusOptions, ...mergeCustomStatuses(customStatuses, value)],
+    [customStatuses, value],
+  )
+  const selectedIndex = Math.max(0, options.findIndex((option) => option.value === value))
+  const selectedOption = getPropertyStatusPresentation(value)
 
   useEffect(() => {
     setActiveIndex(selectedIndex)
   }, [selectedIndex])
 
   useEffect(() => {
-    if (!isOpen) return
+    if (!isOpen || isCreating) return
 
     const focusFrame = window.requestAnimationFrame(() => {
       optionRefs.current[activeIndex]?.focus()
@@ -35,6 +89,7 @@ export function StatusPicker({ disabled = false, onChange, value }: StatusPicker
     const handlePointerDown = (event: PointerEvent) => {
       if (!rootRef.current?.contains(event.target as Node)) {
         setIsOpen(false)
+        setIsCreating(false)
       }
     }
 
@@ -43,28 +98,37 @@ export function StatusPicker({ disabled = false, onChange, value }: StatusPicker
       window.cancelAnimationFrame(focusFrame)
       document.removeEventListener('pointerdown', handlePointerDown)
     }
-  }, [activeIndex, isOpen])
+  }, [activeIndex, isCreating, isOpen])
+
+  useEffect(() => {
+    if (!isOpen || !isCreating) return
+    nameInputRef.current?.focus()
+  }, [isCreating, isOpen])
+
+  function close() {
+    setIsOpen(false)
+    setIsCreating(false)
+    window.requestAnimationFrame(() => triggerRef.current?.focus())
+  }
 
   function openAt(index: number) {
     setActiveIndex(index)
+    setIsCreating(false)
     setIsOpen(true)
   }
 
   function select(index: number) {
-    const option = propertyStatusOptions[index]
+    const option = options[index]
     if (!option) return
     onChange(option.value)
-    setIsOpen(false)
-    window.requestAnimationFrame(() => triggerRef.current?.focus())
+    close()
   }
 
   function handleListKeyDown(event: KeyboardEvent<HTMLDivElement>) {
     if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
       event.preventDefault()
       const direction = event.key === 'ArrowDown' ? 1 : -1
-      const nextIndex = (
-        activeIndex + direction + propertyStatusOptions.length
-      ) % propertyStatusOptions.length
+      const nextIndex = (activeIndex + direction + options.length) % options.length
       setActiveIndex(nextIndex)
       optionRefs.current[nextIndex]?.focus()
       return
@@ -72,7 +136,7 @@ export function StatusPicker({ disabled = false, onChange, value }: StatusPicker
 
     if (event.key === 'Home' || event.key === 'End') {
       event.preventDefault()
-      const nextIndex = event.key === 'Home' ? 0 : propertyStatusOptions.length - 1
+      const nextIndex = event.key === 'Home' ? 0 : options.length - 1
       setActiveIndex(nextIndex)
       optionRefs.current[nextIndex]?.focus()
       return
@@ -86,9 +150,25 @@ export function StatusPicker({ disabled = false, onChange, value }: StatusPicker
 
     if (event.key === 'Escape') {
       event.preventDefault()
-      setIsOpen(false)
-      triggerRef.current?.focus()
+      close()
     }
+  }
+
+  function createStatus(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+    const label = newStatusLabel.trim().replace(/\s+/g, ' ')
+    if (!label) return
+
+    const value = createCustomPropertyStatus(label, newStatusIcon)
+    const presentation = parseCustomPropertyStatus(value)
+    if (!presentation) return
+
+    const nextStatuses = mergeCustomStatuses([presentation, ...customStatuses], value)
+    setCustomStatuses(nextStatuses)
+    writeCustomStatuses(nextStatuses)
+    onChange(value)
+    setNewStatusLabel('')
+    close()
   }
 
   return (
@@ -100,51 +180,104 @@ export function StatusPicker({ disabled = false, onChange, value }: StatusPicker
         aria-haspopup="listbox"
         className="sn-status-picker__trigger"
         disabled={disabled}
-        onClick={() => isOpen ? setIsOpen(false) : openAt(selectedIndex)}
+        onClick={() => isOpen ? close() : openAt(selectedIndex)}
         onKeyDown={(event) => {
           if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
             event.preventDefault()
             openAt(event.key === 'ArrowDown'
-              ? (selectedIndex + 1) % propertyStatusOptions.length
-              : (selectedIndex - 1 + propertyStatusOptions.length) % propertyStatusOptions.length)
+              ? (selectedIndex + 1) % options.length
+              : (selectedIndex - 1 + options.length) % options.length)
           }
         }}
         ref={triggerRef}
         type="button"
       >
-        <span className="sn-property-status-dot" data-tone={selectedOption.value} />
+        <span aria-hidden="true" className="sn-property-status-icon" data-tone={selectedOption.value}>
+          {selectedOption.icon}
+        </span>
         <span>{selectedOption.label}</span>
         <UiIcon name="chevronDown" />
       </button>
       {isOpen ? (
-        <div
-          aria-activedescendant={`${listboxId}-${propertyStatusOptions[activeIndex]?.value}`}
-          className="sn-status-picker__popover"
-          id={listboxId}
-          onKeyDown={handleListKeyDown}
-          role="listbox"
-        >
-          <span className="sn-status-picker__label">Page status</span>
-          {propertyStatusOptions.map((option, index) => (
-            <button
-              aria-selected={option.value === value}
-              className="sn-status-picker__option"
-              data-active={index === activeIndex}
-              id={`${listboxId}-${option.value}`}
-              key={option.value}
-              onClick={() => select(index)}
-              ref={(element) => {
-                optionRefs.current[index] = element
-              }}
-              role="option"
-              tabIndex={index === activeIndex ? 0 : -1}
-              type="button"
-            >
-              <span className="sn-property-status-dot" data-tone={option.value} />
-              <span>{option.label}</span>
-              {option.value === value ? <UiIcon name="check" /> : null}
-            </button>
-          ))}
+        <div className="sn-status-picker__popover">
+          {isCreating ? (
+            <form aria-label="Create a status" className="sn-status-creator" onSubmit={createStatus}>
+              <div className="sn-status-picker__label">New page status</div>
+              <label className="sn-status-creator__name">
+                <span>Name</span>
+                <input
+                  maxLength={32}
+                  onChange={(event) => setNewStatusLabel(event.target.value)}
+                  placeholder="e.g. Waiting"
+                  ref={nameInputRef}
+                  required
+                  value={newStatusLabel}
+                />
+              </label>
+              <fieldset className="sn-status-symbols">
+                <legend>Choose a symbol</legend>
+                <div>
+                  {customStatusIconOptions.map((option) => (
+                    <button
+                      aria-label={option.label}
+                      aria-pressed={newStatusIcon === option.icon}
+                      key={option.icon}
+                      onClick={() => setNewStatusIcon(option.icon)}
+                      title={option.label}
+                      type="button"
+                    >
+                      {option.icon}
+                    </button>
+                  ))}
+                </div>
+              </fieldset>
+              <div className="sn-status-creator__actions">
+                <button onClick={() => setIsCreating(false)} type="button">Back</button>
+                <button type="submit">Add status</button>
+              </div>
+            </form>
+          ) : (
+            <>
+              <div
+                aria-activedescendant={`${listboxId}-${options[activeIndex]?.value}`}
+                id={listboxId}
+                onKeyDown={handleListKeyDown}
+                role="listbox"
+              >
+                <span className="sn-status-picker__label">Page status</span>
+                {options.map((option, index) => (
+                  <button
+                    aria-selected={option.value === value}
+                    className="sn-status-picker__option"
+                    data-active={index === activeIndex}
+                    id={`${listboxId}-${option.value}`}
+                    key={option.value}
+                    onClick={() => select(index)}
+                    ref={(element) => {
+                      optionRefs.current[index] = element
+                    }}
+                    role="option"
+                    tabIndex={index === activeIndex ? 0 : -1}
+                    type="button"
+                  >
+                    <span aria-hidden="true" className="sn-property-status-icon" data-tone={option.value}>
+                      {option.icon}
+                    </span>
+                    <span>{option.label}</span>
+                    {option.value === value ? <UiIcon name="check" /> : null}
+                  </button>
+                ))}
+              </div>
+              <button
+                className="sn-status-picker__create"
+                onClick={() => setIsCreating(true)}
+                type="button"
+              >
+                <span aria-hidden="true">＋</span>
+                Create status
+              </button>
+            </>
+          )}
         </div>
       ) : null}
     </div>

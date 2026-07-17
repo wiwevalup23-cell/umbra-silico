@@ -459,20 +459,20 @@ button {
     var(--sn-background-pattern-y),
     var(--sn-background-pattern-x),
     var(--sn-background-wash),
-    var(--sn-user-background-image),
-    var(--sn-background-scrim);
+    var(--sn-background-scrim),
+    var(--sn-user-background-image);
   background-position:
     0 0,
     0 0,
     0 0,
-    center,
-    0 0;
+    0 0,
+    center;
   background-size:
     var(--sn-background-pattern-size),
     var(--sn-background-pattern-size),
     auto,
-    cover,
-    auto;
+    auto,
+    cover;
   box-shadow: var(--sn-shadow-panel);
 }
 
@@ -1230,20 +1230,20 @@ button {
     var(--sn-background-pattern-y),
     var(--sn-background-pattern-x),
     var(--sn-background-wash),
-    var(--sn-user-background-image),
-    var(--sn-background-scrim);
+    var(--sn-background-scrim),
+    var(--sn-user-background-image);
   background-position:
     0 0,
     0 0,
     0 0,
-    center,
-    0 0;
+    0 0,
+    center;
   background-size:
     var(--sn-background-pattern-size),
     var(--sn-background-pattern-size),
     auto,
-    cover,
-    auto;
+    auto,
+    cover;
 }
 
 .sn-editor-topbar {
@@ -4232,7 +4232,7 @@ button {
   width: 100%;
   min-height: 40px;
   display: grid;
-  grid-template-columns: 10px minmax(0, 1fr) 18px;
+  grid-template-columns: 18px minmax(0, 1fr) 18px;
   align-items: center;
   gap: 10px;
   padding: 0 11px;
@@ -4258,24 +4258,27 @@ button {
   color: var(--sn-muted);
 }
 
-.sn-property-status-dot {
-  width: 9px;
-  height: 9px;
-  border: 1px solid rgba(28, 27, 24, 0.25);
-  border-radius: 999px;
-  background: transparent;
+.sn-property-status-icon {
+  width: 18px;
+  display: inline-grid;
+  place-items: center;
+  color: var(--sn-muted);
+  font-family: var(--sn-compact-font);
+  font-size: 16px;
+  font-weight: 700;
+  line-height: 1;
 }
 
-.sn-property-status-dot[data-tone="idea"] {
-  background: #c49a52;
+.sn-property-status-icon[data-tone="idea"] {
+  color: var(--sn-pending);
 }
 
-.sn-property-status-dot[data-tone="active"] {
-  background: #6d8c9d;
+.sn-property-status-icon[data-tone="active"] {
+  color: var(--sn-selection);
 }
 
-.sn-property-status-dot[data-tone="done"] {
-  background: var(--sn-success);
+.sn-property-status-icon[data-tone="done"] {
+  color: var(--sn-success);
 }
 
 .sn-status-picker__popover {
@@ -4306,7 +4309,7 @@ button {
   width: 100%;
   min-height: 38px;
   display: grid;
-  grid-template-columns: 10px minmax(0, 1fr) 18px;
+  grid-template-columns: 18px minmax(0, 1fr) 18px;
   align-items: center;
   gap: 10px;
   padding: 0 8px;
@@ -4331,6 +4334,134 @@ button {
 .sn-status-picker__option svg {
   width: 15px;
   height: 15px;
+}
+
+.sn-status-picker__create {
+  width: 100%;
+  min-height: 34px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 4px;
+  padding: 0 8px;
+  border: 1px dashed var(--sn-border-control);
+  border-radius: 5px;
+  color: var(--sn-ink-soft);
+  text-align: left;
+  background: rgba(255, 255, 252, 0.46);
+  cursor: pointer;
+  font-family: var(--sn-compact-font);
+  font-size: 11px;
+  letter-spacing: 0.04em;
+}
+
+.sn-status-picker__create:hover,
+.sn-status-picker__create:focus-visible {
+  border-style: solid;
+  color: var(--sn-ink);
+  background: rgba(28, 27, 24, 0.08);
+}
+
+.sn-status-picker__create > span {
+  font-size: 18px;
+  line-height: 1;
+}
+
+.sn-status-creator {
+  display: grid;
+  gap: 10px;
+}
+
+.sn-status-creator__name {
+  display: grid;
+  gap: 5px;
+  padding-inline: 7px;
+  color: var(--sn-muted);
+  font-family: var(--sn-compact-font);
+  font-size: 10px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.sn-status-creator__name input {
+  min-width: 0;
+  height: 34px;
+  padding: 0 8px;
+  border: 1px solid var(--sn-border-control);
+  border-radius: 5px;
+  color: var(--sn-ink);
+  background: rgba(255, 255, 252, 0.86);
+  box-shadow: var(--sn-field-shadow);
+  font: inherit;
+  letter-spacing: normal;
+  text-transform: none;
+}
+
+.sn-status-symbols {
+  display: grid;
+  gap: 6px;
+  margin: 0;
+  padding: 0 7px;
+  border: 0;
+}
+
+.sn-status-symbols legend {
+  padding: 0;
+  color: var(--sn-muted);
+  font-family: var(--sn-compact-font);
+  font-size: 10px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.sn-status-symbols > div {
+  display: grid;
+  grid-template-columns: repeat(8, minmax(0, 1fr));
+  gap: 4px;
+}
+
+.sn-status-symbols button {
+  min-width: 0;
+  height: 28px;
+  border: 1px solid var(--sn-border);
+  border-radius: 4px;
+  color: var(--sn-ink-soft);
+  background: rgba(255, 255, 252, 0.58);
+  cursor: pointer;
+  font-family: var(--sn-compact-font);
+  font-size: 16px;
+}
+
+.sn-status-symbols button[aria-pressed="true"],
+.sn-status-symbols button:hover {
+  border-color: var(--sn-border-control);
+  color: var(--sn-ink);
+  background: var(--sn-paper-bg);
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.74) inset;
+}
+
+.sn-status-creator__actions {
+  display: grid;
+  grid-template-columns: 1fr 1.35fr;
+  gap: 6px;
+  padding: 0 7px 2px;
+}
+
+.sn-status-creator__actions button {
+  min-height: 32px;
+  border: 1px solid var(--sn-border-control);
+  border-radius: 5px;
+  color: var(--sn-ink-soft);
+  background: var(--sn-bevel-bg);
+  box-shadow: var(--sn-bevel-shadow);
+  cursor: pointer;
+  font-family: var(--sn-compact-font);
+  font-size: 11px;
+}
+
+.sn-status-creator__actions button[type="submit"] {
+  color: var(--sn-paper-bg);
+  background: var(--sn-ink);
 }
 
 .sn-tag-entry button {
@@ -4576,18 +4707,6 @@ button {
   background: var(--sn-pending);
 }
 
-.sn-property-status-dot[data-tone="idea"] {
-  background: var(--sn-pending);
-}
-
-.sn-property-status-dot[data-tone="active"] {
-  background: var(--sn-selection);
-}
-
-.sn-property-status-dot[data-tone="done"] {
-  background: var(--sn-success);
-}
-
 .sn-empty-list,
 .sn-inspector-empty {
   border-color: transparent;
@@ -4709,9 +4828,9 @@ button {
   line-height: 1.2;
 }
 
-.sn-note-card__page-status .sn-property-status-dot {
-  width: 7px;
-  height: 7px;
+.sn-note-card__page-status .sn-property-status-icon {
+  width: 13px;
+  font-size: 13px;
 }
 
 .sn-note-card__properties .sn-note-card__tags {

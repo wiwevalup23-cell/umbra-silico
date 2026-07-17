@@ -37,7 +37,17 @@ export const noteSyncStatusSchema = z.enum(noteSyncStatusValues)
 export type NoteSyncStatus = z.infer<typeof noteSyncStatusSchema>
 
 export const notePropertyStatusValues = ['none', 'idea', 'active', 'done'] as const
-export const notePropertyStatusSchema = z.enum(notePropertyStatusValues)
+export type BuiltInNotePropertyStatus = (typeof notePropertyStatusValues)[number]
+
+// Custom statuses encode their icon and label in the value itself. This keeps a
+// status readable on another device even before its local picker preferences
+// have been restored there.
+export const customNotePropertyStatusPrefix = 'custom:'
+export const notePropertyStatusSchema = z.string().min(1).max(96).refine(
+  (value) => notePropertyStatusValues.includes(value as BuiltInNotePropertyStatus)
+    || value.startsWith(customNotePropertyStatusPrefix),
+  { message: 'Expected a built-in or custom note property status.' },
+)
 export type NotePropertyStatus = z.infer<typeof notePropertyStatusSchema>
 
 export const noteTagSchema = z.string().trim().min(1).max(32)

@@ -97,6 +97,10 @@ describe('shared contract validation', () => {
       tags: ['Work'],
     })
     expect(notePropertiesSchema.safeParse({ status: 'blocked', tags: [] }).success).toBe(false)
+    expect(notePropertiesSchema.safeParse({
+      status: 'custom:%E2%9C%A6:In%20review',
+      tags: [],
+    }).success).toBe(true)
   })
 
   it('creates valid built-in note templates with real starting properties', () => {

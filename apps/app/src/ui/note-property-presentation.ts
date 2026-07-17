@@ -1,20 +1,61 @@
-import type { NotePropertyStatus } from '@/shared/contracts'
+import {
+  customNotePropertyStatusPrefix,
+  type NotePropertyStatus,
+} from '@/shared/contracts'
 
 export type PropertyStatusPresentation = {
+  icon: string
   label: string
   value: NotePropertyStatus
 }
 
 export const propertyStatusOptions: readonly PropertyStatusPresentation[] = [
-  { label: 'No status', value: 'none' },
-  { label: 'Idea', value: 'idea' },
-  { label: 'In progress', value: 'active' },
-  { label: 'Done', value: 'done' },
+  { icon: '○', label: 'No status', value: 'none' },
+  { icon: '✦', label: 'Idea', value: 'idea' },
+  { icon: '◒', label: 'In progress', value: 'active' },
+  { icon: '✓', label: 'Done', value: 'done' },
 ]
+
+export const customStatusIconOptions = [
+  { icon: '✦', label: 'Spark' },
+  { icon: '◌', label: 'Orbit' },
+  { icon: '◒', label: 'Phase' },
+  { icon: '⌁', label: 'Wave' },
+  { icon: '✎', label: 'Mark' },
+  { icon: '⚑', label: 'Flag' },
+  { icon: '◎', label: 'Loop' },
+  { icon: '▣', label: 'Archive' },
+] as const
+
+export function createCustomPropertyStatus(label: string, icon: string): NotePropertyStatus {
+  const normalizedLabel = label.trim().replace(/\s+/g, ' ').slice(0, 32)
+  return `${customNotePropertyStatusPrefix}${encodeURIComponent(icon)}:${encodeURIComponent(normalizedLabel)}`
+}
+
+export function parseCustomPropertyStatus(
+  value: NotePropertyStatus | undefined,
+): PropertyStatusPresentation | null {
+  if (!value?.startsWith(customNotePropertyStatusPrefix)) return null
+
+  const encoded = value.slice(customNotePropertyStatusPrefix.length)
+  const separator = encoded.indexOf(':')
+  if (separator === -1) return null
+
+  try {
+    const icon = decodeURIComponent(encoded.slice(0, separator))
+    const label = decodeURIComponent(encoded.slice(separator + 1)).trim()
+    if (!icon || !label) return null
+
+    return { icon, label, value }
+  } catch {
+    return null
+  }
+}
 
 export function getPropertyStatusPresentation(
   value: NotePropertyStatus | undefined,
 ): PropertyStatusPresentation {
   return propertyStatusOptions.find((option) => option.value === value)
+    ?? parseCustomPropertyStatus(value)
     ?? propertyStatusOptions[0]
 }

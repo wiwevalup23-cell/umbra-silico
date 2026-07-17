@@ -140,7 +140,9 @@ export function NoteCard({
                 data-tone={pageStatus.value}
                 title={`Status: ${pageStatus.label}`}
               >
-                <span className="sn-property-status-dot" data-tone={pageStatus.value} />
+                <span aria-hidden="true" className="sn-property-status-icon" data-tone={pageStatus.value}>
+                  {pageStatus.icon}
+                </span>
                 {pageStatus.label}
               </span>
             ) : null}

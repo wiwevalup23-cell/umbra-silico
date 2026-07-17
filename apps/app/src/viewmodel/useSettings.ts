@@ -16,7 +16,7 @@ type AppSettings = {
 const DEFAULT_SETTINGS: AppSettings = {
   backgroundImage: null,
   backgroundPattern: 'grid',
-  backgroundOpacity: 100,
+  backgroundOpacity: 55,
   sidebarWidth: 260,
   inspectorWidth: 240,
 }
@@ -97,10 +97,12 @@ export function useSettings() {
       root.style.removeProperty('--sn-user-background-image')
     }
 
+    const opacity = settings.backgroundOpacity / 100
+
     if (settings.backgroundPattern === 'scanlines') {
       root.style.setProperty(
         '--sn-background-pattern-y',
-        'linear-gradient(rgba(28, 27, 24, 0.16) 1px, transparent 1px)',
+        `linear-gradient(rgba(28, 27, 24, ${0.16 * opacity}) 1px, transparent 1px)`,
       )
       root.style.setProperty('--sn-background-pattern-x', 'none')
       root.style.setProperty('--sn-background-pattern-size', '100% 3px')
@@ -109,12 +111,17 @@ export function useSettings() {
       root.style.setProperty('--sn-background-pattern-x', 'none')
       root.style.setProperty('--sn-background-pattern-size', '24px 24px')
     } else {
-      root.style.removeProperty('--sn-background-pattern-y')
-      root.style.removeProperty('--sn-background-pattern-x')
+      root.style.setProperty(
+        '--sn-background-pattern-y',
+        `linear-gradient(rgba(255, 255, 255, ${0.32 * opacity}) 1px, transparent 1px)`,
+      )
+      root.style.setProperty(
+        '--sn-background-pattern-x',
+        `linear-gradient(90deg, rgba(255, 255, 255, ${0.2 * opacity}) 1px, transparent 1px)`,
+      )
       root.style.removeProperty('--sn-background-pattern-size')
     }
 
-    const opacity = settings.backgroundOpacity / 100
     // background-image layers must each resolve to an <image>, so the scrim
     // color is wrapped in a flat linear-gradient rather than used bare.
     root.style.setProperty(
