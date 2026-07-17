@@ -4902,8 +4902,9 @@ button {
 
 .sn-editor-paper-sheet {
   flex: 0 0 auto !important;
+  min-height: calc(100% - 40px) !important;
   overflow: visible !important;
-  margin-bottom: 20px !important;
+  margin: 20px !important;
 }
 
 .sn-editor-paper {
@@ -4961,10 +4962,15 @@ button {
 /* The two empty-state actions share the same quiet beveled treatment. */
 .sn-empty-actions__primary {
   border-color: var(--sn-bevel-border) !important;
-  background-color: var(--sn-bevel-bg) !important;
-  background-image: none !important;
+  background: var(--sn-bevel-bg) !important;
   color: var(--sn-ink-soft) !important;
   box-shadow: var(--sn-bevel-shadow) !important;
+}
+
+/* A blank document fills the panel while retaining the same 20px frame on
+   every side; long documents can still grow beyond this minimum. */
+.sn-editor-shell:not(.sn-editor-shell--empty) {
+  height: 100% !important;
 }
 
 /* A warm tint connects selected navigation and the active note. */
