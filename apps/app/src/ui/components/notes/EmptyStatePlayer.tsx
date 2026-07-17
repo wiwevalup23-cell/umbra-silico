@@ -1,3 +1,5 @@
+import { publicAsset } from '@/shared/public-asset'
+
 type EmptyStatePlayerProps = {
   isCreatingNote?: boolean
   onCreateNote: () => void
@@ -16,7 +18,7 @@ export function EmptyStatePlayer({
         aria-hidden="true"
         className="sn-empty-player__image"
         draggable={false}
-        src="/assets/player-warm-cut.png"
+        src={publicAsset('assets/player-warm-cut.png')}
       />
 
       <div className="sn-empty-player__screen" aria-live="polite">
@@ -39,7 +41,7 @@ export function EmptyStatePlayer({
               aria-hidden="true"
               className="sn-empty-player__hello-final"
               draggable={false}
-              src="/assets/hello-smooth.svg"
+              src={publicAsset('assets/hello-smooth.svg')}
             />
           </div>
 

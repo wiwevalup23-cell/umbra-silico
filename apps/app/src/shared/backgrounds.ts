@@ -1,3 +1,5 @@
+import { publicAsset } from '@/shared/public-asset'
+
 export type BackgroundPattern = 'grid' | 'scanlines' | 'none'
 
 export const backgroundPatternOptions: Array<{ label: string; value: BackgroundPattern }> = [
@@ -27,14 +29,14 @@ export const backgroundImageFiles = [
 ] as const
 
 export const backgroundEffectFiles = [
-  '/assets/effects/colorful/1.jpg',
-  '/assets/effects/colorful/2.jpg',
-  '/assets/effects/colorful/3.jpg',
-  '/assets/effects/colorful/4.jpg',
-  '/assets/effects/mono/1.jpg',
-  '/assets/effects/mono/2.jpg',
-  '/assets/effects/mono/3.jpg',
-  '/assets/effects/mono/4.jpg',
+  publicAsset('assets/effects/colorful/1.jpg'),
+  publicAsset('assets/effects/colorful/2.jpg'),
+  publicAsset('assets/effects/colorful/3.jpg'),
+  publicAsset('assets/effects/colorful/4.jpg'),
+  publicAsset('assets/effects/mono/1.jpg'),
+  publicAsset('assets/effects/mono/2.jpg'),
+  publicAsset('assets/effects/mono/3.jpg'),
+  publicAsset('assets/effects/mono/4.jpg'),
 ] as const
 
 export const backgroundImageOptions = [
@@ -42,19 +44,19 @@ export const backgroundImageOptions = [
     label: 'None · clean grid',
     value: null,
   },
-  { label: 'Rose mineral', value: `/assets/fons/${backgroundImageFiles[0]}` },
-  { label: 'Sand contour', value: `/assets/fons/${backgroundImageFiles[1]}` },
-  { label: 'Pressed botanicals', value: `/assets/fons/${backgroundImageFiles[2]}` },
-  { label: 'Umber cloud', value: `/assets/fons/${backgroundImageFiles[3]}` },
-  { label: 'Copper petals', value: `/assets/fons/${backgroundImageFiles[4]}` },
-  { label: 'Burnished paper', value: `/assets/fons/${backgroundImageFiles[5]}` },
-  { label: 'Soft focus', value: `/assets/fons/${backgroundImageFiles[6]}` },
-  { label: 'Warped checker', value: `/assets/fons/${backgroundImageFiles[7]}` },
-  { label: 'Signal field', value: `/assets/fons/${backgroundImageFiles[8]}` },
-  { label: 'Signal cross', value: `/assets/fons/${backgroundImageFiles[9]}` },
-  { label: 'Amber current', value: `/assets/fons/${backgroundImageFiles[10]}` },
-  { label: 'Copper veil', value: `/assets/fons/${backgroundImageFiles[11]}` },
-  { label: 'Solar bloom', value: `/assets/fons/${backgroundImageFiles[12]}` },
+  { label: 'Rose mineral', value: publicAsset(`assets/fons/${backgroundImageFiles[0]}`) },
+  { label: 'Sand contour', value: publicAsset(`assets/fons/${backgroundImageFiles[1]}`) },
+  { label: 'Pressed botanicals', value: publicAsset(`assets/fons/${backgroundImageFiles[2]}`) },
+  { label: 'Umber cloud', value: publicAsset(`assets/fons/${backgroundImageFiles[3]}`) },
+  { label: 'Copper petals', value: publicAsset(`assets/fons/${backgroundImageFiles[4]}`) },
+  { label: 'Burnished paper', value: publicAsset(`assets/fons/${backgroundImageFiles[5]}`) },
+  { label: 'Soft focus', value: publicAsset(`assets/fons/${backgroundImageFiles[6]}`) },
+  { label: 'Warped checker', value: publicAsset(`assets/fons/${backgroundImageFiles[7]}`) },
+  { label: 'Signal field', value: publicAsset(`assets/fons/${backgroundImageFiles[8]}`) },
+  { label: 'Signal cross', value: publicAsset(`assets/fons/${backgroundImageFiles[9]}`) },
+  { label: 'Amber current', value: publicAsset(`assets/fons/${backgroundImageFiles[10]}`) },
+  { label: 'Copper veil', value: publicAsset(`assets/fons/${backgroundImageFiles[11]}`) },
+  { label: 'Solar bloom', value: publicAsset(`assets/fons/${backgroundImageFiles[12]}`) },
   { label: 'Ripple weave · azure', value: backgroundEffectFiles[0] },
   { label: 'Halftone dots · crimson', value: backgroundEffectFiles[1] },
   { label: 'Triangle static · neon', value: backgroundEffectFiles[2] },

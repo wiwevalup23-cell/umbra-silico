@@ -157,24 +157,24 @@ describe('PWA readiness', () => {
 
     expect(manifest).toMatchObject({
       name: 'Umbra Silico',
-      start_url: '/',
+      start_url: './',
       display: 'standalone',
       theme_color: '#f8f5ed',
     })
     expect(manifest.icons).toEqual(
       expect.arrayContaining([
         expect.objectContaining({
-          src: '/icons/pwa-icon-192.png',
+          src: 'icons/pwa-icon-192.png',
           sizes: '192x192',
           type: 'image/png',
         }),
         expect.objectContaining({
-          src: '/icons/pwa-icon-512.png',
+          src: 'icons/pwa-icon-512.png',
           sizes: '512x512',
           type: 'image/png',
         }),
         expect.objectContaining({
-          src: '/icons/pwa-maskable-512.png',
+          src: 'icons/pwa-maskable-512.png',
           purpose: 'maskable',
         }),
       ]),

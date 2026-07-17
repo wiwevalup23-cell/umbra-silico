@@ -230,7 +230,7 @@ describe('phase 13 verification pass', () => {
     expect(viteConfigSource).toContain('navigateFallback: `${base}index.html`')
     expect(JSON.parse(manifestSource)).toMatchObject({
       display: 'standalone',
-      start_url: '/',
+      start_url: './',
     })
     expect(tauriConfig.bundle.targets).toEqual(['deb', 'appimage'])
     expect(tauriConfig.plugins?.sql).toEqual({

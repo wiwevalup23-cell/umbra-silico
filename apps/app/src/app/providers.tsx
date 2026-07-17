@@ -4,6 +4,7 @@ import type { NoteRepository } from '@/repository/contracts'
 import { detectPlatform } from '@/platform'
 import { createSyncEngine, type SyncEngine } from '@/sync'
 import { readSiliconSupabaseConfig } from '@/sync/supabase/supabase-config'
+import { publicAsset } from '@/shared/public-asset'
 import { RepositoryProvider, SyncEngineProvider } from '@/viewmodel'
 
 function ProviderState({ error }: { error?: string }) {
@@ -13,7 +14,7 @@ function ProviderState({ error }: { error?: string }) {
         <img
           alt=""
           aria-hidden="true"
-          src="/assets/umbra-silico-eclipse-compass-u.svg"
+          src={publicAsset('assets/umbra-silico-eclipse-compass-u.svg')}
         />
         <div>
           <span>Umbra Silico</span>

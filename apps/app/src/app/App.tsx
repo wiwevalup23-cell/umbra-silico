@@ -14,6 +14,7 @@ import { SettingsModal } from '@/ui/components/silicon/SettingsModal'
 import { ConfirmationDialog, PromptDialog } from '@/ui/components/silicon'
 import { MobileTabBar, type MobileTab } from '@/ui/components/silicon/MobileTabBar'
 import { UiIcon } from '@/ui/icons/ui/UiIcon'
+import { publicAsset } from '@/shared/public-asset'
 import type { CreateNoteInput, FolderId, FolderTreeNode, NoteId } from '@/shared/contracts'
 import {
   createNoteFromTemplate,
@@ -290,7 +291,7 @@ function AppWorkspace() {
                 alt=""
                 className="sn-brand-emblem__image"
                 draggable={false}
-                src="/assets/umbra-silico-eclipse-compass-u.svg"
+                src={publicAsset('assets/umbra-silico-eclipse-compass-u.svg')}
               />
             </span>
             <span className="sn-brand-copy">
