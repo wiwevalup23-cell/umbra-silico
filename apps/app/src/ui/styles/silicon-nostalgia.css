@@ -4920,19 +4920,25 @@ button {
 
 .sn-tiptap-prosemirror {
   min-height: 520px !important;
+  width: 100% !important;
+  max-width: 750px !important;
+  box-sizing: border-box !important;
+  margin: 0 auto !important;
   margin-top: 24px !important;
-  padding-top: 0 !important;
-  padding-right: 40px !important;
-  padding-left: 40px !important;
+  padding: 0 40px !important;
 }
 
-/* The selection position is measured at the active line midpoint in React. */
+/* The title text starts on the same reading axis as the document body. */
+.sn-editor-title-group {
+  margin-left: max(0px, calc(50% - 381px)) !important;
+}
+
+/* The selection position is measured at the active line midpoint in React.
+   750px is the outer width of the reading column; -30px keeps the controls
+   immediately outside of its right edge rather than at the sheet edge. */
 .sn-block-handle {
   left: auto !important;
-  /* .sn-page-layout-frame spans the whole sheet, not just the text measure.
-     Anchor from the 76ch reading column so the controls live in its right
-     gutter instead of spilling into the inspector panel. */
-  right: max(12px, calc(50% - 38ch - 48px)) !important;
+  right: max(12px, calc(50% - 405px)) !important;
   transform: translateY(-50%) !important;
 }
 
@@ -4959,9 +4965,17 @@ button {
 
 /* A warm tint connects selected navigation and the active note. */
 .sn-folder-tree__root[data-active="true"],
-.sn-folder-tree__row[data-active="true"],
-.sn-note-card[data-active="true"] {
+.sn-folder-tree__row[data-active="true"] {
   background-color: rgba(210, 180, 180, 0.15) !important;
+  box-shadow: none !important;
+}
+
+/* The active note is a quiet surface, not a corporate-blue navigation bar. */
+.sn-note-card[data-active="true"] {
+  border-left: none !important;
+  border-radius: 8px !important;
+  background-color: rgba(0, 0, 0, 0.04) !important;
+  box-shadow: none !important;
 }
 
 /* Give the eclipse mark a touch more presence without crowding the wordmark. */
