@@ -188,7 +188,7 @@ describe('P1-A visual and interaction contract', () => {
     expect(css).toContain('min-height: 520px !important;')
     expect(css).toContain('margin-top: 24px !important;')
     expect(css).toContain('padding-left: 40px !important;')
-    expect(css).toContain('right: -40px !important;')
+    expect(css).toContain('right: max(12px, calc(50% - 38ch - 48px)) !important;')
     expect(css).toContain('border: 1px solid rgba(0, 0, 0, 0.08) !important;')
     expect(css).toContain('background-color: #31312E !important;')
     expect(css).toContain('background-color: rgba(210, 180, 180, 0.15) !important;')

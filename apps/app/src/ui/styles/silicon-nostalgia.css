@@ -4929,7 +4929,10 @@ button {
 /* The selection position is measured at the active line midpoint in React. */
 .sn-block-handle {
   left: auto !important;
-  right: -40px !important;
+  /* .sn-page-layout-frame spans the whole sheet, not just the text measure.
+     Anchor from the 76ch reading column so the controls live in its right
+     gutter instead of spilling into the inspector panel. */
+  right: max(12px, calc(50% - 38ch - 48px)) !important;
   transform: translateY(-50%) !important;
 }
 
