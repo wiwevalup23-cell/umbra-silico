@@ -43,6 +43,7 @@ type EditorShellProps = {
   onChangeDocument: (noteId: NoteId, document: NoteDocument) => Promise<void>
   onChangeTitle: (noteId: NoteId, title: string) => Promise<void>
   onCreateNote: () => void
+  isCreatingNote?: boolean
   onBrowseTemplates?: () => void
   onRequestLock: (noteId: NoteId) => void
   pendingOperations: number
@@ -1202,6 +1203,7 @@ export function EditorShell({
   onChangeDocument,
   onChangeTitle,
   onCreateNote,
+  isCreatingNote = false,
   onBrowseTemplates,
   onRequestLock,
   pendingOperations,
@@ -1215,12 +1217,18 @@ export function EditorShell({
       >
         {/* Desktop: decorative player (hidden on mobile via CSS) */}
         <EmptyStatePlayer
+          isCreatingNote={isCreatingNote}
           onCreateNote={onCreateNote}
           pendingOperations={pendingOperations}
           syncStatus={syncStatus}
         />
         <div className="sn-empty-actions" aria-label="Create a note">
-          <button className="sn-empty-actions__primary" onClick={onCreateNote} type="button">
+          <button
+            className="sn-empty-actions__primary"
+            disabled={isCreatingNote}
+            onClick={onCreateNote}
+            type="button"
+          >
             <UiIcon name="plus" />
             New blank note
           </button>

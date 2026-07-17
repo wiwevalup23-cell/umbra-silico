@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { AppProviders } from '@/app/providers'
 import { EditorShell } from '@/ui/components/notes/EditorShell'
 import { FolderTree } from '@/ui/components/notes/FolderTree'
@@ -78,6 +78,8 @@ function AppWorkspace() {
   const [isInspectorCollapsed, setInspectorCollapsed] = useState(false)
   const [isCompactInspectorOpen, setCompactInspectorOpen] = useState(false)
   const [isHomeView, setIsHomeView] = useState(false)
+  const [isCreatingNote, setIsCreatingNote] = useState(false)
+  const [pendingCreatedNoteId, setPendingCreatedNoteId] = useState<NoteId | null>(null)
   const [isSettingsOpen, setIsSettingsOpen] = useState(false)
   const [isQuickSwitcherOpen, setIsQuickSwitcherOpen] = useState(false)
   const [isTemplatePickerOpen, setIsTemplatePickerOpen] = useState(false)
@@ -85,6 +87,7 @@ function AppWorkspace() {
   const [folderPendingDelete, setFolderPendingDelete] = useState<FolderDeleteState | null>(null)
   const [notePendingMove, setNotePendingMove] = useState<NoteId | null>(null)
   const [mobileTab, setMobileTab] = useState<MobileTab>('notes')
+  const creatingNoteRef = useRef(false)
 
   const foldersViewModel = useFoldersViewModel()
   const notesViewModel = useNotesViewModel({
@@ -148,18 +151,37 @@ function AppWorkspace() {
     }
   }, [firstNoteId, isHomeView, notesViewModel, selectedNoteId])
 
+  useEffect(() => {
+    if (pendingCreatedNoteId && activeNoteViewModel.note?.id === pendingCreatedNoteId) {
+      setIsHomeView(false)
+      setPendingCreatedNoteId(null)
+    }
+  }, [activeNoteViewModel.note?.id, pendingCreatedNoteId])
+
   const handleCreateNote = useCallback((input: CreateNoteInput = {}) => {
+    if (creatingNoteRef.current) return
+
+    creatingNoteRef.current = true
+    setIsCreatingNote(true)
     setLibraryMode('notes')
-    setIsHomeView(false)
     setCompactInspectorOpen(false)
     setMobileTab('editor')
     setIsQuickSwitcherOpen(false)
     setIsTemplatePickerOpen(false)
+
     void notesViewModel.createNote({
-      ...input,
-      parentFolderId: foldersViewModel.activeFolderId,
-      title: input.title ?? 'Untitled',
-    })
+        ...input,
+        parentFolderId: foldersViewModel.activeFolderId,
+        title: input.title ?? 'Untitled',
+      })
+      .then((noteId) => {
+        setPendingCreatedNoteId(noteId)
+      })
+      .catch(() => undefined)
+      .finally(() => {
+        creatingNoteRef.current = false
+        setIsCreatingNote(false)
+      })
   }, [foldersViewModel.activeFolderId, notesViewModel])
 
   const handleSelectNote = useCallback(
@@ -289,6 +311,7 @@ function AppWorkspace() {
             <button
               aria-label="Create note"
               className="sn-icon-button sn-icon-button--primary"
+              disabled={isCreatingNote}
               onClick={() => handleCreateNote()}
               title="Create note"
               type="button"
@@ -443,6 +466,7 @@ function AppWorkspace() {
               onBrowseTemplates={handleOpenTemplates}
               onChangeTitle={activeNoteViewModel.updateTitle}
               onCreateNote={handleCreateNote}
+              isCreatingNote={isCreatingNote}
               onRequestLock={notesViewModel.openLockModal}
               pendingOperations={visiblePendingOperations}
               syncStatus={syncViewModel.status}

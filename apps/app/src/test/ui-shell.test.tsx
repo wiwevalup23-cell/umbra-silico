@@ -510,4 +510,27 @@ describe('Umbra Silico UI shell', () => {
     expect(syncProgress).toBeNull()
     expect(onCreateNote).toHaveBeenCalledOnce()
   })
+
+  it('locks empty-state creation controls while a note is being prepared', () => {
+    const rendered = renderUi(
+      <EditorShell
+        isCreatingNote
+        note={null}
+        onChangeDocument={vi.fn(async () => undefined)}
+        onChangeTitle={vi.fn(async () => undefined)}
+        onCreateNote={vi.fn()}
+        onRequestLock={vi.fn()}
+        pendingOperations={0}
+        syncStatus="idle"
+      />,
+    )
+    cleanupTasks.push(rendered.cleanup)
+
+    expect(rendered.container.querySelector<HTMLButtonElement>(
+      'button[aria-label="Create note"]',
+    )?.disabled).toBe(true)
+    expect(rendered.container.querySelector<HTMLButtonElement>(
+      '.sn-empty-actions__primary',
+    )?.disabled).toBe(true)
+  })
 })

@@ -184,7 +184,7 @@ describe('P1-A visual and interaction contract', () => {
 
     expect(css).toContain('overflow-y: auto !important;')
     expect(css).toContain('overflow: visible !important;')
-    expect(css).toContain('margin-bottom: 80px !important;')
+    expect(css).toContain('margin-bottom: 20px !important;')
     expect(css).toContain('min-height: 520px !important;')
     expect(css).toContain('margin-top: 24px !important;')
     expect(css).toContain('max-width: 750px !important;')
@@ -193,7 +193,8 @@ describe('P1-A visual and interaction contract', () => {
     expect(css).toContain('right: max(12px, calc(100% - 810px)) !important;')
     expect(css).toContain('border-left: none !important;')
     expect(css).toContain('border: 1px solid rgba(0, 0, 0, 0.08) !important;')
-    expect(css).toContain('background-color: #31312E !important;')
+    expect(css).toContain('background-color: var(--sn-bevel-bg) !important;')
+    expect(css).toContain('color: var(--sn-ink-soft) !important;')
     expect(css).toContain('background-color: rgba(210, 180, 180, 0.15) !important;')
     expect(blockHandle).toContain('lineMidpoint - frameRect.top')
     expect(logo).toContain('translate(142.8,380.5)')

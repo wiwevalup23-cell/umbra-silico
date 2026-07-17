@@ -4903,7 +4903,7 @@ button {
 .sn-editor-paper-sheet {
   flex: 0 0 auto !important;
   overflow: visible !important;
-  margin-bottom: 80px !important;
+  margin-bottom: 20px !important;
 }
 
 .sn-editor-paper {
@@ -4958,11 +4958,13 @@ button {
     0 2px 8px rgba(0, 0, 0, 0.04) !important;
 }
 
-/* Graphite, rather than pure black, keeps the primary action in the palette. */
+/* The two empty-state actions share the same quiet beveled treatment. */
 .sn-empty-actions__primary {
-  background-color: #31312E !important;
+  border-color: var(--sn-bevel-border) !important;
+  background-color: var(--sn-bevel-bg) !important;
   background-image: none !important;
-  color: #FDFBF7 !important;
+  color: var(--sn-ink-soft) !important;
+  box-shadow: var(--sn-bevel-shadow) !important;
 }
 
 /* A warm tint connects selected navigation and the active note. */

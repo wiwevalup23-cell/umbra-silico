@@ -1,10 +1,12 @@
 type EmptyStatePlayerProps = {
+  isCreatingNote?: boolean
   onCreateNote: () => void
   pendingOperations: number
   syncStatus: string
 }
 
 export function EmptyStatePlayer({
+  isCreatingNote = false,
   onCreateNote,
 }: EmptyStatePlayerProps) {
   return (
@@ -51,6 +53,7 @@ export function EmptyStatePlayer({
       <button
         aria-label="Create note"
         className="sn-empty-player__hotspot sn-empty-player__hotspot--play"
+        disabled={isCreatingNote}
         onClick={onCreateNote}
         title="Create note"
         type="button"
