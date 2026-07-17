@@ -4919,6 +4919,7 @@ button {
 }
 
 .sn-tiptap-prosemirror {
+  min-height: 520px !important;
   margin-top: 24px !important;
   padding-top: 0 !important;
   padding-right: 40px !important;
