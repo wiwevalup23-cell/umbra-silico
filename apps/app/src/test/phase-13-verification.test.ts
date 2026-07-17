@@ -227,7 +227,7 @@ describe('phase 13 verification pass', () => {
       'verify:phase13': 'npm run check && npm run test:run && npm run lint && npm run build',
     })
     expect(viteConfigSource).toContain('VitePWA')
-    expect(viteConfigSource).toContain("navigateFallback: '/index.html'")
+    expect(viteConfigSource).toContain('navigateFallback: `${base}index.html`')
     expect(JSON.parse(manifestSource)).toMatchObject({
       display: 'standalone',
       start_url: '/',
