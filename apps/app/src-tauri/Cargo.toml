@@ -1,6 +1,6 @@
 [package]
 name = "umbra-silico"
-version = "0.0.0"
+version = "0.0.1"
 description = "Umbra Silico local-first notes desktop shell"
 authors = ["Umbra Silico"]
 license = ""
