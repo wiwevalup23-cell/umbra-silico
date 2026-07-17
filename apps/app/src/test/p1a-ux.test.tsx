@@ -167,4 +167,32 @@ describe('P1-A visual and interaction contract', () => {
     expect(css).toContain('.sn-editor-tools-menu')
     expect(css).toContain('bottom: calc(var(--sn-tabbar-height)')
   })
+
+  it('keeps the paper physical and applies release-surface overrides', () => {
+    const css = readFileSync(
+      `${process.cwd()}/src/ui/styles/silicon-nostalgia.css`,
+      'utf8',
+    )
+    const blockHandle = readFileSync(
+      `${process.cwd()}/src/ui/components/notes/BlockHandle.tsx`,
+      'utf8',
+    )
+    const logo = readFileSync(
+      `${process.cwd()}/public/assets/umbra-silico-eclipse-compass-u.svg`,
+      'utf8',
+    )
+
+    expect(css).toContain('overflow-y: auto !important;')
+    expect(css).toContain('overflow: visible !important;')
+    expect(css).toContain('margin-bottom: 80px !important;')
+    expect(css).toContain('margin-top: 24px !important;')
+    expect(css).toContain('padding-left: 40px !important;')
+    expect(css).toContain('right: -40px !important;')
+    expect(css).toContain('border: 1px solid rgba(0, 0, 0, 0.08) !important;')
+    expect(css).toContain('background-color: #31312E !important;')
+    expect(css).toContain('background-color: rgba(210, 180, 180, 0.15) !important;')
+    expect(blockHandle).toContain('lineMidpoint - frameRect.top')
+    expect(logo).toContain('translate(142.8,380.5)')
+    expect(logo).not.toContain('translate(142.8,387.29)')
+  })
 })

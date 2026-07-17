@@ -76,9 +76,10 @@ export function BlockHandle({ editor }: BlockHandleProps) {
 
       try {
         const coords = currentEditor.view.coordsAtPos(position)
-        // Center the 24px button cluster on the vertical midpoint of the line.
+        // CSS offsets the 24px button cluster by half of its own height, so
+        // this value is the exact vertical midpoint of the active line.
         const lineMidpoint = (coords.top + coords.bottom) / 2
-        setTop(Math.max(8, Math.round(lineMidpoint - frameRect.top - 12)))
+        setTop(Math.max(8, Math.round(lineMidpoint - frameRect.top)))
       } catch {
         setTop(48)
       }

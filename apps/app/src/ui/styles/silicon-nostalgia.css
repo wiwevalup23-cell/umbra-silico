@@ -4888,3 +4888,74 @@ button {
     linear-gradient(90deg, transparent 46%, rgba(28, 27, 24, 0.08) 46% 54%, transparent 54%),
     var(--sn-bevel-bg);
 }
+
+/* ==========================================================================
+   Release polish — explicit priority over legacy responsive layers
+   ========================================================================== */
+
+/* The scroll surface is the patterned editor panel. The paper itself grows
+   with its content, leaving the panel visible below it at the document end. */
+.sn-editor-panel {
+  height: 100% !important;
+  overflow-y: auto !important;
+}
+
+.sn-editor-paper-sheet {
+  flex: 0 0 auto !important;
+  overflow: visible !important;
+  margin-bottom: 80px !important;
+}
+
+.sn-editor-paper {
+  flex: 0 0 auto !important;
+  height: auto !important;
+  overflow: visible !important;
+}
+
+/* Keep the editor close to its toolbar and give reading a quiet, even axis. */
+.sn-editor-toolbar {
+  padding-bottom: 16px !important;
+  border-bottom: 1px solid rgba(28, 27, 24, 0.1) !important;
+}
+
+.sn-tiptap-prosemirror {
+  margin-top: 24px !important;
+  padding-top: 0 !important;
+  padding-right: 40px !important;
+  padding-left: 40px !important;
+}
+
+/* The selection position is measured at the active line midpoint in React. */
+.sn-block-handle {
+  left: auto !important;
+  right: -40px !important;
+  transform: translateY(-50%) !important;
+}
+
+.sn-block-handle-menu {
+  right: 0 !important;
+  left: auto !important;
+}
+
+/* Lift the status selector above the browser-default control treatment. */
+.sn-status-picker__popover {
+  border: 1px solid rgba(0, 0, 0, 0.08) !important;
+  border-radius: 12px !important;
+  box-shadow:
+    0 10px 40px rgba(0, 0, 0, 0.08),
+    0 2px 8px rgba(0, 0, 0, 0.04) !important;
+}
+
+/* Graphite, rather than pure black, keeps the primary action in the palette. */
+.sn-empty-actions__primary {
+  background-color: #31312E !important;
+  background-image: none !important;
+  color: #FDFBF7 !important;
+}
+
+/* A warm tint connects selected navigation and the active note. */
+.sn-folder-tree__root[data-active="true"],
+.sn-folder-tree__row[data-active="true"],
+.sn-note-card[data-active="true"] {
+  background-color: rgba(210, 180, 180, 0.15) !important;
+}
