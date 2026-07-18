@@ -1,24 +1,30 @@
-import { useEffect, useState, type FormEvent } from 'react'
+import { useEffect, useMemo, useRef, useState, type FormEvent } from 'react'
 import {
   emptyNoteProperties,
   normalizeNoteTags,
   notePropertiesSchema,
+  type ImageSourceResolver,
   type NoteDetail,
+  type NoteImageListItem,
   type NoteProperties,
 } from '@/shared/contracts'
 import { UiIcon } from '@/ui/icons/ui/UiIcon'
+import { NoteImageGallery } from './NoteImageGallery'
 import { StatusPicker } from './StatusPicker'
 
 type WorkspaceInspectorProps = {
   activeNote: NoteDetail | null
   folderName?: string
+  imageResolver?: ImageSourceResolver | null
   noteCount: number
+  noteImages?: NoteImageListItem[]
   onChangeProperties?: (noteId: NoteDetail['id'], properties: NoteProperties) => Promise<void>
   onCollapse?: () => void
   onOpenSettings?: () => void
+  onRevealImage?: (imageId: string) => void
 }
 
-type InspectorTab = 'properties' | 'info'
+type InspectorTab = 'properties' | 'photos' | 'info'
 
 const dateFormatter = new Intl.DateTimeFormat(undefined, {
   day: '2-digit',
@@ -49,32 +55,70 @@ function activeTitle(note: NoteDetail | null): string {
 export function WorkspaceInspector({
   activeNote,
   folderName = 'All notes',
+  imageResolver = null,
   noteCount,
+  noteImages = [],
   onChangeProperties,
   onCollapse,
   onOpenSettings,
+  onRevealImage,
 }: WorkspaceInspectorProps) {
   const [activeTab, setActiveTab] = useState<InspectorTab>('properties')
   const [tagDraft, setTagDraft] = useState('')
   const [propertyError, setPropertyError] = useState<string | null>(null)
-  const properties = activeNote && !activeNote.isLocked
-    ? notePropertiesSchema.parse(activeNote.properties ?? emptyNoteProperties)
-    : emptyNoteProperties
+  const activeNoteId = activeNote?.id ?? null
+  const activeNoteIsLocked = activeNote?.isLocked ?? false
+  const activeNoteProperties = activeNote && !activeNote.isLocked
+    ? activeNote.properties
+    : undefined
+  const incomingProperties = useMemo(
+    () => activeNoteId && !activeNoteIsLocked
+      ? notePropertiesSchema.parse(activeNoteProperties ?? emptyNoteProperties)
+      : emptyNoteProperties,
+    [activeNoteId, activeNoteIsLocked, activeNoteProperties],
+  )
+  const [properties, setProperties] = useState<NoteProperties>(incomingProperties)
+  const pendingSaveCountRef = useRef(0)
+  const saveQueueRef = useRef<Promise<void>>(Promise.resolve())
+  const activeNoteIdRef = useRef(activeNoteId)
+  activeNoteIdRef.current = activeNoteId
 
   useEffect(() => {
     setTagDraft('')
     setPropertyError(null)
-  }, [activeNote?.id])
+  }, [activeNoteId])
 
-  async function saveProperties(nextProperties: NoteProperties) {
+  useEffect(() => {
+    if (pendingSaveCountRef.current === 0) {
+      setProperties(incomingProperties)
+    }
+  }, [activeNoteId, incomingProperties])
+
+  function saveProperties(nextProperties: NoteProperties) {
     if (!activeNote || activeNote.isLocked || !onChangeProperties) return
 
+    const noteId = activeNote.id
+    const parsedProperties = notePropertiesSchema.parse(nextProperties)
+    setProperties(parsedProperties)
     setPropertyError(null)
-    try {
-      await onChangeProperties(activeNote.id, notePropertiesSchema.parse(nextProperties))
-    } catch (error) {
-      setPropertyError(error instanceof Error ? error.message : 'Properties could not be saved.')
-    }
+    pendingSaveCountRef.current += 1
+    saveQueueRef.current = saveQueueRef.current.then(async () => {
+      try {
+        await onChangeProperties(noteId, parsedProperties)
+      } catch (error) {
+        if (activeNoteIdRef.current === noteId) {
+          setPropertyError(
+            error instanceof Error
+              ? error.message
+              : typeof error === 'string' && error.trim()
+                ? error
+                : 'Properties could not be saved.',
+          )
+        }
+      } finally {
+        pendingSaveCountRef.current = Math.max(0, pendingSaveCountRef.current - 1)
+      }
+    })
   }
 
   function addTag(event: FormEvent) {
@@ -140,6 +184,19 @@ export function WorkspaceInspector({
         >
           <UiIcon name="tag" />
           Properties
+        </button>
+        <button
+          aria-selected={activeTab === 'photos'}
+          className="sn-inspector-tab"
+          onClick={() => setActiveTab('photos')}
+          role="tab"
+          type="button"
+        >
+          <UiIcon name="image" />
+          Photos
+          {!activeNoteIsLocked && noteImages.length > 0 ? (
+            <span className="sn-inspector-tab__badge">{noteImages.length}</span>
+          ) : null}
         </button>
         <button
           aria-selected={activeTab === 'info'}
@@ -221,6 +278,24 @@ export function WorkspaceInspector({
               </section>
               {propertyError ? <p className="sn-property-error" role="alert">{propertyError}</p> : null}
             </>
+          )}
+        </div>
+      ) : null}
+
+      {activeNote && activeTab === 'photos' ? (
+        <div className="sn-inspector-section" role="tabpanel">
+          {activeNote.isLocked ? (
+            <div className="sn-inspector-empty sn-inspector-empty--compact">
+              <UiIcon name="lock" />
+              <strong>Photos are encrypted</strong>
+              <p>Unlock this note to browse its images.</p>
+            </div>
+          ) : (
+            <NoteImageGallery
+              images={noteImages}
+              onSelectImage={(imageId) => onRevealImage?.(imageId)}
+              resolver={imageResolver}
+            />
           )}
         </div>
       ) : null}

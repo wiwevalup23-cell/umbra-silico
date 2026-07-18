@@ -2,7 +2,7 @@ import { useMemo } from 'react'
 import type { NoteRepository } from '@/repository/contracts'
 import type { NoteId } from '@/shared/contracts'
 import { useLiveQuery } from '@/viewmodel/live-query-view-model'
-import { useNoteRepository } from '@/viewmodel/repository-hooks'
+import { useImageRepository, useNoteRepository } from '@/viewmodel/repository-hooks'
 import { useSyncEngine } from '@/viewmodel/sync-engine-hooks'
 
 export type TrashViewModel = {
@@ -17,6 +17,7 @@ export type TrashViewModel = {
 
 export function useTrashViewModel(): TrashViewModel {
   const repository = useNoteRepository()
+  const imageRepository = useImageRepository()
   const syncEngine = useSyncEngine()
   const liveQuery = useMemo(() => repository.liveTrashList(), [repository])
   const trashedNotes = useLiveQuery(liveQuery)
@@ -24,6 +25,14 @@ export function useTrashViewModel(): TrashViewModel {
   return {
     async purgeNote(noteId) {
       await repository.purgeNote(noteId)
+
+      try {
+        await imageRepository?.purgeNoteImages(noteId)
+      } catch {
+        // The image metadata remains discoverable. Repository boot compares all
+        // image rows with existing notes and retries this cleanup, so the note
+        // purge is not reported as failed after it has already committed.
+      }
     },
     async restoreNote(noteId) {
       await repository.restoreNote(noteId)

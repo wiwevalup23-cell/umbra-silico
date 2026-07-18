@@ -36,6 +36,9 @@
 /архивы/
 /проверить/
 *.zip
+*.apk
+*.aab
+/Иконка затмения с циркулем и буквой U/
 
 # Unused source asset retained only in the local design workspace
 /apps/app/src/assets/hero.png

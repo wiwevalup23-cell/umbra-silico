@@ -17,6 +17,11 @@ export const syncOperationTypeValues = [
   'folder.create',
   'folder.update',
   'folder.delete',
+  // Reserved for the future sync module; never enqueued by the local-only
+  // build. Image rows carry sync_status/deleted_at tombstones from which the
+  // sync module can derive these operations later.
+  'image.create',
+  'image.delete',
 ] as const
 
 export const syncOperationTypeSchema = z.enum(syncOperationTypeValues)

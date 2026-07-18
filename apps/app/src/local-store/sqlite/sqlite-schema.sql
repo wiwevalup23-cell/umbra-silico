@@ -75,6 +75,25 @@ create table if not exists automation_events (
   delivered_at text
 );
 
+create table if not exists images (
+  id text primary key,
+  note_id text not null,
+  user_id text not null,
+  source_file_name text,
+  mime_type text not null,
+  byte_size integer not null,
+  width integer not null,
+  height integer not null,
+  renditions text not null,
+  is_encrypted integer not null default 0,
+  encryption text,
+  created_at text not null,
+  deleted_at text,
+  local_revision integer not null default 0,
+  sync_status text not null default 'dirty',
+  device_id text not null
+);
+
 create index if not exists notes_updated_idx
 on notes (updated_at desc);
 
@@ -89,3 +108,9 @@ on folders (parent_folder_id);
 
 create index if not exists note_ops_status_idx
 on note_ops (status, created_at);
+
+create index if not exists images_note_idx
+on images (note_id, deleted_at);
+
+create index if not exists images_deleted_idx
+on images (deleted_at);

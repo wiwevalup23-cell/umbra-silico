@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { AppProviders } from '@/app/providers'
-import { EditorShell } from '@/ui/components/notes/EditorShell'
+import { EditorShell, type EditorShellApi } from '@/ui/components/notes/EditorShell'
 import { FolderTree } from '@/ui/components/notes/FolderTree'
 import { noteDragType } from '@/ui/components/notes/note-drag'
 import { LockModal } from '@/ui/components/notes/LockModal'
@@ -25,6 +25,7 @@ import {
   useActiveNoteViewModel,
   useFoldersViewModel,
   useLockModalViewModel,
+  useNoteImagesViewModel,
   useNotesViewModel,
   useSyncViewModel,
   useTrashViewModel,
@@ -89,6 +90,7 @@ function AppWorkspace() {
   const [notePendingMove, setNotePendingMove] = useState<NoteId | null>(null)
   const [mobileTab, setMobileTab] = useState<MobileTab>('notes')
   const creatingNoteRef = useRef(false)
+  const editorApiRef = useRef<EditorShellApi | null>(null)
 
   const foldersViewModel = useFoldersViewModel()
   const notesViewModel = useNotesViewModel({
@@ -98,6 +100,11 @@ function AppWorkspace() {
   const allNotesViewModel = useNotesViewModel()
   const trashViewModel = useTrashViewModel()
   const activeNoteViewModel = useActiveNoteViewModel()
+  const noteImagesViewModel = useNoteImagesViewModel(
+    activeNoteViewModel.note && !activeNoteViewModel.note.isLocked
+      ? activeNoteViewModel.note.id
+      : null,
+  )
   const syncViewModel = useSyncViewModel()
   const lockModalViewModel = useLockModalViewModel()
   const { settings, updateSetting } = useSettings()
@@ -236,6 +243,15 @@ function AppWorkspace() {
   const handleSelectTemplate = useCallback((templateId: NoteTemplateId) => {
     handleCreateNote(createNoteFromTemplate(templateId))
   }, [handleCreateNote])
+
+  const handleRevealImage = useCallback((imageId: string) => {
+    // On mobile the gallery lives in the Details tab; jump to the editor
+    // first so the scroll target is actually on screen.
+    setMobileTab('editor')
+    requestAnimationFrame(() => {
+      editorApiRef.current?.revealImage(imageId)
+    })
+  }, [])
 
   function findFolderName(nodes: FolderTreeNode[], folderId: string | null): string {
     if (!folderId) return 'All notes'
@@ -439,6 +455,13 @@ function AppWorkspace() {
                   onDragNoteStart={(noteId, event) => {
                     event.dataTransfer.effectAllowed = 'move'
                     event.dataTransfer.setData(noteDragType, noteId)
+                    const preview = document.createElement('div')
+                    preview.className = 'sn-note-drag-preview'
+                    preview.textContent = event.currentTarget.querySelector('strong')?.textContent
+                      ?? 'Move note'
+                    document.body.append(preview)
+                    event.dataTransfer.setDragImage(preview, 18, 18)
+                    window.setTimeout(() => preview.remove(), 0)
                   }}
                   onOpenLockedNote={(noteId) => {
                     setIsHomeView(false)
@@ -461,13 +484,16 @@ function AppWorkspace() {
 
           <section className="sn-editor-panel" aria-label="Editor">
             <EditorShell
+              editorApiRef={editorApiRef}
               hasRemote={syncViewModel.hasRemote}
+              imageResolver={noteImagesViewModel.resolver}
               note={activeNote}
               onChangeDocument={activeNoteViewModel.updateDocument}
               onBrowseTemplates={handleOpenTemplates}
               onChangeTitle={activeNoteViewModel.updateTitle}
               onCreateNote={handleCreateNote}
               isCreatingNote={isCreatingNote}
+              onImportImage={noteImagesViewModel.importImage}
               onRequestLock={notesViewModel.openLockModal}
               pendingOperations={visiblePendingOperations}
               syncStatus={syncViewModel.status}
@@ -496,8 +522,11 @@ function AppWorkspace() {
               <WorkspaceInspector
                 activeNote={activeNote}
                 folderName={activeFolderName}
+                imageResolver={noteImagesViewModel.resolver}
                 noteCount={notesViewModel.notes.length}
+                noteImages={noteImagesViewModel.images}
                 onChangeProperties={activeNoteViewModel.updateProperties}
+                onRevealImage={handleRevealImage}
                 onCollapse={isNarrow ? undefined : () => {
                   if (isCompactDesktop) {
                     setCompactInspectorOpen(false)

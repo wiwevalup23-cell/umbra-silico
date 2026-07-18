@@ -1,5 +1,11 @@
 import { createAutomationEventBus } from '@/automation'
-import { createLocalNotesStore, type LocalStoreRuntime } from '@/local-store'
+import { createCryptoService, createKeyring } from '@/crypto'
+import { createImageProcessor } from '@/images'
+import { createLocalStores, type LocalStoreRuntime } from '@/local-store'
+import {
+  DefaultImageRepository,
+  type DefaultImageRepositoryDependencies,
+} from '@/repository/image-repository'
 import {
   DefaultNoteRepository,
   type DefaultNoteRepositoryDependencies,
@@ -13,26 +19,63 @@ export type CreateNoteRepositoryOptions = {
   databaseName?: string
   clock?: DefaultNoteRepositoryDependencies['clock']
   idFactory?: DefaultNoteRepositoryDependencies['idFactory']
+  imageProcessor?: DefaultImageRepositoryDependencies['imageProcessor']
 }
 
-export async function createNoteRepository(options: CreateNoteRepositoryOptions) {
-  const localStore = await createLocalNotesStore({
+export type Repositories = {
+  noteRepository: DefaultNoteRepository
+  imageRepository: DefaultImageRepository
+}
+
+// Notes and images share one keyring (so a cached master key unlocks both)
+// and one local-store connection.
+export async function createRepositories(
+  options: CreateNoteRepositoryOptions,
+): Promise<Repositories> {
+  const { notesStore, imagesStore } = await createLocalStores({
     runtime: options.runtime,
     databaseName: options.databaseName,
   })
   const parsedUserId = userIdSchema.parse(options.userId)
   const automationEvents = createAutomationEventBus({
-    localStore,
+    localStore: notesStore,
     userId: parsedUserId,
     clock: options.clock,
   })
+  const cryptoService = createCryptoService()
+  const keyring = createKeyring(cryptoService)
 
-  return new DefaultNoteRepository({
+  const noteRepository = new DefaultNoteRepository({
     automationEvents,
-    localStore,
+    cryptoService,
+    keyring,
+    localStore: notesStore,
     userId: parsedUserId,
     deviceId: options.deviceId,
     clock: options.clock,
     idFactory: options.idFactory,
   })
+
+  const imageRepository = new DefaultImageRepository({
+    localImagesStore: imagesStore,
+    imageProcessor: options.imageProcessor ?? createImageProcessor(),
+    localNotesStore: notesStore,
+    cryptoService,
+    keyring,
+    userId: parsedUserId,
+    deviceId: options.deviceId,
+    clock: options.clock,
+  })
+
+  // Finish or roll back crash-interrupted image operations before any UI can
+  // observe the repositories. Locked notes converge to ciphertext; plain notes
+  // discard unused staged ciphertext; images of already-purged notes retry GC.
+  await imageRepository.recoverPendingImageOperations()
+
+  return { noteRepository, imageRepository }
+}
+
+export async function createNoteRepository(options: CreateNoteRepositoryOptions) {
+  const { noteRepository } = await createRepositories(options)
+  return noteRepository
 }

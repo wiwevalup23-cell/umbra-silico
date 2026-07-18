@@ -40,6 +40,9 @@ describe('phase 12 Tauri desktop packaging readiness', () => {
       title: 'Umbra Silico',
       width: 1200,
     })
+    expect((tauriConfig as { identifier?: string }).identifier).toBe(
+      'app.umbra-silico.notes',
+    )
     expect(tauriConfig.bundle).toMatchObject({
       active: true,
       targets: ['deb', 'appimage'],
@@ -59,10 +62,12 @@ describe('phase 12 Tauri desktop packaging readiness', () => {
     expect(tauriConfig.plugins).not.toHaveProperty('stronghold')
   })
 
-  it('grants only the desktop capabilities needed by phase 12 plugins', () => {
+  it('grants only the desktop capabilities needed by the shipped plugins', () => {
     const capability = readJson<{
       description: string
-      permissions: string[]
+      permissions: Array<
+        string | { identifier: string; allow: Array<{ path: string }> }
+      >
       windows: string[]
     }>('src-tauri/capabilities/default.json')
 
@@ -77,19 +82,33 @@ describe('phase 12 Tauri desktop packaging readiness', () => {
       'sql:allow-close',
       'stronghold:default',
       'stronghold:allow-remove-store-record',
+      'fs:allow-mkdir',
+      'fs:allow-exists',
+      'fs:allow-read-file',
+      'fs:allow-write-file',
+      'fs:allow-remove',
+      'fs:allow-rename',
+      {
+        identifier: 'fs:scope',
+        allow: [{ path: '$APPDATA/images' }, { path: '$APPDATA/images/**' }],
+      },
     ])
   })
 
-  it('registers SQL and Stronghold plugins in the native shell', () => {
+  it('registers SQL, Stronghold and FS plugins in the native shell', () => {
     const cargoToml = readFileSync('src-tauri/Cargo.toml', 'utf8')
     const libRs = readFileSync('src-tauri/src/lib.rs', 'utf8')
 
     expect(cargoToml).toContain('tauri-plugin-sql')
     expect(cargoToml).toContain('tauri-plugin-stronghold')
+    expect(cargoToml).toContain('tauri-plugin-fs')
     expect(cargoToml).toContain('argon2')
     expect(libRs).toContain('tauri_plugin_stronghold::Builder::new')
     expect(libRs).toContain('silicon-nostalgia-stronghold-v1')
     expect(libRs).toContain('tauri_plugin_sql::Builder::default')
+    expect(libRs).toContain('tauri_plugin_fs::init()')
+    expect(libRs).toContain('pool.begin()')
+    expect(libRs).toContain('execute_sqlite_transaction')
   })
 
   it('uses the same SQLite database name in Tauri runtime and SQL preload', () => {

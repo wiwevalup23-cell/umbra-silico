@@ -43,6 +43,7 @@ describe('phase 5 UI shell boundaries', () => {
       '@/crypto',
       '@/local-store',
       '@/platform',
+      '@/images',
       '@tauri-apps',
       'supabase',
     ]
@@ -67,8 +68,10 @@ describe('cross-layer boundary discipline', () => {
         '@/local-store',
         '@/crypto',
         '@/platform',
+        '@/images',
         '@/sync/',
         '@/repository/note-repository',
+        '@/repository/image-repository',
         '@supabase',
         'dexie',
         '@tauri-apps',
@@ -116,6 +119,33 @@ describe('cross-layer boundary discipline', () => {
         "from 'react'",
         'zustand',
         '@tauri-apps',
+      ]),
+    ).toEqual([])
+  })
+
+  it('keeps the image processing service self-contained', () => {
+    const files = import.meta.glob<string>('/src/images/**/*.{ts,tsx}', {
+      eager: true,
+      import: 'default',
+      query: '?raw',
+    })
+
+    // The image processor is a pure browser-API service (canvas,
+    // createImageBitmap): no React, no stores, no other layers.
+    expect(
+      findImportViolations(files, [
+        '@/ui',
+        '@/viewmodel',
+        '@/repository',
+        '@/local-store',
+        '@/sync',
+        '@/crypto',
+        '@/platform',
+        "from 'react'",
+        'zustand',
+        'dexie',
+        '@tauri-apps',
+        'supabase',
       ]),
     ).toEqual([])
   })

@@ -13,11 +13,19 @@ export type {
   LockModalViewModel,
 } from './lock-modal-view-model'
 export { useLockModalViewModel } from './lock-modal-view-model'
+export type { NoteImagesViewModel } from './note-images-view-model'
+export { useNoteImagesViewModel } from './note-images-view-model'
+export type { ImageUrlCache, ImageUrlCacheOptions } from './image-url-cache'
+export { createImageUrlCache } from './image-url-cache'
 export type { NotesViewModel } from './notes-view-model'
 export type { NotesViewModelDependencies } from './notes-view-model'
 export { createNotesViewModelDependencies } from './notes-view-model'
 export { useNotesViewModel } from './notes-view-model'
-export { useNoteRepository } from './repository-hooks'
+export {
+  useImageRepository,
+  useImageSourceResolver,
+  useNoteRepository,
+} from './repository-hooks'
 export { RepositoryProvider } from './repository-provider'
 export type { RepositoryProviderProps } from './repository-provider'
 export { useSyncEngine } from './sync-engine-hooks'

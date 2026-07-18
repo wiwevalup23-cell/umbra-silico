@@ -485,3 +485,25 @@
     font-size: 52px;
   }
 }
+
+@media (max-width: 959px) {
+  /* Image blocks: comfortable touch targets */
+  .sn-image-block__resize-handle {
+    width: 22px;
+    height: 22px;
+  }
+
+  .sn-image-block__toolbar button {
+    min-width: 40px;
+    min-height: 40px;
+  }
+
+  .sn-image-lightbox {
+    padding: 16px;
+  }
+
+  .sn-image-lightbox__close {
+    min-width: 44px;
+    min-height: 44px;
+  }
+}

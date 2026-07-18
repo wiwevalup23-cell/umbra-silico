@@ -21,6 +21,7 @@ export type UiIconName =
   | 'gripVertical'
   | 'history'
   | 'home'
+  | 'image'
   | 'info'
   | 'library'
   | 'link'
@@ -61,6 +62,7 @@ const paths: Record<UiIconName, string[]> = {
   gripVertical: ['M9 5h.01', 'M9 12h.01', 'M9 19h.01', 'M15 5h.01', 'M15 12h.01', 'M15 19h.01'],
   history: ['M3 12a9 9 0 1 0 3-6.7', 'M3 4v5h5', 'M12 7v5l3 2'],
   home: ['M3 11.5 12 4l9 7.5', 'M5 10.5V20h5v-5h4v5h5v-9.5'],
+  image: ['M4 5h16v14H4z', 'M4 15.5l4.5-4.5 3.5 3.5 3.5-3.5 4.5 4.5', 'M9.2 9.2h.01'],
   info: ['M12 17v-5', 'M12 8h.01', 'M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0'],
   library: ['M4 4h4v16H4z', 'M10 4h4v16h-4z', 'M16.5 5 20 4l2.5 15-3.5 1z', 'M5.5 8h1', 'M11.5 8h1'],
   link: ['M10 13a5 5 0 0 0 7.1 0l2-2a5 5 0 0 0-7.1-7.1l-1.1 1.1', 'M14 11a5 5 0 0 0-7.1 0l-2 2A5 5 0 0 0 12 20.1l1.1-1.1'],

@@ -15,9 +15,15 @@ export {
 } from './block-actions'
 export {
   Callout,
+  ImageBlock,
+  normalizeImageAlign,
+  normalizeImageWidthPct,
   TaskListExtensions,
   ToggleExtensions,
   type CalloutAttrs,
   type CalloutTone,
+  type ImageAlign,
+  type ImageBlockAttrs,
 } from './extensions'
+export { ImageSourceContext } from './image-source-context'
 export { turnInto, type TurnIntoTarget } from './turn-into'

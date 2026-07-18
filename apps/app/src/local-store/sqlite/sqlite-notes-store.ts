@@ -20,7 +20,11 @@ import {
   rowToNote,
   rowToOperation,
 } from '@/local-store/serialization'
-import type { SqlBindValue, SqlDatabase } from '@/local-store/sqlite/sqlite-driver'
+import type {
+  SqlBindValue,
+  SqlDatabase,
+  SqlStatement,
+} from '@/local-store/sqlite/sqlite-driver'
 import { runSqlStatements } from '@/local-store/sqlite/sqlite-driver'
 import { loadTauriSqliteDatabase } from '@/local-store/sqlite/tauri-sqlite-driver'
 import sqliteSchema from '@/local-store/sqlite/sqlite-schema.sql?raw'
@@ -239,18 +243,18 @@ export class SqliteNotesStore implements LocalNotesStore {
   }
 
   async putNoteWithOp(note: LocalNote, op: SyncOperation) {
-    await this.inTransaction(async () => {
-      await this.upsertNote(note)
-      await this.insertOperation(op)
-    })
+    await this.executeTransaction([
+      this.noteUpsertStatement(note),
+      this.operationInsertStatement(op),
+    ])
   }
 
   async putNoteWithOpReplacingNoteOps(note: LocalNote, op: SyncOperation) {
-    await this.inTransaction(async () => {
-      await this.upsertNote(note)
-      await this.db.execute('delete from note_ops where note_id = $1', [note.id])
-      await this.insertOperation(op)
-    })
+    await this.executeTransaction([
+      this.noteUpsertStatement(note),
+      { query: 'delete from note_ops where note_id = $1', bindValues: [note.id] },
+      this.operationInsertStatement(op),
+    ])
   }
 
   async hardDeleteNote(id: NoteId) {
@@ -267,15 +271,15 @@ export class SqliteNotesStore implements LocalNotesStore {
   }
 
   async softDeleteNoteWithOp(id: NoteId, deletedAt: string, op: SyncOperation) {
-    await this.inTransaction(async () => {
-      await this.db.execute(
-        `update notes
+    await this.executeTransaction([
+      {
+        query: `update notes
          set deleted_at = $1, sync_status = $2
          where id = $3`,
-        [deletedAt, 'dirty', id],
-      )
-      await this.insertOperation(op)
-    })
+        bindValues: [deletedAt, 'dirty', id],
+      },
+      this.operationInsertStatement(op),
+    ])
   }
 
   async listFolders() {
@@ -441,8 +445,13 @@ export class SqliteNotesStore implements LocalNotesStore {
   }
 
   private async upsertNote(note: LocalNote) {
-    await this.db.execute(
-      `insert into notes (
+    const statement = this.noteUpsertStatement(note)
+    await this.db.execute(statement.query, statement.bindValues)
+  }
+
+  private noteUpsertStatement(note: LocalNote): SqlStatement {
+    return {
+      query: `insert into notes (
          id, user_id, schema_version, title, preview, is_locked, document,
          encrypted_payload, encryption, created_at, updated_at, deleted_at,
          parent_folder_id, local_revision, remote_revision, base_remote_revision,
@@ -472,25 +481,40 @@ export class SqliteNotesStore implements LocalNotesStore {
          sync_status = excluded.sync_status,
          last_op_id = excluded.last_op_id,
          device_id = excluded.device_id`,
-      noteBindValues(noteToRow(note)),
-    )
+      bindValues: noteBindValues(noteToRow(note)),
+    }
   }
 
   private async insertOperation(op: SyncOperation) {
-    await this.db.execute(
-      `insert into note_ops (
+    const statement = this.operationInsertStatement(op)
+    await this.db.execute(statement.query, statement.bindValues)
+  }
+
+  private operationInsertStatement(op: SyncOperation): SqlStatement {
+    return {
+      query: `insert into note_ops (
          op_id, note_id, user_id, device_id, type, payload,
          base_remote_revision, created_at, attempt_count, last_error, status
        )
        values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)`,
-      opBindValues(operationToRow(assertOperation(op))),
-    )
+      bindValues: opBindValues(operationToRow(assertOperation(op))),
+    }
   }
 
-  private async inTransaction(action: () => Promise<void>) {
+  private async executeTransaction(statements: SqlStatement[]) {
+    if (this.db.executeTransaction) {
+      await this.db.executeTransaction(statements)
+      return
+    }
+
+    // Non-Tauri adapters used by contract tests retain the callback-style
+    // transaction fallback. The desktop adapter always uses one native SQLx
+    // transaction so BEGIN/COMMIT cannot be split across pooled connections.
     await this.db.execute('begin immediate')
     try {
-      await action()
+      for (const statement of statements) {
+        await this.db.execute(statement.query, statement.bindValues)
+      }
       await this.db.execute('commit')
     } catch (error) {
       await this.db.execute('rollback')
@@ -504,8 +528,23 @@ export function createSqliteNotesStore(db: SqlDatabase): SqliteNotesStore {
 }
 
 export async function initializeSqliteNotesStore(db: SqlDatabase): Promise<void> {
-  await runSqlStatements(db, sqliteSchema)
+  const schemaStatements = sqliteSchema
+    .split(';')
+    .map((statement) => statement.trim())
+    .filter(Boolean)
+  const tableStatements = schemaStatements.filter(
+    (statement) => !/^create\s+(?:unique\s+)?index\b/i.test(statement),
+  )
+  const indexStatements = schemaStatements.filter((statement) =>
+    /^create\s+(?:unique\s+)?index\b/i.test(statement),
+  )
+
+  // Existing databases can predate columns used by newer indexes. Create the
+  // tables first, migrate their columns, and only then create dependent
+  // indexes; otherwise SQLite aborts startup before migrations can run.
+  await runSqlStatements(db, tableStatements.join(';'))
   await ensureSqliteNotesMigrations(db)
+  await runSqlStatements(db, indexStatements.join(';'))
 }
 
 async function ensureSqliteNotesMigrations(db: SqlDatabase): Promise<void> {

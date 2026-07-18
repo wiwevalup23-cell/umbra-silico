@@ -17,6 +17,7 @@ import {
   parseNoteDocument,
   type NoteDocument,
 } from '@/shared/contracts/document'
+import type { ImageSourceResolver } from '@/shared/contracts/image'
 import type {
   NoteDetail,
   NoteId,
@@ -25,6 +26,9 @@ import type {
 import {
   Callout,
   createDebouncedAutosave,
+  getCurrentTopLevelBlockRange,
+  ImageBlock,
+  ImageSourceContext,
   TaskListExtensions,
   ToggleExtensions,
   turnInto,
@@ -37,6 +41,23 @@ import {
   getPersistencePresentation,
 } from '@/ui/note-presentation'
 
+// Structural mirror of the repository's ImportedImage: UI stays decoupled
+// from the repository layer.
+export type ImportedImageInfo = {
+  imageId: string
+  width: number
+  height: number
+}
+
+export type ImportImageHandler = (
+  noteId: NoteId,
+  file: File,
+) => Promise<ImportedImageInfo>
+
+export type EditorShellApi = {
+  revealImage(imageId: string): void
+}
+
 type EditorShellProps = {
   hasRemote?: boolean
   note: NoteDetail | null
@@ -48,6 +69,9 @@ type EditorShellProps = {
   onRequestLock: (noteId: NoteId) => void
   pendingOperations: number
   syncStatus: string
+  editorApiRef?: { current: EditorShellApi | null }
+  imageResolver?: ImageSourceResolver | null
+  onImportImage?: ImportImageHandler | null
 }
 
 type AutosaveState = 'saved' | 'queued' | 'saving' | 'error'
@@ -91,6 +115,7 @@ function isSameContent(left: unknown, right: unknown): boolean {
 
 type EditorToolbarProps = {
   editor: ReturnType<typeof useEditor> | null
+  onInsertImage?: (() => void) | null
 }
 
 const blockIndentMin = 0
@@ -445,7 +470,7 @@ function MenuButton({
   )
 }
 
-function EditorToolbar({ editor }: EditorToolbarProps) {
+function EditorToolbar({ editor, onInsertImage = null }: EditorToolbarProps) {
   const [isMoreMenuOpen, setIsMoreMenuOpen] = useState(false)
   const moreMenuRef = useRef<HTMLDivElement>(null)
   const state = useEditorState({
@@ -609,6 +634,17 @@ function EditorToolbar({ editor }: EditorToolbarProps) {
         >
           <span className="sn-editor-tool-label">Quote</span>
         </ToolbarButton>
+        {onInsertImage ? (
+          <ToolbarButton
+            disabled={!editor}
+            label="Insert image"
+            onPress={() => {
+              runCommand(() => onInsertImage())
+            }}
+          >
+            <UiIcon name="image" />
+          </ToolbarButton>
+        ) : null}
       </div>
       <span className="sn-editor-toolbar__divider" aria-hidden="true" />
 
@@ -758,6 +794,17 @@ function EditorToolbar({ editor }: EditorToolbarProps) {
                 >
                   Callout
                 </MenuButton>
+                {onInsertImage ? (
+                  <MenuButton
+                    disabled={!editor}
+                    label="Insert image"
+                    onPress={() => {
+                      runCommand(() => onInsertImage())
+                    }}
+                  >
+                    Image
+                  </MenuButton>
+                ) : null}
               </div>
             </div>
 
@@ -876,6 +923,15 @@ type EditableNoteEditorProps = {
   onChangeDocument: (noteId: NoteId, document: NoteDocument) => Promise<void>
   onChangeTitle: (noteId: NoteId, title: string) => Promise<void>
   onRequestLock: (noteId: NoteId) => void
+  editorApiRef?: { current: EditorShellApi | null }
+  imageResolver?: ImageSourceResolver | null
+  onImportImage?: ImportImageHandler | null
+}
+
+const acceptedImageTypes = 'image/jpeg,image/png,image/webp,image/gif,image/avif'
+
+function pickImageFiles(files: FileList | null | undefined): File[] {
+  return files ? [...files].filter((file) => file.type.startsWith('image/')) : []
 }
 
 /**
@@ -891,12 +947,21 @@ function EditableNoteEditor({
   onChangeDocument,
   onChangeTitle,
   onRequestLock,
+  editorApiRef,
+  imageResolver = null,
+  onImportImage = null,
 }: EditableNoteEditorProps) {
   const [titleDraft, setTitleDraft] = useState(note.title)
   const [autosaveState, setAutosaveState] = useState<AutosaveState>('saved')
+  const [importNotice, setImportNotice] = useState<string | null>(null)
+  const [importingCount, setImportingCount] = useState(0)
   const didFocusEmptyNoteRef = useRef(false)
   const onChangeDocumentRef = useRef(onChangeDocument)
   const onChangeTitleRef = useRef(onChangeTitle)
+  const fileInputRef = useRef<HTMLInputElement>(null)
+  const insertImageFilesRef = useRef<
+    ((files: File[], dropPos: number | null) => Promise<void>) | null
+  >(null)
   const documentAutosave = useMemo(
     () =>
       createDebouncedAutosave<DocumentAutosavePayload>({
@@ -952,6 +1017,34 @@ function EditableNoteEditor({
 
         return false
       },
+      handlePaste(_view, event) {
+        const images = pickImageFiles(event.clipboardData?.files)
+
+        if (images.length === 0) {
+          return false
+        }
+
+        event.preventDefault()
+        void insertImageFilesRef.current?.(images, null)
+        return true
+      },
+      handleDrop(view, event, _slice, moved) {
+        // `moved` covers blocks dragged within the editor; only external
+        // file drops become image imports.
+        const images = moved ? [] : pickImageFiles(event.dataTransfer?.files)
+
+        if (images.length === 0) {
+          return false
+        }
+
+        event.preventDefault()
+        const dropPosition = view.posAtCoords({
+          left: event.clientX,
+          top: event.clientY,
+        })
+        void insertImageFilesRef.current?.(images, dropPosition?.pos ?? null)
+        return true
+      },
     },
     extensions: [
       StarterKit.configure({
@@ -971,6 +1064,7 @@ function EditableNoteEditor({
       ...TaskListExtensions,
       ...ToggleExtensions,
       Callout,
+      ImageBlock,
       BlockLayout,
       PageLayout,
     ],
@@ -1006,6 +1100,102 @@ function EditableNoteEditor({
       title: 'Privacy: Local note · not encrypted',
     },
   ]
+
+  const canInsertImages = Boolean(onImportImage)
+
+  async function insertImageFiles(files: File[], dropPos: number | null) {
+    if (!editor || !onImportImage) {
+      return
+    }
+
+    let insertAt = dropPos
+
+    for (const file of files) {
+      setImportingCount((count) => count + 1)
+
+      try {
+        // The blob is fully persisted before the node lands in the document,
+        // so the document only ever references stored images.
+        const imported = await onImportImage(note.id, file)
+        const attrs = {
+          imageId: imported.imageId,
+          naturalWidth: imported.width,
+          naturalHeight: imported.height,
+        }
+
+        if (insertAt !== null) {
+          editor.chain().focus().insertImageBlockAt(insertAt, attrs).run()
+          insertAt = null
+        } else {
+          const range = getCurrentTopLevelBlockRange(editor)
+          const position = range ? range.to : editor.state.doc.content.size
+          editor.chain().focus().insertImageBlockAt(position, attrs).run()
+        }
+      } catch (error) {
+        setImportNotice(
+          error instanceof Error ? error.message : 'The image could not be added.',
+        )
+      } finally {
+        setImportingCount((count) => Math.max(0, count - 1))
+      }
+    }
+  }
+
+  insertImageFilesRef.current = canInsertImages ? insertImageFiles : null
+
+  function openImagePicker() {
+    fileInputRef.current?.click()
+  }
+
+  useEffect(() => {
+    if (!editorApiRef) {
+      return
+    }
+
+    editorApiRef.current = {
+      revealImage(imageId) {
+        if (!editor) {
+          return
+        }
+
+        let foundPosition: number | null = null
+
+        editor.state.doc.descendants((node, position) => {
+          if (foundPosition !== null) {
+            return false
+          }
+
+          if (node.type.name === 'imageBlock' && node.attrs.imageId === imageId) {
+            foundPosition = position
+            return false
+          }
+
+          return true
+        })
+
+        if (foundPosition === null) {
+          return
+        }
+
+        editor.commands.setNodeSelection(foundPosition)
+        const dom = editor.view.nodeDOM(foundPosition)
+
+        if (dom instanceof HTMLElement) {
+          dom.scrollIntoView({ behavior: 'smooth', block: 'center' })
+        }
+
+        // The node view listens for this and drives the highlight from
+        // React state, so its own re-renders can't wipe the class.
+        document.dispatchEvent(
+          new CustomEvent('sn-image-flash', { detail: { imageId } }),
+        )
+      },
+    }
+
+    return () => {
+      editorApiRef.current = null
+    }
+  }, [editor, editorApiRef])
 
   useEffect(() => {
     onChangeDocumentRef.current = onChangeDocument
@@ -1177,22 +1367,69 @@ function EditableNoteEditor({
         </div>
       </header>
 
-      <EditorToolbar editor={editor} />
+      <EditorToolbar
+        editor={editor}
+        onInsertImage={canInsertImages ? openImagePicker : null}
+      />
 
-      <div
-        className="sn-editor-paper sn-editor-paper--editable"
-        style={
-          {
-            '--sn-page-footer-offset': `${pageLayout.pageFooterOffset}px`,
-            '--sn-page-header-offset': `${pageLayout.pageHeaderOffset}px`,
-          } as CSSProperties
-        }
-      >
-        <div className="sn-page-layout-frame">
-          <BlockHandle editor={editor} />
-          <EditorContent className="sn-editor-content" editor={editor} />
+      {canInsertImages ? (
+        <input
+          accept={acceptedImageTypes}
+          aria-label="Add images"
+          hidden
+          multiple
+          onChange={(event) => {
+            const files = pickImageFiles(event.target.files)
+            event.target.value = ''
+
+            if (files.length > 0) {
+              void insertImageFiles(files, null)
+            }
+          }}
+          ref={fileInputRef}
+          type="file"
+        />
+      ) : null}
+
+      {importingCount > 0 || importNotice ? (
+        <div aria-live="polite" className="sn-editor-notice" role="status">
+          {importingCount > 0 ? (
+            <span className="sn-editor-notice__busy">Importing image…</span>
+          ) : null}
+          {importNotice ? (
+            <>
+              <span>{importNotice}</span>
+              <button
+                aria-label="Dismiss message"
+                onClick={() => setImportNotice(null)}
+                type="button"
+              >
+                <UiIcon name="close" />
+              </button>
+            </>
+          ) : null}
         </div>
-      </div>
+      ) : null}
+
+      <ImageSourceContext.Provider value={imageResolver}>
+        <div
+          className="sn-editor-paper sn-editor-paper--editable"
+          style={
+            {
+              '--sn-page-footer-offset': `${pageLayout.pageFooterOffset}px`,
+              '--sn-page-header-offset': `${pageLayout.pageHeaderOffset}px`,
+            } as CSSProperties
+          }
+        >
+          <div className="sn-page-layout-frame">
+            <BlockHandle
+              editor={editor}
+              onInsertImage={canInsertImages ? openImagePicker : null}
+            />
+            <EditorContent className="sn-editor-content" editor={editor} />
+          </div>
+        </div>
+      </ImageSourceContext.Provider>
     </div>
   )
 }
@@ -1208,6 +1445,9 @@ export function EditorShell({
   onRequestLock,
   pendingOperations,
   syncStatus,
+  editorApiRef,
+  imageResolver = null,
+  onImportImage = null,
 }: EditorShellProps) {
   if (!note) {
     return (
@@ -1298,10 +1538,13 @@ export function EditorShell({
         </div>
       ) : (
         <EditableNoteEditor
+          editorApiRef={editorApiRef}
+          imageResolver={imageResolver}
           key={note.id}
           note={note}
           onChangeDocument={onChangeDocument}
           onChangeTitle={onChangeTitle}
+          onImportImage={onImportImage}
           onRequestLock={onRequestLock}
         />
       )}

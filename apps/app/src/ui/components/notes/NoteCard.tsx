@@ -56,6 +56,7 @@ export function NoteCard({
 }: NoteCardProps) {
   const actionsRef = useRef<HTMLDivElement>(null)
   const [isActionsOpen, setActionsOpen] = useState(false)
+  const [isDragging, setDragging] = useState(false)
   const title = note.title.trim()
   const isUntitled = title.length === 0 || title.toLocaleLowerCase() === 'untitled'
   const displayTitle = isUntitled ? 'Untitled' : title
@@ -97,8 +98,13 @@ export function NoteCard({
   return (
     <div
       className="sn-note-card-wrap"
+      data-dragging={isDragging}
       draggable={draggable}
-      onDragStart={(event) => onDragStart?.(note.id, event)}
+      onDragEnd={() => setDragging(false)}
+      onDragStart={(event) => {
+        setDragging(true)
+        onDragStart?.(note.id, event)
+      }}
       style={{ '--sn-note-index': index } as CSSProperties}
     >
       <button

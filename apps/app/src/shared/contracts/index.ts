@@ -60,6 +60,25 @@ export {
 } from './document-v1'
 export type { DocumentMigration, DocumentSchemaVersion } from './document-v1'
 export {
+  collectImageIdsFromDocument,
+  imageBlockNodeName,
+  imageIdSchema,
+  imageRenditionInfoSchema,
+  imageTierSchema,
+  imageTierValues,
+  localImageMetaSchema,
+  parseLocalImageMeta,
+  toNoteImageListItem,
+} from './image'
+export type {
+  ImageId,
+  ImageRenditionInfo,
+  ImageSourceResolver,
+  ImageTier,
+  LocalImageMeta,
+  NoteImageListItem,
+} from './image'
+export {
   isJsonValue,
   jsonObjectSchema,
   jsonValueSchema,

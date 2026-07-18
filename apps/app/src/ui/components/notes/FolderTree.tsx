@@ -35,6 +35,7 @@ function FolderNode({
 }: FolderNodeProps) {
   const [isExpanded, setExpanded] = useState(true)
   const [isActionsOpen, setActionsOpen] = useState(false)
+  const [isDropTarget, setDropTarget] = useState(false)
   const actionsRef = useRef<HTMLDivElement>(null)
   const isActive = activeFolderId === node.folder.id
   const hasChildren = node.children.length > 0
@@ -61,13 +62,25 @@ function FolderNode({
       <div
         className="sn-folder-tree__row"
         data-active={isActive}
+        data-drop-target={isDropTarget}
         data-expanded={isExpanded}
-        onDragOver={(event) => event.preventDefault()}
+        onDragLeave={(event) => {
+          if (!event.currentTarget.contains(event.relatedTarget as Node | null)) {
+            setDropTarget(false)
+          }
+        }}
+        onDragOver={(event) => {
+          event.preventDefault()
+          event.dataTransfer.dropEffect = 'move'
+          setDropTarget(true)
+        }}
         onDrop={(event) => {
           const noteId = readDraggedNoteId(event)
+          setDropTarget(false)
 
           if (noteId) {
             event.preventDefault()
+            event.stopPropagation()
             onMoveNoteToFolder(noteId, node.folder.id)
           }
         }}

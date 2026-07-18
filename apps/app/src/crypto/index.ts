@@ -1,6 +1,7 @@
 export type {
   CreateMasterKeyResult,
   CryptoService,
+  EncryptBinaryResult,
   EncryptNoteResult,
 } from './crypto-service'
 export { createCryptoService, WebCryptoService } from './crypto-service'

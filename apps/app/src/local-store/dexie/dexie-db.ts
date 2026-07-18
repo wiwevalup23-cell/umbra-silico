@@ -1,8 +1,10 @@
-import Dexie, { type EntityTable } from 'dexie'
+import Dexie, { type EntityTable, type Table } from 'dexie'
 import type {
   StoredAutomationEventRow,
   StoredCryptoProfileRow,
   StoredFolderRow,
+  StoredImageBlobRow,
+  StoredImageMetaRow,
   StoredNoteRow,
   StoredSyncOperationRow,
   StoredSyncStateRow,
@@ -15,6 +17,9 @@ export type SiliconDexieDatabase = Dexie & {
   syncState: EntityTable<StoredSyncStateRow, 'key'>
   cryptoProfiles: EntityTable<StoredCryptoProfileRow, 'userId'>
   automationEvents: EntityTable<StoredAutomationEventRow, 'id'>
+  images: EntityTable<StoredImageMetaRow, 'id'>
+  // Primary key is the compound [imageId+tier] declared in the schema string.
+  imageBlobs: Table<StoredImageBlobRow, [string, string]>
 }
 
 export function createDexieDatabase(name = 'silicon-nostalgia'): SiliconDexieDatabase {
@@ -37,6 +42,18 @@ export function createDexieDatabase(name = 'silicon-nostalgia'): SiliconDexieDat
     syncState: 'key',
     cryptoProfiles: 'userId',
     automationEvents: 'id, userId, noteId, eventType, createdAt, deliveredAt',
+  })
+
+  db.version(3).stores({
+    notes:
+      'id, userId, updatedAt, deletedAt, parentFolderId, isLocked, syncStatus, remoteRevision',
+    folders: 'id, userId, parentFolderId, deletedAt, updatedAt',
+    noteOps: 'opId, noteId, userId, status, createdAt',
+    syncState: 'key',
+    cryptoProfiles: 'userId',
+    automationEvents: 'id, userId, noteId, eventType, createdAt, deliveredAt',
+    images: 'id, noteId, deletedAt, createdAt',
+    imageBlobs: '[imageId+tier], imageId',
   })
 
   return db

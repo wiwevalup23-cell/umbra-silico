@@ -52,4 +52,37 @@ describe('WebCryptoService', () => {
       }),
     ).rejects.toThrow()
   })
+
+  it('round-trips binary payloads with per-payload DEKs', async () => {
+    const cryptoService = new WebCryptoService()
+    const masterKey = await globalThis.crypto.subtle.generateKey(
+      { name: 'AES-GCM', length: 256 },
+      true,
+      ['encrypt', 'decrypt'],
+    )
+    const plaintext = new Uint8Array(1024).map((_, index) => index % 251)
+
+    const encrypted = await cryptoService.encryptBinaryPayload(plaintext, masterKey)
+
+    expect(encrypted.encryption).toMatchObject({
+      version: 1,
+      algorithm: 'AES-GCM-256',
+    })
+    expect(encrypted.ciphertext).not.toEqual(plaintext)
+
+    const decrypted = await cryptoService.decryptBinaryPayload(
+      encrypted.ciphertext,
+      encrypted.encryption,
+      masterKey,
+    )
+
+    expect(decrypted).toEqual(plaintext)
+
+    const tampered = encrypted.ciphertext.slice()
+    tampered[0] = tampered[0] ^ 0xff
+
+    await expect(
+      cryptoService.decryptBinaryPayload(tampered, encrypted.encryption, masterKey),
+    ).rejects.toThrow()
+  })
 })

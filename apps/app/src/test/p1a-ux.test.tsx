@@ -3,7 +3,12 @@ import { act, type ReactNode } from 'react'
 import { createRoot } from 'react-dom/client'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { backgroundImageOptions } from '@/shared/backgrounds'
-import { notePropertiesSchema } from '@/shared/contracts'
+import {
+  deviceIdSchema,
+  folderIdSchema,
+  notePropertiesSchema,
+  userIdSchema,
+} from '@/shared/contracts'
 import { FolderTree, StatusPicker } from '@/ui/components/notes'
 
 ;(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true
@@ -139,6 +144,60 @@ describe('P1-A visual and interaction contract', () => {
     expect(folderTreeSource).toContain('<UiIcon name="library" />')
   })
 
+  it('drops a dragged note onto the intended folder with move feedback', () => {
+    const onMoveNoteToFolder = vi.fn()
+    const rendered = renderUi(
+      <FolderTree
+        activeFolderId={null}
+        nodes={[{
+          folder: {
+            id: folderIdSchema.parse('folder_kraslab'),
+            userId: userIdSchema.parse('user_local'),
+            name: 'KRASLAB',
+            parentFolderId: null,
+            sortIndex: 0,
+            createdAt: '2026-07-18T00:00:00.000Z',
+            updatedAt: '2026-07-18T00:00:00.000Z',
+            deletedAt: null,
+            localRevision: 1,
+            syncStatus: 'synced',
+            deviceId: deviceIdSchema.parse('device_local'),
+          },
+          children: [],
+          noteCount: 0,
+        }]}
+        onCreateFolder={vi.fn()}
+        onDeleteFolder={vi.fn()}
+        onMoveNoteToFolder={onMoveNoteToFolder}
+        onRenameFolder={vi.fn()}
+        onSelectFolder={vi.fn()}
+      />,
+    )
+    cleanupTasks.push(rendered.cleanup)
+    const row = rendered.container.querySelector<HTMLElement>('.sn-folder-tree__row')
+    const dataTransfer = {
+      dropEffect: 'none',
+      getData: vi.fn(() => 'note_dragged'),
+    }
+
+    act(() => {
+      const dragOver = new Event('dragover', { bubbles: true, cancelable: true })
+      Object.defineProperty(dragOver, 'dataTransfer', { value: dataTransfer })
+      row?.dispatchEvent(dragOver)
+    })
+    expect(row?.dataset.dropTarget).toBe('true')
+    expect(dataTransfer.dropEffect).toBe('move')
+
+    act(() => {
+      const drop = new Event('drop', { bubbles: true, cancelable: true })
+      Object.defineProperty(drop, 'dataTransfer', { value: dataTransfer })
+      row?.dispatchEvent(drop)
+    })
+    expect(onMoveNoteToFolder).toHaveBeenCalledOnce()
+    expect(onMoveNoteToFolder).toHaveBeenCalledWith('note_dragged', 'folder_kraslab')
+    expect(row?.dataset.dropTarget).toBe('false')
+  })
+
   it('uses the selected workspace background behind both player and editor paper', () => {
     const css = readFileSync(
       `${process.cwd()}/src/ui/styles/silicon-nostalgia.css`,
@@ -203,8 +262,9 @@ describe('P1-A visual and interaction contract', () => {
     expect(blockHandle).toContain('lineMidpoint - frameRect.top')
     expect(blockHandle).toContain("scrollContainer?.addEventListener('scroll'")
     expect(logo).toContain('translate(142.8,380.5)')
-    expect(logo).toContain('<circle cx="240" cy="250" r="195" fill="#141414" />')
-    expect(logo).not.toContain('<polygon')
+    expect(logo).toContain('<polygon id="corona"')
+    expect(logo).toContain('<use href="#corona" fill="#141414"')
+    expect(logo).not.toContain('<circle cx="240" cy="250" r="195"')
     expect(logo).not.toContain('translate(142.8,387.29)')
   })
 })

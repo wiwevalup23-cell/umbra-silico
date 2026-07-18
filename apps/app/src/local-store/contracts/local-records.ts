@@ -21,6 +21,35 @@ export type StoredNoteRow = {
   deviceId: string
 }
 
+export type StoredImageMetaRow = {
+  id: string
+  noteId: string
+  userId: string
+  sourceFileName: string | null
+  mimeType: string
+  byteSize: number
+  width: number
+  height: number
+  renditions: string
+  isEncrypted: 0 | 1
+  encryption: string | null
+  createdAt: string
+  deletedAt: string | null
+  localRevision: number
+  syncStatus: string
+  deviceId: string
+}
+
+// Dexie-only row: browsers store the binary payload straight in IndexedDB.
+// Bytes are stored as ArrayBuffer (not Blob) — structured-clone of Blobs is
+// flaky across environments, and the mime type travels alongside the bytes.
+export type StoredImageBlobRow = {
+  imageId: string
+  tier: string
+  mimeType: string
+  bytes: ArrayBuffer
+}
+
 export type StoredFolderRow = {
   id: string
   userId: string

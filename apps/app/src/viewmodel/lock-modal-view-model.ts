@@ -5,7 +5,7 @@ import {
   createStaticLiveQuery,
   useLiveQuery,
 } from '@/viewmodel/live-query-view-model'
-import { useNoteRepository } from '@/viewmodel/repository-hooks'
+import { useImageRepository, useNoteRepository } from '@/viewmodel/repository-hooks'
 import { useSyncEngine } from '@/viewmodel/sync-engine-hooks'
 
 export type LockModalMode = 'lock' | 'unlock'
@@ -23,6 +23,7 @@ export type LockModalViewModel = {
 
 export function useLockModalViewModel(): LockModalViewModel {
   const repository = useNoteRepository()
+  const imageRepository = useImageRepository()
   const syncEngine = useSyncEngine()
   const noteId = useAppUiStore((state) => state.lockModalNoteId)
   const closeLockModal = useAppUiStore((state) => state.closeLockModal)
@@ -61,9 +62,35 @@ export function useLockModalViewModel(): LockModalViewModel {
       try {
         if (mode === 'unlock') {
           await repository.unlockNoteForSession(noteId, { masterPassword })
+
+          // Self-heal: a previous lock that crashed mid-way may have left
+          // plaintext image tiers behind; finish encrypting them now that the
+          // master key is cached. Never fatal for the unlock itself.
+          try {
+            await imageRepository?.unlockSweep(noteId)
+          } catch {
+            // The next unlock retries the sweep.
+          }
+
           setActiveNote(noteId)
         } else {
-          await repository.lockNote(noteId, { masterPassword })
+          const credentials = { masterPassword }
+
+          // Ciphertext for every attachment is made durable before the note
+          // lock is published. If the note write fails, plaintext remains the
+          // active representation and the preparation is rolled back.
+          await imageRepository?.prepareNoteImagesLock(noteId, credentials)
+
+          try {
+            await repository.lockNote(noteId, credentials)
+          } catch (error) {
+            await imageRepository?.rollbackPreparedNoteImagesLock(noteId)
+            throw error
+          }
+
+          // Promotion uses a transaction/rename and is restart-recoverable:
+          // repository boot completes an interruption after the note write.
+          await imageRepository?.commitPreparedNoteImagesLock(noteId)
           syncEngine?.requestSync('outbox-change')
         }
 

@@ -1,11 +1,17 @@
 import { useMemo } from 'react'
-import type { NoteDetail, NoteDocument, NoteId, NoteProperties } from '@/shared/contracts'
+import {
+  collectImageIdsFromDocument,
+  type NoteDetail,
+  type NoteDocument,
+  type NoteId,
+  type NoteProperties,
+} from '@/shared/contracts'
 import { useAppUiStore } from '@/viewmodel/app-ui-store'
 import {
   createStaticLiveQuery,
   useLiveQuery,
 } from '@/viewmodel/live-query-view-model'
-import { useNoteRepository } from '@/viewmodel/repository-hooks'
+import { useImageRepository, useNoteRepository } from '@/viewmodel/repository-hooks'
 import { useSyncEngine } from '@/viewmodel/sync-engine-hooks'
 
 export type ActiveNoteViewModel = {
@@ -19,6 +25,7 @@ export type ActiveNoteViewModel = {
 
 export function useActiveNoteViewModel(): ActiveNoteViewModel {
   const repository = useNoteRepository()
+  const imageRepository = useImageRepository()
   const syncEngine = useSyncEngine()
   const activeNoteId = useAppUiStore((state) => state.activeNoteId)
   const setActiveNote = useAppUiStore((state) => state.setActiveNote)
@@ -37,6 +44,21 @@ export function useActiveNoteViewModel(): ActiveNoteViewModel {
     setActiveNote,
     async updateDocument(noteId, document) {
       await repository.updateNote(noteId, { document })
+
+      // Image GC rides the explicit save: unreferenced images get tombstoned,
+      // referenced-but-tombstoned ones restored (undo). A GC failure must
+      // never fail the save itself.
+      if (imageRepository) {
+        try {
+          await imageRepository.reconcileNoteImages(
+            noteId,
+            collectImageIdsFromDocument(document),
+          )
+        } catch {
+          // Swallowed on purpose; the next save retries the reconcile.
+        }
+      }
+
       syncEngine?.requestSync('outbox-change')
     },
     async updateProperties(noteId, properties) {

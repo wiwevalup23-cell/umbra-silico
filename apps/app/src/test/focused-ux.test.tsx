@@ -162,7 +162,7 @@ describe('focused product UX', () => {
       await Promise.resolve()
     })
     expect(onChangeProperties).toHaveBeenCalledWith(noteId, {
-      status: 'idea',
+      status: 'done',
       tags: ['Research', 'Local'],
     })
   })

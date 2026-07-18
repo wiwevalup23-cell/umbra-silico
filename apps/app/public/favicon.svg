@@ -1,7 +1,62 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
-  <rect width="32" height="32" fill="#e5e5e5"/>
-  <path d="M4 4h24v24H4z" fill="#fff" fill-opacity=".58" stroke="#000"/>
-  <path d="M8 9h16M8 13h10M8 17h14M8 21h8" stroke="#000" stroke-width="2"/>
-  <path d="M25 25h3v3h-3z" fill="#00e5ff"/>
-  <path d="M22 22h3v3h-3z" fill="#ff2dd5"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 320" role="img">
+  <defs>
+    <linearGradient id="outerBevel" x1="44" x2="276" y1="24" y2="296" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#b9b4ac" />
+      <stop offset="0.55" stop-color="#7d7a74" />
+      <stop offset="1" stop-color="#9a968e" />
+    </linearGradient>
+    <radialGradient id="innerBevel" cx="0" cy="0" r="1" gradientTransform="matrix(360 360 -360 360 102 76)" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#fbf7ee" />
+      <stop offset="0.46" stop-color="#f3ece0" />
+      <stop offset="1" stop-color="#e6dccb" />
+    </radialGradient>
+    <filter id="innerInset" x="9" y="9" width="302" height="302" color-interpolation-filters="sRGB" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="2" stdDeviation="1.5" flood-color="#fff" flood-opacity="0.85" />
+      <feDropShadow dx="0" dy="-10" stdDeviation="11" flood-color="#968a76" flood-opacity="0.35" />
+    </filter>
+    <clipPath id="diskClip">
+      <circle cx="240" cy="250" r="158" />
+    </clipPath>
+    <mask id="legMask" x="0" y="0" width="480" height="480" maskUnits="userSpaceOnUse">
+      <rect width="480" height="480" fill="#000" />
+      <line x1="240" x2="147.9" y1="150" y2="378.6" stroke="#fff" stroke-width="12" />
+      <line x1="240" x2="332" y1="150" y2="378.7" stroke="#fff" stroke-width="12" />
+    </mask>
+    <path id="uRim" d="M843 820q0 11-8 20.5t-23 9.5H649q-17 0-25-9.5t-8-20.5q0-11 8-20.5t25-9.5h49V277q0-56-21.5-100.5T618 101.5Q581 71 533 54.5T433 38q-36 0-67 6v746h53q17 0 25 9.5t8 20.5q0 11-8 20.5t-25 9.5H56q-16 0-24-9.5T24 820q0-11 8-20.5T56 790h51V277q0-68 26.5-123.5T205 58.5Q250 19 309-2.5T433-24q65 0 124 21.5T661 58.5q45 39.5 71.5 95T759 277v513h53q15 0 23 9.5t8 20.5Z" />
+    <path id="uFull" d="M843 820q0 11-8 20.5t-23 9.5H649q-17 0-25-9.5t-8-20.5q0-11 8-20.5t25-9.5h49V277q0-56-21.5-100.5T618 101.5Q581 71 533 54.5T433 38q-36 0-67 6v746h53q17 0 25 9.5t8 20.5q0 11-8 20.5t-25 9.5H56q-16 0-24-9.5T24 820q0-11 8-20.5T56 790h51V277q0-68 26.5-123.5T205 58.5Q250 19 309-2.5T433-24q65 0 124 21.5T661 58.5q45 39.5 71.5 95T759 277v513h53q15 0 23 9.5t8 20.5ZM213 137q-21 29-33 63.5T168 277v513h45V137Z" />
+    <polygon id="corona" points="240,18 262.5,93.6 305.4,27.4 305.6,106.3 365.4,54.8 343.5,130.6 415.3,98.1 372.9,164.6 451,153.6 391.6,205.5 469.6,217 398,250 469.6,283 391.6,294.5 451,346.4 372.9,335.4 415.3,401.9 343.5,369.4 365.4,445.2 305.6,393.7 305.4,472.6 262.5,406.4 240,482 217.5,406.4 174.6,472.6 174.4,393.7 114.6,445.2 136.5,369.4 64.7,401.9 107.1,335.4 29,346.4 88.4,294.5 10.4,283 82,250 10.4,217 88.4,205.5 29,153.6 107.1,164.6 64.7,98.1 136.5,130.6 114.6,54.8 174.4,106.3 174.6,27.4 217.5,93.6" />
+    <clipPath id="letterRaised">
+      <use href="#uFull" transform="translate(142.8,380.5) scale(0.2242,-0.2242)" />
+    </clipPath>
+  </defs>
+
+  <rect width="320" height="320" rx="64" fill="url(#outerBevel)" />
+  <rect x="9" y="9" width="302" height="302" rx="56" fill="url(#innerBevel)" filter="url(#innerInset)" />
+
+  <svg x="10" y="10" width="300" height="300" viewBox="0 0 480 480" aria-hidden="true">
+    <use href="#corona" fill="#141414" />
+    <circle cx="240" cy="250" r="158" fill="#f4ecdf" />
+    <circle cx="262.3" cy="238.1" r="158" fill="#141414" clip-path="url(#diskClip)" />
+
+    <line x1="240" x2="147.9" y1="150" y2="378.6" stroke="#f4ecdf" stroke-linecap="round" stroke-width="4.5" />
+    <line x1="240" x2="332" y1="150" y2="378.7" stroke="#f4ecdf" stroke-linecap="round" stroke-width="4.5" />
+
+    <g mask="url(#legMask)">
+      <use href="#uRim" transform="translate(142.8,380.5) scale(0.2242,-0.2242)" fill="none" stroke="#141414" stroke-width="24" />
+    </g>
+    <circle cx="147.9" cy="378.6" r="9.5" fill="#141414" />
+    <circle cx="332" cy="378.7" r="8" fill="#f4ecdf" />
+    <use href="#uFull" transform="translate(142.8,380.5) scale(0.2242,-0.2242)" fill="#f4ecdf" />
+
+    <line x1="184.9" x2="147.9" y1="287" y2="378.6" stroke="#141414" stroke-linecap="round" stroke-width="7.5" clip-path="url(#letterRaised)" />
+    <line x1="192.5" x2="147.9" y1="268" y2="378.6" stroke="#f4ecdf" stroke-linecap="round" stroke-width="4.5" />
+    <line x1="160.3" x2="147.9" y1="347.6" y2="378.6" stroke="#141414" stroke-linecap="round" stroke-width="7.5" />
+    <line x1="160.3" x2="147.9" y1="347.6" y2="378.6" stroke="#f4ecdf" stroke-linecap="round" stroke-width="4.5" />
+    <circle cx="147.9" cy="378.6" r="8" fill="#f4ecdf" />
+
+    <rect x="237.5" y="118" width="5" height="34" fill="#f4ecdf" />
+    <circle cx="240" cy="114" r="6.5" fill="#f4ecdf" />
+    <circle cx="240" cy="150" r="25" fill="#f4ecdf" />
+    <circle cx="240" cy="150" r="13" fill="#141414" />
+  </svg>
 </svg>

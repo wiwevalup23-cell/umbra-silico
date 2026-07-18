@@ -1,7 +1,7 @@
 {
   "name": "umbra-silico",
   "private": true,
-  "version": "0.0.1",
+  "version": "0.0.3",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -20,6 +20,7 @@
   "dependencies": {
     "@supabase/supabase-js": "^2.110.0",
     "@tauri-apps/api": "^2.11.1",
+    "@tauri-apps/plugin-fs": "^2.5.1",
     "@tauri-apps/plugin-sql": "^2.4.0",
     "@tauri-apps/plugin-stronghold": "^2.3.1",
     "@tiptap/core": "^3.27.1",

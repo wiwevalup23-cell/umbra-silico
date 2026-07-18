@@ -20,6 +20,7 @@ import { UiIcon } from '@/ui/icons/ui/UiIcon'
 
 type BlockHandleProps = {
   editor: Editor | null
+  onInsertImage?: (() => void) | null
 }
 
 type HandleMenu = 'actions' | 'insert'
@@ -48,7 +49,7 @@ const turnTargets: Array<{ label: string; target: TurnIntoTarget }> = [
   { label: 'Toggle', target: 'toggle' },
 ]
 
-export function BlockHandle({ editor }: BlockHandleProps) {
+export function BlockHandle({ editor, onInsertImage = null }: BlockHandleProps) {
   const rootRef = useRef<HTMLDivElement>(null)
   const draggedSourceRef = useRef<number | null>(null)
   const [activeMenu, setActiveMenu] = useState<HandleMenu | null>(null)
@@ -253,6 +254,15 @@ export function BlockHandle({ editor }: BlockHandleProps) {
               {item.label}
             </button>
           ))}
+          {onInsertImage ? (
+            <button
+              key="image"
+              onClick={() => runAction(() => onInsertImage())}
+              type="button"
+            >
+              Image
+            </button>
+          ) : null}
         </div>
       ) : null}
 

@@ -33,6 +33,7 @@ export default [
         { type: 'local-store', pattern: 'src/local-store/**' },
         { type: 'sync', pattern: 'src/sync/**' },
         { type: 'automation', pattern: 'src/automation/**' },
+        { type: 'images', pattern: 'src/images/**' },
         { type: 'crypto', pattern: 'src/crypto/**' },
         { type: 'platform', pattern: 'src/platform/**' },
         { type: 'shared', pattern: 'src/shared/**' },
@@ -84,6 +85,7 @@ export default [
                     'local-store-contracts',
                     'local-store',
                     'crypto',
+                    'images',
                     'shared',
                   ],
                 },
@@ -117,6 +119,12 @@ export default [
               from: { type: 'automation' },
               allow: {
                 to: { type: ['automation', 'repository-contracts', 'shared'] },
+              },
+            },
+            {
+              from: { type: 'images' },
+              allow: {
+                to: { type: ['images', 'shared'] },
               },
             },
             {

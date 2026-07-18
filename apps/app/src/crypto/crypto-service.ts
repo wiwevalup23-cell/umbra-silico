@@ -22,6 +22,11 @@ export type EncryptNoteResult = {
   encryption: NoteEncryptionMetadata
 }
 
+export type EncryptBinaryResult = {
+  ciphertext: Uint8Array
+  encryption: NoteEncryptionMetadata
+}
+
 export type CreateMasterKeyResult = {
   masterKey: CryptoKey
   profile: LocalCryptoProfile
@@ -39,6 +44,15 @@ export interface CryptoService {
     masterKey: CryptoKey,
   ): Promise<string>
   encryptNotePayload(payload: string, masterKey: CryptoKey): Promise<EncryptNoteResult>
+  encryptBinaryPayload(
+    plaintext: Uint8Array,
+    masterKey: CryptoKey,
+  ): Promise<EncryptBinaryResult>
+  decryptBinaryPayload(
+    ciphertext: Uint8Array,
+    encryption: NoteEncryptionMetadata,
+    masterKey: CryptoKey,
+  ): Promise<Uint8Array>
   unlockMasterKey(
     profile: LocalCryptoProfile,
     credentials: UnlockCredentials,
@@ -211,6 +225,51 @@ export class WebCryptoService implements CryptoService {
         wrapNonce: bytesToBase64(wrappedDek.nonce),
       },
     }
+  }
+
+  async encryptBinaryPayload(
+    plaintext: Uint8Array,
+    masterKey: CryptoKey,
+  ): Promise<EncryptBinaryResult> {
+    const dek = await generateAesKey()
+    const encryptedPayload = await encryptBytes({
+      key: dek,
+      plaintext,
+    })
+    const wrappedDek = await encryptBytes({
+      key: masterKey,
+      plaintext: await exportAesKey(dek),
+    })
+
+    return {
+      ciphertext: encryptedPayload.ciphertext,
+      encryption: {
+        version: 1,
+        algorithm: 'AES-GCM-256',
+        payloadNonce: bytesToBase64(encryptedPayload.nonce),
+        wrappedDek: bytesToBase64(wrappedDek.ciphertext),
+        wrapNonce: bytesToBase64(wrappedDek.nonce),
+      },
+    }
+  }
+
+  async decryptBinaryPayload(
+    ciphertext: Uint8Array,
+    encryption: NoteEncryptionMetadata,
+    masterKey: CryptoKey,
+  ): Promise<Uint8Array> {
+    const rawDek = await decryptBytes({
+      ciphertext: base64ToBytes(encryption.wrappedDek),
+      key: masterKey,
+      nonce: base64ToBytes(encryption.wrapNonce),
+    })
+    const dek = await importAesKey(rawDek)
+
+    return decryptBytes({
+      ciphertext,
+      key: dek,
+      nonce: base64ToBytes(encryption.payloadNonce),
+    })
   }
 
   async unlockMasterKey(

@@ -2,12 +2,14 @@ import type {
   StoredAutomationEventRow,
   StoredCryptoProfileRow,
   StoredFolderRow,
+  StoredImageMetaRow,
   StoredNoteRow,
   StoredSyncOperationRow,
 } from '@/local-store/contracts'
 import {
   localCryptoProfileSchema,
   localFolderSchema,
+  localImageMetaSchema,
   localNoteSchema,
   parseAutomationEventRecord,
   parseSyncOperation,
@@ -17,6 +19,7 @@ import {
   type AutomationEventRecord,
   type LocalCryptoProfile,
   type LocalFolder,
+  type LocalImageMeta,
   type LocalNote,
   type NoteListItem,
   type SyncOperation,
@@ -76,6 +79,48 @@ export function rowToNote(row: StoredNoteRow): LocalNote {
     baseRemoteRevision: row.baseRemoteRevision,
     syncStatus: row.syncStatus,
     lastOpId: row.lastOpId,
+    deviceId: row.deviceId,
+  })
+}
+
+export function imageMetaToRow(meta: LocalImageMeta): StoredImageMetaRow {
+  return {
+    id: meta.id,
+    noteId: meta.noteId,
+    userId: meta.userId,
+    sourceFileName: meta.sourceFileName,
+    mimeType: meta.mimeType,
+    byteSize: meta.byteSize,
+    width: meta.width,
+    height: meta.height,
+    renditions: stringify(meta.renditions),
+    isEncrypted: meta.isEncrypted ? 1 : 0,
+    encryption: meta.encryption ? stringify(meta.encryption) : null,
+    createdAt: meta.createdAt,
+    deletedAt: meta.deletedAt,
+    localRevision: meta.localRevision,
+    syncStatus: meta.syncStatus,
+    deviceId: meta.deviceId,
+  }
+}
+
+export function rowToImageMeta(row: StoredImageMetaRow): LocalImageMeta {
+  return localImageMetaSchema.parse({
+    id: row.id,
+    noteId: row.noteId,
+    userId: row.userId,
+    sourceFileName: row.sourceFileName,
+    mimeType: row.mimeType,
+    byteSize: row.byteSize,
+    width: row.width,
+    height: row.height,
+    renditions: parseJson(row.renditions),
+    isEncrypted: row.isEncrypted === 1,
+    encryption: row.encryption ? parseJson(row.encryption) : null,
+    createdAt: row.createdAt,
+    deletedAt: row.deletedAt,
+    localRevision: row.localRevision,
+    syncStatus: row.syncStatus,
     deviceId: row.deviceId,
   })
 }

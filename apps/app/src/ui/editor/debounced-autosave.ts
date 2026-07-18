@@ -19,6 +19,7 @@ export function createDebouncedAutosave<TValue>({
   let timeout: ReturnType<typeof setTimeout> | null = null
   let pendingValue: TValue | null = null
   let pending = false
+  let inFlightFlush: Promise<void> | null = null
 
   function clearTimer() {
     if (timeout) {
@@ -27,22 +28,39 @@ export function createDebouncedAutosave<TValue>({
     }
   }
 
-  async function flush() {
+  // `pending` stays true until the save has actually landed: the editor's
+  // echo-suppression relies on hasPending() to shield unsaved content, so
+  // clearing it before (or despite a failed) save opens a window where a
+  // live-query echo could roll the editor back and drop the draft.
+  async function runFlush() {
+    while (pending) {
+      const value = pendingValue as TValue
+
+      try {
+        await save(value)
+      } catch (error) {
+        onError?.(error)
+        return
+      }
+
+      // Clear only when no newer draft arrived while the save was in flight.
+      if (pendingValue === value) {
+        pendingValue = null
+        pending = false
+      }
+    }
+  }
+
+  function flush(): Promise<void> {
     clearTimer()
 
-    if (!pending) {
-      return
+    if (!inFlightFlush) {
+      inFlightFlush = runFlush().finally(() => {
+        inFlightFlush = null
+      })
     }
 
-    const value = pendingValue as TValue
-    pendingValue = null
-    pending = false
-
-    try {
-      await save(value)
-    } catch (error) {
-      onError?.(error)
-    }
+    return inFlightFlush
   }
 
   return {

@@ -13,7 +13,12 @@ import type {
 } from '@/local-store/contracts'
 import { createDexieDatabase } from '@/local-store/dexie/dexie-db'
 import { DexieNotesStore } from '@/local-store/dexie/dexie-notes-store'
-import type { SqlBindValue, SqlDatabase, SqlQueryResult } from '@/local-store/sqlite/sqlite-driver'
+import type {
+  SqlBindValue,
+  SqlDatabase,
+  SqlQueryResult,
+  SqlStatement,
+} from '@/local-store/sqlite/sqlite-driver'
 import {
   createSqliteNotesStore,
   initializeSqliteNotesStore,
@@ -130,6 +135,21 @@ class MemorySqlDatabase implements SqlDatabase {
     noteOps: Map<string, StoredSyncOperationRow>
     syncState: Map<string, StoredSyncStateRow>
   } | null = null
+  transactionCount = 0
+
+  async executeTransaction(statements: SqlStatement[]): Promise<void> {
+    this.transactionCount += 1
+    await this.execute('begin immediate')
+    try {
+      for (const statement of statements) {
+        await this.execute(statement.query, statement.bindValues)
+      }
+      await this.execute('commit')
+    } catch (error) {
+      await this.execute('rollback')
+      throw error
+    }
+  }
 
   async execute(query: string, bindValues: SqlBindValue[] = []): Promise<SqlQueryResult> {
     const normalized = query.trim().toLowerCase()
@@ -518,6 +538,75 @@ it('keeps SQLite notes readable after the store is recreated on the same databas
   expect((await secondSession.listNotes()).map((storedNote) => storedNote.id)).toEqual([
     note.id,
   ])
+})
+
+it('delegates note and outbox writes to one database transaction', async () => {
+  const database = new MemorySqlDatabase()
+  await initializeSqliteNotesStore(database)
+  const store = createSqliteNotesStore(database)
+  const note = makeNote('note_native_transaction', 'Native transaction')
+
+  await store.putNoteWithOp(
+    note,
+    makeOperation('op_native_transaction', note.id, 'note.create'),
+  )
+
+  expect(database.transactionCount).toBe(1)
+  expect(await store.getNote(note.id)).toMatchObject({ title: 'Native transaction' })
+  expect(await store.listPendingOps(10)).toHaveLength(1)
+})
+
+it('migrates legacy note columns before creating dependent SQLite indexes', async () => {
+  const columns = new Set(['id'])
+  const executed: string[] = []
+  const database: SqlDatabase = {
+    async execute(query) {
+      const normalized = query.trim().toLowerCase()
+      executed.push(normalized)
+
+      if (
+        normalized.startsWith('create index') &&
+        normalized.includes('parent_folder_id') &&
+        !columns.has('parent_folder_id')
+      ) {
+        throw new Error('no such column: parent_folder_id')
+      }
+
+      if (normalized === 'alter table notes add column parent_folder_id text') {
+        columns.add('parent_folder_id')
+      }
+
+      if (normalized === 'alter table notes add column properties text') {
+        columns.add('properties')
+      }
+
+      return { rowsAffected: 0 }
+    },
+    async select<TRow extends Record<string, unknown>>(query: string) {
+      if (query.trim().toLowerCase() === 'pragma table_info(notes)') {
+        return [...columns].map((name) => ({ name })) as unknown as TRow[]
+      }
+
+      throw new Error(`Unsupported SQL select: ${query}`)
+    },
+  }
+
+  await initializeSqliteNotesStore(database)
+
+  const parentMigration = executed.indexOf(
+    'alter table notes add column parent_folder_id text',
+  )
+  const propertiesMigration = executed.indexOf(
+    'alter table notes add column properties text',
+  )
+  const parentIndex = executed.findIndex(
+    (query) => query.startsWith('create index') && query.includes('parent_folder_id'),
+  )
+
+  expect(parentMigration).toBeGreaterThanOrEqual(0)
+  expect(propertiesMigration).toBeGreaterThanOrEqual(0)
+  expect(parentIndex).toBeGreaterThan(parentMigration)
+  expect(parentIndex).toBeGreaterThan(propertiesMigration)
 })
 
 describe.each(harnesses)('$name contract', (harness) => {
