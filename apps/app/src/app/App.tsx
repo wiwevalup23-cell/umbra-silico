@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
+import brandEmblemUrl from '../../src-tauri/icons/128x128@2x.png'
 import { AppProviders } from '@/app/providers'
 import { EditorShell, type EditorShellApi } from '@/ui/components/notes/EditorShell'
 import { FolderTree } from '@/ui/components/notes/FolderTree'
@@ -14,7 +15,6 @@ import { SettingsModal } from '@/ui/components/silicon/SettingsModal'
 import { ConfirmationDialog, PromptDialog } from '@/ui/components/silicon'
 import { MobileTabBar, type MobileTab } from '@/ui/components/silicon/MobileTabBar'
 import { UiIcon } from '@/ui/icons/ui/UiIcon'
-import { publicAsset } from '@/shared/public-asset'
 import type { CreateNoteInput, FolderId, FolderTreeNode, NoteId } from '@/shared/contracts'
 import {
   createNoteFromTemplate,
@@ -306,8 +306,9 @@ function AppWorkspace() {
               <img
                 alt=""
                 className="sn-brand-emblem__image"
+                decoding="sync"
                 draggable={false}
-                src={publicAsset('assets/umbra-silico-eclipse-compass-u.svg')}
+                src={brandEmblemUrl}
               />
             </span>
             <span className="sn-brand-copy">

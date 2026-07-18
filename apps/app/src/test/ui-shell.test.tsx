@@ -498,7 +498,34 @@ describe('Umbra Silico UI shell', () => {
     const playerImage = rendered.container.querySelector<HTMLImageElement>(
       'img[src="/assets/player-warm-cut.png"]',
     )
+    const player = rendered.container.querySelector<HTMLElement>(
+      '.sn-empty-player',
+    )
     const syncProgress = rendered.container.querySelector('[role="progressbar"]')
+
+    expect(player?.dataset.pointerInside).toBe('false')
+
+    act(() => {
+      player?.dispatchEvent(new MouseEvent('pointerover', { bubbles: true }))
+    })
+
+    expect(player?.dataset.pointerInside).toBe('true')
+
+    act(() => {
+      player?.dispatchEvent(new MouseEvent('pointermove', { bubbles: true }))
+      player?.dispatchEvent(new MouseEvent('pointermove', { bubbles: true }))
+    })
+
+    expect(player?.dataset.pointerInside).toBe('true')
+
+    act(() => {
+      player?.dispatchEvent(new MouseEvent('pointerout', {
+        bubbles: true,
+        relatedTarget: document.body,
+      }))
+    })
+
+    expect(player?.dataset.pointerInside).toBe('false')
 
     act(() => {
       playButton?.click()

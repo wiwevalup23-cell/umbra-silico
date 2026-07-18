@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { publicAsset } from '@/shared/public-asset'
 
 type EmptyStatePlayerProps = {
@@ -11,8 +12,16 @@ export function EmptyStatePlayer({
   isCreatingNote = false,
   onCreateNote,
 }: EmptyStatePlayerProps) {
+  const [isPointerInside, setIsPointerInside] = useState(false)
+
   return (
-    <div className="sn-empty-player" aria-label="Empty notebook player">
+    <div
+      aria-label="Empty notebook player"
+      className="sn-empty-player"
+      data-pointer-inside={isPointerInside}
+      onPointerEnter={() => setIsPointerInside(true)}
+      onPointerLeave={() => setIsPointerInside(false)}
+    >
       <img
         alt=""
         aria-hidden="true"

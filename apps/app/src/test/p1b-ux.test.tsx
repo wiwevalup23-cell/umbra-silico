@@ -219,6 +219,9 @@ describe('P1-B navigation and folder workflows', () => {
 
   it('contains no browser folder dialogs and keeps Save and Lock geometry equal', () => {
     const appSource = readFileSync(`${process.cwd()}/src/app/App.tsx`, 'utf8')
+    const brandEmblem = readFileSync(
+      `${process.cwd()}/src-tauri/icons/128x128@2x.png`,
+    )
     const css = readFileSync(
       `${process.cwd()}/src/ui/styles/silicon-nostalgia.css`,
       'utf8',
@@ -226,8 +229,14 @@ describe('P1-B navigation and folder workflows', () => {
     expect(appSource).not.toContain('window.prompt')
     expect(appSource).not.toContain('window.confirm')
     expect(appSource).toContain('aria-label="Open home"')
+    expect(appSource).toContain("import brandEmblemUrl from '../../src-tauri/icons/128x128@2x.png'")
+    expect(appSource).toContain('src={brandEmblemUrl}')
+    expect(appSource).not.toContain("publicAsset('assets/umbra-silico-eclipse-compass-u.svg')")
+    expect(brandEmblem.subarray(1, 4).toString()).toBe('PNG')
     expect(appSource).toContain('setIsHomeView(true)')
     expect(appSource).toContain("isHomeView || libraryMode === 'trash'")
+    expect(css).toContain('.sn-empty-player[data-pointer-inside="true"]')
+    expect(css).not.toContain('.sn-empty-player:hover .sn-empty-player__image')
     expect(css).toContain('font-family: "SN Cormorant Garamond"')
     expect(css).toContain('CormorantGaramond-Variable.woff2')
     expect(css).toContain('--sn-garamond-weight: 300')
