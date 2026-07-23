@@ -18,7 +18,7 @@ export type EditorHighlightOption = {
 }
 
 export const editorFontOptions: EditorFontOption[] = [
-  { label: 'App default', value: '' },
+  { label: 'Default', value: '' },
   { label: 'Inter', sampleClass: 'sn-font-sample--inter', value: 'Inter Variable' },
   { label: 'Lora', sampleClass: 'sn-font-sample--lora', value: 'Lora Variable' },
   {

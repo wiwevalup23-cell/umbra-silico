@@ -1532,6 +1532,7 @@ button {
   max-width: 124px;
   padding: 0 20px 0 0;
   border: 0;
+  overflow: hidden;
   color: inherit;
   background: transparent;
   cursor: pointer;
@@ -1539,7 +1540,9 @@ button {
   font-size: 10px;
   letter-spacing: 0.02em;
   outline: 0;
+  text-overflow: ellipsis;
   text-transform: none;
+  white-space: nowrap;
 }
 
 .sn-editor-format-field--size {

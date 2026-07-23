@@ -658,6 +658,50 @@ function EditorToolbar({
             ))}
           </select>
         </label>
+      </div>
+      <span className="sn-editor-toolbar__divider" aria-hidden="true" />
+
+      <div className="sn-editor-toolbar__group" aria-label="Text formatting" role="group">
+        <ToolbarButton
+          disabled={!editor}
+          label="Bold"
+          onPress={() => {
+            runCommand(() => editor?.chain().focus().toggleBold().run())
+          }}
+          pressed={toolbarState.isBold}
+        >
+          <CompassIcon name="bold" />
+        </ToolbarButton>
+        <ToolbarButton
+          disabled={!editor}
+          label="Italic"
+          onPress={() => {
+            runCommand(() => editor?.chain().focus().toggleItalic().run())
+          }}
+          pressed={toolbarState.isItalic}
+        >
+          <CompassIcon name="italic" />
+        </ToolbarButton>
+        <ToolbarButton
+          disabled={!editor}
+          label="Strike"
+          onPress={() => {
+            runCommand(() => editor?.chain().focus().toggleStrike().run())
+          }}
+          pressed={toolbarState.isStrike}
+        >
+          <CompassIcon name="strikethrough" />
+        </ToolbarButton>
+        <ToolbarButton
+          disabled={!editor}
+          label="Inline code"
+          onPress={() => {
+            runCommand(() => editor?.chain().focus().toggleCode().run())
+          }}
+          pressed={toolbarState.isCode}
+        >
+          <CompassIcon name="code" />
+        </ToolbarButton>
         <div className="sn-editor-highlight-control" ref={highlightMenuRef}>
           <ToolbarButton
             disabled={!editor}
@@ -718,50 +762,6 @@ function EditorToolbar({
             </div>
           ) : null}
         </div>
-      </div>
-      <span className="sn-editor-toolbar__divider" aria-hidden="true" />
-
-      <div className="sn-editor-toolbar__group" aria-label="Text formatting" role="group">
-        <ToolbarButton
-          disabled={!editor}
-          label="Bold"
-          onPress={() => {
-            runCommand(() => editor?.chain().focus().toggleBold().run())
-          }}
-          pressed={toolbarState.isBold}
-        >
-          <CompassIcon name="bold" />
-        </ToolbarButton>
-        <ToolbarButton
-          disabled={!editor}
-          label="Italic"
-          onPress={() => {
-            runCommand(() => editor?.chain().focus().toggleItalic().run())
-          }}
-          pressed={toolbarState.isItalic}
-        >
-          <CompassIcon name="italic" />
-        </ToolbarButton>
-        <ToolbarButton
-          disabled={!editor}
-          label="Strike"
-          onPress={() => {
-            runCommand(() => editor?.chain().focus().toggleStrike().run())
-          }}
-          pressed={toolbarState.isStrike}
-        >
-          <CompassIcon name="strikethrough" />
-        </ToolbarButton>
-        <ToolbarButton
-          disabled={!editor}
-          label="Inline code"
-          onPress={() => {
-            runCommand(() => editor?.chain().focus().toggleCode().run())
-          }}
-          pressed={toolbarState.isCode}
-        >
-          <CompassIcon name="code" />
-        </ToolbarButton>
       </div>
       <span className="sn-editor-toolbar__divider" aria-hidden="true" />
 
