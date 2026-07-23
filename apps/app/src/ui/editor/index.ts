@@ -26,4 +26,15 @@ export {
   type ImageBlockAttrs,
 } from './extensions'
 export { ImageSourceContext } from './image-source-context'
+export {
+  editorFontOptions,
+  editorHighlightOptions,
+  editorTextSizeOptions,
+  NoteTextStyleExtensions,
+} from './rich-text'
+export type {
+  EditorFontOption,
+  EditorHighlightOption,
+  EditorTextSizeOption,
+} from './rich-text'
 export { turnInto, type TurnIntoTarget } from './turn-into'

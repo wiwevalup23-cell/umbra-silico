@@ -1,5 +1,7 @@
 export type { ActiveNoteViewModel } from './active-note-view-model'
 export { useActiveNoteViewModel } from './active-note-view-model'
+export type { ChatImageMessageInput, ChatViewModel } from './chat-view-model'
+export { useChatViewModel } from './chat-view-model'
 export { useAppUiStore } from './app-ui-store'
 export type { SyncBadge } from './app-ui-store'
 export type { FoldersViewModel } from './folders-view-model'

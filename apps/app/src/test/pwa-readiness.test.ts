@@ -30,7 +30,12 @@ import viteConfigSource from '../../vite.config.ts?raw'
 import mainSource from '../main.tsx?raw'
 import serviceWorkerRegistrationSource from '../pwa/register-service-worker.ts?raw'
 const responsiveCssSource = readFileSync(
-  `${process.cwd()}/src/ui/styles/silicon-nostalgia.css`,
+  `${process.cwd()}/src/ui/styles/mobile-ui.css`,
+  'utf8',
+)
+const indexHtmlSource = readFileSync(`${process.cwd()}/index.html`, 'utf8')
+const androidActivitySource = readFileSync(
+  `${process.cwd()}/src-tauri/gen/android/app/src/main/java/app/umbra_silico/notes/MainActivity.kt`,
   'utf8',
 )
 
@@ -204,23 +209,51 @@ describe('PWA readiness', () => {
     expect(viteConfigSource).toContain("manifest: false")
   })
 
-  it('keeps the mobile editor ergonomic with safe-area shell padding and touch-sized toolbar', () => {
-    // Safe area support preserved
-    expect(responsiveCssSource).toContain('env(safe-area-inset-top)')
-    // New 5-level breakpoint system
+  it('uses a dedicated, touch-safe mobile layout instead of scaling the desktop canvas', () => {
+    expect(responsiveCssSource).toContain('--sn-mobile-safe-top: env(safe-area-inset-top, 0px)')
+    expect(responsiveCssSource).toContain('--sn-mobile-safe-bottom: env(safe-area-inset-bottom, 0px)')
     expect(responsiveCssSource).toContain('@media (max-width: 959px)')
+    expect(responsiveCssSource).toContain('@media (max-width: 600px)')
     expect(responsiveCssSource).toContain('@media (max-width: 479px)')
-    // Single active panel on mobile
-    expect(responsiveCssSource).toContain('flex-direction: column')
-    // Touch-safe scroll behavior
+    expect(responsiveCssSource).toContain('@media (max-width: 359px)')
+    expect(responsiveCssSource).toContain('(orientation: landscape)')
+    expect(responsiveCssSource).toContain('.sn-workspace[data-mobile-tab="notes"]')
+    expect(responsiveCssSource).toContain('.sn-workspace[data-mobile-tab="editor"]')
+    expect(responsiveCssSource).toContain('.sn-workspace[data-mobile-tab="details"]')
+    expect(responsiveCssSource).toContain('display: none !important')
+    expect(responsiveCssSource).toContain('display: flex !important')
     expect(responsiveCssSource).toContain('overscroll-behavior-x: contain')
-    // Touch-safe targets: 44px minimum per WCAG 2.5.8
     expect(responsiveCssSource).toContain('min-width: 44px')
     expect(responsiveCssSource).toContain('min-height: 44px')
-    // Dynamic viewport height for mobile Safari
     expect(responsiveCssSource).toContain('100dvh')
-    // Text overflow handling
     expect(responsiveCssSource).toContain('overflow-wrap: anywhere')
+    expect(responsiveCssSource).toContain('grid-auto-rows: max-content')
+    expect(responsiveCssSource).toContain('align-content: start')
+    expect(responsiveCssSource).not.toMatch(/\bzoom\s*:/)
+    expect(responsiveCssSource).not.toContain('scale(')
+  })
+
+  it('keeps editor popovers inside the usable mobile viewport', () => {
+    expect(responsiveCssSource).toMatch(
+      /\.sn-editor-tools-menu,[\s\S]*?\.sn-block-handle-menu--wide\s*\{[\s\S]*?position: fixed !important/,
+    )
+    expect(responsiveCssSource).toContain(
+      'bottom: calc(var(--sn-tabbar-height) + 8px) !important',
+    )
+    expect(responsiveCssSource).toContain('max-height: min(60dvh, 520px)')
+    expect(responsiveCssSource).toContain('.sn-editor-shell--empty .sn-empty-player')
+    expect(responsiveCssSource).toContain('.sn-mobile-empty-state')
+  })
+
+  it('declares cutout-aware viewport behavior and consumes Android system-bar insets once', () => {
+    expect(indexHtmlSource).toContain('viewport-fit=cover')
+    expect(indexHtmlSource).toContain('interactive-widget=resizes-content')
+    expect(androidActivitySource).toContain('enableEdgeToEdge(')
+    expect(androidActivitySource).toContain('WindowInsetsCompat.Type.systemBars()')
+    expect(androidActivitySource).toContain('WindowInsetsCompat.Type.displayCutout()')
+    expect(androidActivitySource).toContain('WindowInsetsCompat.CONSUMED')
+    expect(androidActivitySource).toContain('isAppearanceLightStatusBars = true')
+    expect(androidActivitySource).toContain('isAppearanceLightNavigationBars = true')
   })
 
 

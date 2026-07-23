@@ -1,9 +1,11 @@
 import { Extension } from '@tiptap/core'
+import { Mathematics } from '@tiptap/extension-mathematics'
 import { TableKit } from '@tiptap/extension-table'
 import type { Node as ProseMirrorNode } from '@tiptap/pm/model'
 import type { EditorState, Transaction } from '@tiptap/pm/state'
 import { EditorContent, useEditor, useEditorState } from '@tiptap/react'
 import StarterKit from '@tiptap/starter-kit'
+import katex from 'katex'
 import {
   useEffect,
   useMemo,
@@ -26,15 +28,20 @@ import type {
 import {
   Callout,
   createDebouncedAutosave,
+  editorFontOptions,
+  editorHighlightOptions,
+  editorTextSizeOptions,
   getCurrentTopLevelBlockRange,
   ImageBlock,
   ImageSourceContext,
+  NoteTextStyleExtensions,
   TaskListExtensions,
   ToggleExtensions,
   turnInto,
 } from '@/ui/editor'
 import { BlockHandle } from '@/ui/components/notes/BlockHandle'
 import { EmptyStatePlayer } from '@/ui/components/notes/EmptyStatePlayer'
+import { CompassIcon } from '@/ui/icons/compass/CompassIcon'
 import { UiIcon } from '@/ui/icons/ui/UiIcon'
 import {
   getLocalSavePresentation,
@@ -116,6 +123,16 @@ function isSameContent(left: unknown, right: unknown): boolean {
 type EditorToolbarProps = {
   editor: ReturnType<typeof useEditor> | null
   onInsertImage?: (() => void) | null
+  onOpenMath: (kind: MathKind) => void
+}
+
+type MathKind = 'inline' | 'block'
+
+type MathEditorDraft = {
+  kind: MathKind
+  latex: string
+  mode: 'insert' | 'edit'
+  pos: number | null
 }
 
 const blockIndentMin = 0
@@ -470,8 +487,14 @@ function MenuButton({
   )
 }
 
-function EditorToolbar({ editor, onInsertImage = null }: EditorToolbarProps) {
+function EditorToolbar({
+  editor,
+  onInsertImage = null,
+  onOpenMath,
+}: EditorToolbarProps) {
+  const [isHighlightMenuOpen, setIsHighlightMenuOpen] = useState(false)
   const [isMoreMenuOpen, setIsMoreMenuOpen] = useState(false)
+  const highlightMenuRef = useRef<HTMLDivElement>(null)
   const moreMenuRef = useRef<HTMLDivElement>(null)
   const state = useEditorState({
     editor,
@@ -487,6 +510,10 @@ function EditorToolbar({ editor, onInsertImage = null }: EditorToolbarProps) {
         : { pageFooterOffset: 40, pageHeaderOffset: 40 },
       canRedo: currentEditor?.can().redo() ?? false,
       canUndo: currentEditor?.can().undo() ?? false,
+      fontFamily: (currentEditor?.getAttributes('textStyle').fontFamily as string | undefined) ?? '',
+      fontSize: (currentEditor?.getAttributes('textStyle').fontSize as string | undefined) ?? '',
+      highlightColor:
+        (currentEditor?.getAttributes('highlight').color as string | undefined) ?? '',
       isBlockquote: currentEditor?.isActive('blockquote') ?? false,
       isBold: currentEditor?.isActive('bold') ?? false,
       isBulletList: currentEditor?.isActive('bulletList') ?? false,
@@ -511,6 +538,9 @@ function EditorToolbar({ editor, onInsertImage = null }: EditorToolbarProps) {
     pageLayout: { pageFooterOffset: 40, pageHeaderOffset: 40 },
     canRedo: false,
     canUndo: false,
+    fontFamily: '',
+    fontSize: '',
+    highlightColor: '',
     isBlockquote: false,
     isBold: false,
     isBulletList: false,
@@ -528,11 +558,15 @@ function EditorToolbar({ editor, onInsertImage = null }: EditorToolbarProps) {
   }
 
   useEffect(() => {
-    if (!isMoreMenuOpen) {
+    if (!isHighlightMenuOpen && !isMoreMenuOpen) {
       return
     }
 
     function handlePointerDown(event: PointerEvent) {
+      if (!highlightMenuRef.current?.contains(event.target as Node)) {
+        setIsHighlightMenuOpen(false)
+      }
+
       if (!moreMenuRef.current?.contains(event.target as Node)) {
         setIsMoreMenuOpen(false)
       }
@@ -540,6 +574,7 @@ function EditorToolbar({ editor, onInsertImage = null }: EditorToolbarProps) {
 
     function handleKeyDown(event: KeyboardEvent) {
       if (event.key === 'Escape') {
+        setIsHighlightMenuOpen(false)
         setIsMoreMenuOpen(false)
       }
     }
@@ -551,14 +586,141 @@ function EditorToolbar({ editor, onInsertImage = null }: EditorToolbarProps) {
       document.removeEventListener('pointerdown', handlePointerDown)
       document.removeEventListener('keydown', handleKeyDown)
     }
-  }, [isMoreMenuOpen])
+  }, [isHighlightMenuOpen, isMoreMenuOpen])
 
   function runCommand(command: () => void) {
     command()
   }
 
+  const selectedFontFamily = editorFontOptions.some(
+    (option) => option.value === toolbarState.fontFamily,
+  )
+    ? toolbarState.fontFamily
+    : ''
+  const selectedFontSize = editorTextSizeOptions.some(
+    (option) => option.value === toolbarState.fontSize,
+  )
+    ? toolbarState.fontSize
+    : ''
+
   return (
     <div className="sn-editor-toolbar" aria-label="Editor toolbar" role="toolbar">
+      <div
+        aria-label="Typography"
+        className="sn-editor-toolbar__group sn-editor-toolbar__group--typography"
+        role="group"
+      >
+        <label className="sn-editor-format-field">
+          <span aria-hidden="true" className="sn-editor-format-field__prefix">Aa</span>
+          <span className="sn-sr-only">Font family</span>
+          <select
+            aria-label="Font family"
+            disabled={!editor}
+            onChange={(event) => {
+              const fontFamily = event.target.value
+              runCommand(() => {
+                if (!editor) return
+                const chain = editor.chain().focus()
+                if (fontFamily) chain.setFontFamily(fontFamily).run()
+                else chain.unsetFontFamily().run()
+              })
+            }}
+            style={{ fontFamily: selectedFontFamily || undefined }}
+            value={selectedFontFamily}
+          >
+            {editorFontOptions.map((option) => (
+              <option key={option.label} value={option.value}>
+                {option.label}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label className="sn-editor-format-field sn-editor-format-field--size">
+          <span className="sn-sr-only">Font size</span>
+          <select
+            aria-label="Font size"
+            disabled={!editor}
+            onChange={(event) => {
+              const fontSize = event.target.value
+              runCommand(() => {
+                if (!editor) return
+                const chain = editor.chain().focus()
+                if (fontSize) chain.setFontSize(fontSize).run()
+                else chain.unsetFontSize().run()
+              })
+            }}
+            value={selectedFontSize}
+          >
+            {editorTextSizeOptions.map((option) => (
+              <option key={option.label} value={option.value}>
+                {option.label}
+              </option>
+            ))}
+          </select>
+        </label>
+        <div className="sn-editor-highlight-control" ref={highlightMenuRef}>
+          <ToolbarButton
+            disabled={!editor}
+            label="Text marker color"
+            onPress={() => {
+              setIsHighlightMenuOpen((isOpen) => !isOpen)
+              setIsMoreMenuOpen(false)
+            }}
+            pressed={Boolean(toolbarState.highlightColor)}
+          >
+            <span
+              aria-hidden="true"
+              className="sn-editor-highlight-symbol"
+              style={
+                {
+                  '--sn-editor-highlight': toolbarState.highlightColor || '#f3df84',
+                } as CSSProperties
+              }
+            >
+              A
+            </span>
+          </ToolbarButton>
+          {isHighlightMenuOpen ? (
+            <div
+              aria-label="Text marker colors"
+              className="sn-editor-highlight-menu"
+              role="menu"
+            >
+              <span className="sn-editor-highlight-menu__label">Marker</span>
+              <div className="sn-editor-highlight-menu__swatches">
+                {editorHighlightOptions.map((option) => (
+                  <button
+                    aria-label={option.label}
+                    className="sn-editor-highlight-swatch"
+                    data-active={toolbarState.highlightColor === option.color}
+                    key={option.color}
+                    onClick={() => {
+                      editor?.chain().focus().setHighlight({ color: option.color }).run()
+                      setIsHighlightMenuOpen(false)
+                    }}
+                    style={{ backgroundColor: option.color }}
+                    title={option.label}
+                    type="button"
+                  />
+                ))}
+              </div>
+              <button
+                className="sn-editor-highlight-menu__clear"
+                disabled={!toolbarState.highlightColor}
+                onClick={() => {
+                  editor?.chain().focus().unsetHighlight().run()
+                  setIsHighlightMenuOpen(false)
+                }}
+                type="button"
+              >
+                Clear marker
+              </button>
+            </div>
+          ) : null}
+        </div>
+      </div>
+      <span className="sn-editor-toolbar__divider" aria-hidden="true" />
+
       <div className="sn-editor-toolbar__group" aria-label="Text formatting" role="group">
         <ToolbarButton
           disabled={!editor}
@@ -568,7 +730,7 @@ function EditorToolbar({ editor, onInsertImage = null }: EditorToolbarProps) {
           }}
           pressed={toolbarState.isBold}
         >
-          <span className="sn-editor-tool-label sn-editor-tool-label--bold">B</span>
+          <CompassIcon name="bold" />
         </ToolbarButton>
         <ToolbarButton
           disabled={!editor}
@@ -578,7 +740,7 @@ function EditorToolbar({ editor, onInsertImage = null }: EditorToolbarProps) {
           }}
           pressed={toolbarState.isItalic}
         >
-          <span className="sn-editor-tool-label sn-editor-tool-label--italic">I</span>
+          <CompassIcon name="italic" />
         </ToolbarButton>
         <ToolbarButton
           disabled={!editor}
@@ -588,7 +750,7 @@ function EditorToolbar({ editor, onInsertImage = null }: EditorToolbarProps) {
           }}
           pressed={toolbarState.isStrike}
         >
-          <span className="sn-editor-tool-label sn-editor-tool-label--strike">S</span>
+          <CompassIcon name="strikethrough" />
         </ToolbarButton>
         <ToolbarButton
           disabled={!editor}
@@ -598,7 +760,7 @@ function EditorToolbar({ editor, onInsertImage = null }: EditorToolbarProps) {
           }}
           pressed={toolbarState.isCode}
         >
-          <span className="sn-editor-tool-label sn-editor-tool-label--code">Code</span>
+          <CompassIcon name="code" />
         </ToolbarButton>
       </div>
       <span className="sn-editor-toolbar__divider" aria-hidden="true" />
@@ -612,7 +774,7 @@ function EditorToolbar({ editor, onInsertImage = null }: EditorToolbarProps) {
           }}
           pressed={toolbarState.isHeading1}
         >
-          <span className="sn-editor-tool-label">H1</span>
+          <CompassIcon name="heading1" />
         </ToolbarButton>
         <ToolbarButton
           disabled={!editor}
@@ -622,7 +784,7 @@ function EditorToolbar({ editor, onInsertImage = null }: EditorToolbarProps) {
           }}
           pressed={toolbarState.isHeading2}
         >
-          <span className="sn-editor-tool-label">H2</span>
+          <CompassIcon name="heading2" />
         </ToolbarButton>
         <ToolbarButton
           disabled={!editor}
@@ -632,7 +794,7 @@ function EditorToolbar({ editor, onInsertImage = null }: EditorToolbarProps) {
           }}
           pressed={toolbarState.isBlockquote}
         >
-          <span className="sn-editor-tool-label">Quote</span>
+          <CompassIcon name="quote" />
         </ToolbarButton>
         {onInsertImage ? (
           <ToolbarButton
@@ -642,9 +804,18 @@ function EditorToolbar({ editor, onInsertImage = null }: EditorToolbarProps) {
               runCommand(() => onInsertImage())
             }}
           >
-            <UiIcon name="image" />
+            <CompassIcon name="image" />
           </ToolbarButton>
         ) : null}
+        <ToolbarButton
+          disabled={!editor}
+          label="Insert equation"
+          onPress={() => onOpenMath('block')}
+        >
+          <span aria-hidden="true" className="sn-editor-tool-label sn-editor-tool-label--math">
+            ∑
+          </span>
+        </ToolbarButton>
       </div>
       <span className="sn-editor-toolbar__divider" aria-hidden="true" />
 
@@ -657,7 +828,7 @@ function EditorToolbar({ editor, onInsertImage = null }: EditorToolbarProps) {
           }}
           pressed={toolbarState.isBulletList}
         >
-          <span className="sn-editor-tool-label">Bullets</span>
+          <CompassIcon name="bulletList" />
         </ToolbarButton>
         <ToolbarButton
           disabled={!editor}
@@ -667,7 +838,7 @@ function EditorToolbar({ editor, onInsertImage = null }: EditorToolbarProps) {
           }}
           pressed={toolbarState.isOrderedList}
         >
-          <span className="sn-editor-tool-label">Numbers</span>
+          <CompassIcon name="numberedList" />
         </ToolbarButton>
       </div>
       <span className="sn-editor-toolbar__divider" aria-hidden="true" />
@@ -681,6 +852,7 @@ function EditorToolbar({ editor, onInsertImage = null }: EditorToolbarProps) {
           label="More editor tools"
           onPress={() => {
             setIsMoreMenuOpen((isOpen) => !isOpen)
+            setIsHighlightMenuOpen(false)
           }}
           pressed={isMoreMenuOpen}
         >
@@ -793,6 +965,26 @@ function EditorToolbar({ editor, onInsertImage = null }: EditorToolbarProps) {
                   pressed={toolbarState.isCallout}
                 >
                   Callout
+                </MenuButton>
+                <MenuButton
+                  disabled={!editor}
+                  label="Inline equation"
+                  onPress={() => {
+                    onOpenMath('inline')
+                    setIsMoreMenuOpen(false)
+                  }}
+                >
+                  Inline equation
+                </MenuButton>
+                <MenuButton
+                  disabled={!editor}
+                  label="Equation block"
+                  onPress={() => {
+                    onOpenMath('block')
+                    setIsMoreMenuOpen(false)
+                  }}
+                >
+                  Equation block
                 </MenuButton>
                 {onInsertImage ? (
                   <MenuButton
@@ -918,6 +1110,114 @@ function EditorToolbar({ editor, onInsertImage = null }: EditorToolbarProps) {
   )
 }
 
+function MathPreview({ kind, latex }: { kind: MathKind; latex: string }) {
+  const previewRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    if (!previewRef.current) {
+      return
+    }
+
+    if (!latex.trim()) {
+      previewRef.current.replaceChildren()
+      return
+    }
+
+    katex.render(latex, previewRef.current, {
+      displayMode: kind === 'block',
+      output: 'htmlAndMathml',
+      strict: 'warn',
+      throwOnError: false,
+    })
+  }, [kind, latex])
+
+  return (
+    <div
+      aria-label="Equation preview"
+      className="sn-math-editor__preview"
+      data-empty={!latex.trim()}
+      ref={previewRef}
+    />
+  )
+}
+
+type MathEditorPanelProps = {
+  draft: MathEditorDraft
+  onCancel: () => void
+  onChange: (latex: string) => void
+  onDelete: (() => void) | null
+  onSave: () => void
+}
+
+function MathEditorPanel({
+  draft,
+  onCancel,
+  onChange,
+  onDelete,
+  onSave,
+}: MathEditorPanelProps) {
+  return (
+    <section aria-label="Equation editor" className="sn-math-editor">
+      <div className="sn-math-editor__header">
+        <div>
+          <span className="sn-math-editor__eyebrow">KaTeX · LaTeX</span>
+          <strong>{draft.kind === 'block' ? 'Equation block' : 'Inline equation'}</strong>
+        </div>
+        <button
+          aria-label="Close equation editor"
+          className="sn-math-editor__close"
+          onClick={onCancel}
+          type="button"
+        >
+          <UiIcon name="close" />
+        </button>
+      </div>
+      <MathPreview kind={draft.kind} latex={draft.latex} />
+      <label className="sn-math-editor__field">
+        <span className="sn-sr-only">LaTeX expression</span>
+        <input
+          aria-label="LaTeX expression"
+          autoFocus
+          onChange={(event) => onChange(event.target.value)}
+          onKeyDown={(event) => {
+            if (event.key === 'Escape') {
+              event.preventDefault()
+              onCancel()
+            }
+
+            if (event.key === 'Enter') {
+              event.preventDefault()
+              onSave()
+            }
+          }}
+          placeholder={draft.kind === 'block' ? String.raw`\frac{a}{b} = c` : 'E = mc^2'}
+          spellCheck={false}
+          value={draft.latex}
+        />
+      </label>
+      <div className="sn-math-editor__footer">
+        <span>Rendered while you type · click a formula later to edit</span>
+        <div className="sn-math-editor__actions">
+          {onDelete ? (
+            <button className="sn-math-editor__delete" onClick={onDelete} type="button">
+              Delete
+            </button>
+          ) : null}
+          <button onClick={onCancel} type="button">Cancel</button>
+          <button
+            className="sn-math-editor__save"
+            disabled={!draft.latex.trim()}
+            onClick={onSave}
+            type="button"
+          >
+            {draft.mode === 'edit' ? 'Update' : 'Insert'}
+          </button>
+        </div>
+      </div>
+    </section>
+  )
+}
+
 type EditableNoteEditorProps = {
   note: PlaintextLocalNote
   onChangeDocument: (noteId: NoteId, document: NoteDocument) => Promise<void>
@@ -955,6 +1255,7 @@ function EditableNoteEditor({
   const [autosaveState, setAutosaveState] = useState<AutosaveState>('saved')
   const [importNotice, setImportNotice] = useState<string | null>(null)
   const [importingCount, setImportingCount] = useState(0)
+  const [mathDraft, setMathDraft] = useState<MathEditorDraft | null>(null)
   const didFocusEmptyNoteRef = useRef(false)
   const onChangeDocumentRef = useRef(onChangeDocument)
   const onChangeTitleRef = useRef(onChangeTitle)
@@ -1065,6 +1366,34 @@ function EditableNoteEditor({
       ...ToggleExtensions,
       Callout,
       ImageBlock,
+      ...NoteTextStyleExtensions,
+      Mathematics.configure({
+        blockOptions: {
+          onClick(node, pos) {
+            setMathDraft({
+              kind: 'block',
+              latex: typeof node.attrs.latex === 'string' ? node.attrs.latex : '',
+              mode: 'edit',
+              pos,
+            })
+          },
+        },
+        inlineOptions: {
+          onClick(node, pos) {
+            setMathDraft({
+              kind: 'inline',
+              latex: typeof node.attrs.latex === 'string' ? node.attrs.latex : '',
+              mode: 'edit',
+              pos,
+            })
+          },
+        },
+        katexOptions: {
+          output: 'htmlAndMathml',
+          strict: 'warn',
+          throwOnError: false,
+        },
+      }),
       BlockLayout,
       PageLayout,
     ],
@@ -1147,6 +1476,49 @@ function EditableNoteEditor({
     fileInputRef.current?.click()
   }
 
+  function openMathEditor(kind: MathKind) {
+    setMathDraft({ kind, latex: '', mode: 'insert', pos: null })
+  }
+
+  function saveMathDraft() {
+    if (!editor || !mathDraft?.latex.trim()) {
+      return
+    }
+
+    const latex = mathDraft.latex.trim()
+    const chain = editor.chain().focus()
+
+    if (mathDraft.mode === 'insert') {
+      if (mathDraft.kind === 'block') {
+        chain.insertBlockMath({ latex }).run()
+      } else {
+        chain.insertInlineMath({ latex }).run()
+      }
+    } else if (mathDraft.kind === 'block' && mathDraft.pos !== null) {
+      chain.updateBlockMath({ latex, pos: mathDraft.pos }).run()
+    } else if (mathDraft.kind === 'inline' && mathDraft.pos !== null) {
+      chain.updateInlineMath({ latex, pos: mathDraft.pos }).run()
+    }
+
+    setMathDraft(null)
+  }
+
+  function deleteMathDraft() {
+    if (!editor || mathDraft?.mode !== 'edit' || mathDraft.pos === null) {
+      return
+    }
+
+    const chain = editor.chain().focus()
+
+    if (mathDraft.kind === 'block') {
+      chain.deleteBlockMath({ pos: mathDraft.pos }).run()
+    } else {
+      chain.deleteInlineMath({ pos: mathDraft.pos }).run()
+    }
+
+    setMathDraft(null)
+  }
+
   useEffect(() => {
     if (!editorApiRef) {
       return
@@ -1224,6 +1596,10 @@ function EditableNoteEditor({
   useEffect(() => {
     onChangeTitleRef.current = onChangeTitle
   }, [onChangeTitle])
+
+  useEffect(() => {
+    setMathDraft(null)
+  }, [note.id])
 
   useEffect(() => {
     // Don't clobber a title the user is still typing: with the manual-save
@@ -1370,7 +1746,18 @@ function EditableNoteEditor({
       <EditorToolbar
         editor={editor}
         onInsertImage={canInsertImages ? openImagePicker : null}
+        onOpenMath={openMathEditor}
       />
+
+      {mathDraft ? (
+        <MathEditorPanel
+          draft={mathDraft}
+          onCancel={() => setMathDraft(null)}
+          onChange={(latex) => setMathDraft((draft) => (draft ? { ...draft, latex } : draft))}
+          onDelete={mathDraft.mode === 'edit' ? deleteMathDraft : null}
+          onSave={saveMathDraft}
+        />
+      ) : null}
 
       {canInsertImages ? (
         <input
@@ -1462,6 +1849,13 @@ export function EditorShell({
           pendingOperations={pendingOperations}
           syncStatus={syncStatus}
         />
+        <div className="sn-mobile-empty-state" aria-hidden="true">
+          <span className="sn-mobile-empty-state__icon">
+            <UiIcon name="document" />
+          </span>
+          <strong>Start with a note</strong>
+          <p>Create a blank page or choose a template to begin writing.</p>
+        </div>
         <div className="sn-empty-actions" aria-label="Create a note">
           <button
             className="sn-empty-actions__primary"

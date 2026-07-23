@@ -104,16 +104,16 @@ describe('P1-A visual and interaction contract', () => {
     )
     act(() => {
       setInputValue(input!, 'Waiting on signal')
-      rendered.container.querySelector<HTMLButtonElement>('button[aria-label="Flag"]')?.click()
+      rendered.container.querySelector<HTMLButtonElement>('button[aria-label="Important"]')?.click()
     })
-    expect(rendered.container.querySelector('button[aria-label="Flag"] svg')).not.toBeNull()
+    expect(rendered.container.querySelector('button[aria-label="Important"] svg')).not.toBeNull()
     act(() => {
       rendered.container.querySelector('form')?.dispatchEvent(
         new Event('submit', { bubbles: true, cancelable: true }),
       )
     })
 
-    expect(onChange).toHaveBeenCalledWith('custom:flag:Waiting%20on%20signal')
+    expect(onChange).toHaveBeenCalledWith('custom:important:Waiting%20on%20signal')
     expect(notePropertiesSchema.safeParse({
       status: onChange.mock.calls[0]?.[0],
       tags: [],

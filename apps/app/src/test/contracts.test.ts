@@ -10,6 +10,7 @@ import {
   documentV1Contract,
   encryptedLocalNoteSchema,
   emptyDocumentV1,
+  isChatDocument,
   isJsonValue,
   localNoteSchema,
   noteDocumentSchema,
@@ -93,9 +94,12 @@ describe('shared contract validation', () => {
       'Ideas',
     ])
     expect(notePropertiesSchema.parse({ status: 'active', tags: ['Work'] })).toEqual({
+      kind: 'standard',
       status: 'active',
       tags: ['Work'],
     })
+    expect(notePropertiesSchema.parse({ kind: 'chat', status: 'none', tags: [] }).kind).toBe('chat')
+    expect(notePropertiesSchema.safeParse({ kind: 'stream', status: 'none', tags: [] }).success).toBe(false)
     expect(notePropertiesSchema.safeParse({ status: 'blocked', tags: [] }).success).toBe(false)
     expect(notePropertiesSchema.safeParse({
       status: 'custom:%E2%9C%A6:In%20review',
@@ -108,8 +112,16 @@ describe('shared contract validation', () => {
     const meeting = createNoteFromTemplate('meeting')
 
     expect(noteDocumentSchema.parse(daily.document).content.content?.length).toBeGreaterThan(2)
-    expect(daily.properties).toEqual({ status: 'active', tags: ['daily'] })
-    expect(meeting.properties).toEqual({ status: 'active', tags: ['meeting'] })
+    expect(daily.properties).toEqual({ kind: 'standard', status: 'active', tags: ['daily'] })
+    expect(meeting.properties).toEqual({ kind: 'standard', status: 'active', tags: ['meeting'] })
+
+    const chat = createNoteFromTemplate('chat')
+
+    expect(chat.title).toBe('Saved Messages')
+    expect(chat.properties).toEqual({ kind: 'chat', status: 'none', tags: [] })
+    expect(chat.document ? isChatDocument(noteDocumentSchema.parse(chat.document)) : false).toBe(
+      true,
+    )
   })
 
   it('rejects locked notes that still persist plaintext document data', () => {

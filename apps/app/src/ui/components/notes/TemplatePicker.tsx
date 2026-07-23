@@ -5,6 +5,7 @@ import { UiIcon } from '@/ui/icons/ui/UiIcon'
 
 const templateIcons = {
   blank: 'document',
+  chat: 'chat',
   daily: 'calendar',
   meeting: 'users',
   project: 'briefcase',

@@ -122,7 +122,7 @@ describe('focused product UX', () => {
       userId: userIdSchema.parse('focused_user'),
       deviceId: deviceIdSchema.parse('focused_device'),
       now,
-      properties: { status: 'idea', tags: ['Research'] },
+      properties: { kind: 'standard', status: 'idea', tags: ['Research'] },
     })
     const rendered = renderUi(
       <WorkspaceInspector
@@ -149,6 +149,7 @@ describe('focused product UX', () => {
       await Promise.resolve()
     })
     expect(onChangeProperties).toHaveBeenCalledWith(noteId, {
+      kind: 'standard',
       status: 'done',
       tags: ['Research'],
     })
@@ -162,6 +163,7 @@ describe('focused product UX', () => {
       await Promise.resolve()
     })
     expect(onChangeProperties).toHaveBeenCalledWith(noteId, {
+      kind: 'standard',
       status: 'done',
       tags: ['Research', 'Local'],
     })

@@ -432,7 +432,7 @@ describe('DefaultNoteRepository', () => {
     const noteId = await repository.createNote({
       title: 'Secret title',
       document: createDocument('Secret body'),
-      properties: { status: 'active', tags: ['classified'] },
+      properties: { kind: 'standard', status: 'active', tags: ['classified'] },
     })
     const noteQuery = repository.liveNote(noteId)
 
@@ -523,7 +523,7 @@ describe('DefaultNoteRepository', () => {
 
     const noteId = await repository.createNote({
       title: 'Field notes',
-      properties: { status: 'idea', tags: ['Research', 'Archive'] },
+      properties: { kind: 'standard', status: 'idea', tags: ['Research', 'Archive'] },
     })
     const taggedQuery = repository.liveNoteList({ search: 'research' })
     const noteQuery = repository.liveNote(noteId)
@@ -536,11 +536,11 @@ describe('DefaultNoteRepository', () => {
     })
 
     await repository.updateNote(noteId, {
-      properties: { status: 'done', tags: ['Reference'] },
+      properties: { kind: 'standard', status: 'done', tags: ['Reference'] },
     })
 
     expect(noteQuery.getSnapshot()).toMatchObject({
-      properties: { status: 'done', tags: ['Reference'] },
+      properties: { kind: 'standard', status: 'done', tags: ['Reference'] },
     })
     expect(taggedQuery.getSnapshot()).toEqual([])
   })

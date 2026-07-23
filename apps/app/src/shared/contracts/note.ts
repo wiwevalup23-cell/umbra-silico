@@ -50,8 +50,16 @@ export const notePropertyStatusSchema = z.string().min(1).max(96).refine(
 )
 export type NotePropertyStatus = z.infer<typeof notePropertyStatusSchema>
 
+// `kind` picks the presentation surface for a note: a standard page opens the
+// block editor, a chat opens the message feed. It lives in properties so it
+// survives lock/unlock and future sync without a schema migration.
+export const noteKindValues = ['standard', 'chat'] as const
+export const noteKindSchema = z.enum(noteKindValues)
+export type NoteKind = z.infer<typeof noteKindSchema>
+
 export const noteTagSchema = z.string().trim().min(1).max(32)
 export const notePropertiesSchema = z.object({
+  kind: noteKindSchema.default('standard'),
   status: notePropertyStatusSchema.default('none'),
   tags: z.array(noteTagSchema).max(12).transform(normalizeNoteTags).default([]),
 })
@@ -59,6 +67,7 @@ export const notePropertiesSchema = z.object({
 export type NoteProperties = z.infer<typeof notePropertiesSchema>
 
 export const emptyNoteProperties: NoteProperties = {
+  kind: 'standard',
   status: 'none',
   tags: [],
 }
@@ -94,6 +103,7 @@ export const noteListItemSchema = z.object({
   parentFolderId: folderIdSchema.nullable(),
   updatedAt: isoDateTimeSchema,
   syncStatus: noteSyncStatusSchema,
+  kind: noteKindSchema.optional(),
   propertyStatus: notePropertyStatusSchema.optional(),
   tags: z.array(noteTagSchema).optional(),
 })
@@ -245,6 +255,7 @@ export function toPlaintextListItem(note: PlaintextLocalNote): NoteListItem {
     parentFolderId: note.parentFolderId,
     updatedAt: note.updatedAt,
     syncStatus: note.syncStatus,
+    kind: note.properties?.kind,
     propertyStatus: note.properties?.status,
     tags: note.properties?.tags,
   }

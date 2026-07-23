@@ -18,6 +18,13 @@ export type {
   AutomationUnlockGrant,
 } from './automation'
 export {
+  chatLogNodeName,
+  chatMessageNodeName,
+  createChatDocument,
+  isChatDocument,
+} from './chat'
+export type { ChatMessage, ChatMessageContent } from './chat'
+export {
   argon2idParamsSchema,
   encryptionAlgorithmSchema,
   localCryptoProfileSchema,
@@ -108,6 +115,8 @@ export {
   isoDateTimeSchema,
   localNoteSchema,
   noteIdSchema,
+  noteKindSchema,
+  noteKindValues,
   noteListItemSchema,
   noteListQuerySchema,
   notePropertiesSchema,
@@ -136,6 +145,7 @@ export type {
   NoteDetail,
   NoteEncryptionFields,
   NoteId,
+  NoteKind,
   NoteListItem,
   NoteListQuery,
   NoteProperties,

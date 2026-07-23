@@ -119,6 +119,11 @@ export function NoteCard({
         type="button"
       >
         <span className="sn-note-card__topline">
+          {note.kind === 'chat' ? (
+            <span aria-label="Chat note" className="sn-note-card__kind" title="Chat">
+              <UiIcon height={13} name="chat" width={13} />
+            </span>
+          ) : null}
           <strong data-empty-title={isUntitled}>{displayTitle}</strong>
           <time className="sn-note-card__date" dateTime={note.updatedAt}>
             {formatUpdatedAt(note.updatedAt)}

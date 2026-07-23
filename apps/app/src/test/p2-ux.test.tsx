@@ -115,6 +115,7 @@ describe('P2 visual system, accessibility and brand', () => {
 
     expect(cards.map((card) => card.dataset.template)).toEqual([
       'blank',
+      'chat',
       'daily',
       'meeting',
       'project',

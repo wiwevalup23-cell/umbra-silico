@@ -1,3 +1,4 @@
+import { createChatDocument } from '@/shared/contracts/chat'
 import {
   createNoteInputSchema,
   type CreateNoteInput,
@@ -5,7 +6,7 @@ import {
 } from '@/shared/contracts/note'
 import type { DocumentNode, NoteDocument } from '@/shared/contracts/document'
 
-export const noteTemplateIds = ['blank', 'daily', 'meeting', 'project'] as const
+export const noteTemplateIds = ['blank', 'chat', 'daily', 'meeting', 'project'] as const
 export type NoteTemplateId = (typeof noteTemplateIds)[number]
 
 export type NoteTemplateSummary = {
@@ -21,6 +22,13 @@ export const noteTemplates: NoteTemplateSummary[] = [
     id: 'blank',
     label: 'Blank note',
     description: 'A clean page with no structure.',
+    status: 'none',
+    tags: [],
+  },
+  {
+    id: 'chat',
+    label: 'Chat',
+    description: 'A private message stream, like your saved-messages chat.',
     status: 'none',
     tags: [],
   },
@@ -98,10 +106,22 @@ export function createNoteFromTemplate(
     throw new Error(`Unknown note template: ${templateId}`)
   }
 
-  const properties = { status: summary.status, tags: summary.tags }
+  const properties = {
+    status: summary.status,
+    tags: summary.tags,
+    ...(templateId === 'chat' ? { kind: 'chat' as const } : {}),
+  }
 
   if (templateId === 'blank') {
     return createNoteInputSchema.parse({ title: 'Untitled', properties })
+  }
+
+  if (templateId === 'chat') {
+    return createNoteInputSchema.parse({
+      title: 'Saved Messages',
+      properties,
+      document: createChatDocument(),
+    })
   }
 
   if (templateId === 'daily') {

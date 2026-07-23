@@ -78,7 +78,7 @@ const lockedNotePayloadSchema = z.object({
   title: z.string().min(1),
   preview: z.string(),
   document: noteDocumentSchema,
-  properties: notePropertiesSchema.default({ status: 'none', tags: [] }),
+  properties: notePropertiesSchema.default({ kind: 'standard', status: 'none', tags: [] }),
 })
 
 type LockedNotePayload = z.infer<typeof lockedNotePayloadSchema>

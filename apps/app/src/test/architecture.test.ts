@@ -44,6 +44,7 @@ describe('phase 5 UI shell boundaries', () => {
       '@/local-store',
       '@/platform',
       '@/images',
+      '@/chat',
       '@tauri-apps',
       'supabase',
     ]
@@ -141,6 +142,34 @@ describe('cross-layer boundary discipline', () => {
         '@/sync',
         '@/crypto',
         '@/platform',
+        "from 'react'",
+        'zustand',
+        'dexie',
+        '@tauri-apps',
+        'supabase',
+      ]),
+    ).toEqual([])
+  })
+
+  it('keeps the chat log service self-contained', () => {
+    const files = import.meta.glob<string>('/src/chat/**/*.{ts,tsx}', {
+      eager: true,
+      import: 'default',
+      query: '?raw',
+    })
+
+    // The chat module is a pure message algebra over the shared note
+    // document: no React, no stores, no other layers.
+    expect(
+      findImportViolations(files, [
+        '@/ui',
+        '@/viewmodel',
+        '@/repository',
+        '@/local-store',
+        '@/sync',
+        '@/crypto',
+        '@/platform',
+        '@/images',
         "from 'react'",
         'zustand',
         'dexie',

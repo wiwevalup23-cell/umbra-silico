@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import brandEmblemUrl from '../../src-tauri/icons/128x128@2x.png'
 import { AppProviders } from '@/app/providers'
+import { ChatShell } from '@/ui/components/chat'
 import { EditorShell, type EditorShellApi } from '@/ui/components/notes/EditorShell'
 import { FolderTree } from '@/ui/components/notes/FolderTree'
 import { noteDragType } from '@/ui/components/notes/note-drag'
@@ -23,6 +24,7 @@ import {
 } from '@/shared/note-templates'
 import {
   useActiveNoteViewModel,
+  useChatViewModel,
   useFoldersViewModel,
   useLockModalViewModel,
   useNoteImagesViewModel,
@@ -123,6 +125,7 @@ function AppWorkspace() {
     : isInspectorCollapsed
   const isFocusLayout = isLibraryCollapsed && isInspectorEffectivelyCollapsed
   const activeNote = isHomeView || libraryMode === 'trash' ? null : activeNoteViewModel.note
+  const chatViewModel = useChatViewModel(activeNote, activeNoteViewModel.updateDocument)
   const noteToMove = notePendingMove
     ? allNotesViewModel.notes.find((note) => note.id === notePendingMove) ?? null
     : null
@@ -243,6 +246,30 @@ function AppWorkspace() {
   const handleSelectTemplate = useCallback((templateId: NoteTemplateId) => {
     handleCreateNote(createNoteFromTemplate(templateId))
   }, [handleCreateNote])
+
+  const activeNoteId = activeNoteViewModel.note?.id ?? null
+  const importChatImage = noteImagesViewModel.importImage
+  const sendChatImageMessage = chatViewModel.sendImageMessage
+  const handleSendChatImages = useCallback(
+    (files: File[]) => {
+      if (!activeNoteId) return
+
+      void (async () => {
+        // Each file becomes its own message, mirroring how messengers deliver
+        // multi-image drops; a failed import skips that file only.
+        for (const file of files) {
+          try {
+            const imported = await importChatImage(activeNoteId, file)
+            await sendChatImageMessage(imported)
+          } catch {
+            // The image repository already reports storage errors; a chat
+            // send should not take down the whole batch.
+          }
+        }
+      })()
+    },
+    [activeNoteId, importChatImage, sendChatImageMessage],
+  )
 
   const handleRevealImage = useCallback((imageId: string) => {
     // On mobile the gallery lives in the Details tab; jump to the editor
@@ -484,21 +511,41 @@ function AppWorkspace() {
           )}
 
           <section className="sn-editor-panel" aria-label="Editor">
-            <EditorShell
-              editorApiRef={editorApiRef}
-              hasRemote={syncViewModel.hasRemote}
-              imageResolver={noteImagesViewModel.resolver}
-              note={activeNote}
-              onChangeDocument={activeNoteViewModel.updateDocument}
-              onBrowseTemplates={handleOpenTemplates}
-              onChangeTitle={activeNoteViewModel.updateTitle}
-              onCreateNote={handleCreateNote}
-              isCreatingNote={isCreatingNote}
-              onImportImage={noteImagesViewModel.importImage}
-              onRequestLock={notesViewModel.openLockModal}
-              pendingOperations={visiblePendingOperations}
-              syncStatus={syncViewModel.status}
-            />
+            {activeNote && !activeNote.isLocked && chatViewModel.isChatNote ? (
+              <ChatShell
+                imageResolver={noteImagesViewModel.resolver}
+                messages={chatViewModel.messages}
+                note={activeNote}
+                onChangeTitle={activeNoteViewModel.updateTitle}
+                onDeleteMessage={(messageId) => {
+                  void chatViewModel.deleteMessage(messageId)
+                }}
+                onEditMessage={(messageId, content) => {
+                  void chatViewModel.editMessage(messageId, content)
+                }}
+                onRequestLock={notesViewModel.openLockModal}
+                onSendImages={handleSendChatImages}
+                onSendMessage={(content) => {
+                  void chatViewModel.sendMessage(content)
+                }}
+              />
+            ) : (
+              <EditorShell
+                editorApiRef={editorApiRef}
+                hasRemote={syncViewModel.hasRemote}
+                imageResolver={noteImagesViewModel.resolver}
+                note={activeNote}
+                onChangeDocument={activeNoteViewModel.updateDocument}
+                onBrowseTemplates={handleOpenTemplates}
+                onChangeTitle={activeNoteViewModel.updateTitle}
+                onCreateNote={handleCreateNote}
+                isCreatingNote={isCreatingNote}
+                onImportImage={noteImagesViewModel.importImage}
+                onRequestLock={notesViewModel.openLockModal}
+                pendingOperations={visiblePendingOperations}
+                syncStatus={syncViewModel.status}
+              />
+            )}
           </section>
 
           {!isNarrow && isInspectorEffectivelyCollapsed ? (

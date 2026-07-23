@@ -10,21 +10,29 @@ export type PropertyStatusPresentation = {
 }
 
 export const propertyStatusOptions: readonly PropertyStatusPresentation[] = [
-  { icon: 'idle', label: 'No status', value: 'none' },
-  { icon: 'beacon', label: 'Idea', value: 'idea' },
-  { icon: 'orbit', label: 'In progress', value: 'active' },
-  { icon: 'seal', label: 'Done', value: 'done' },
+  { icon: 'none', label: 'No status', value: 'none' },
+  { icon: 'idea', label: 'Idea', value: 'idea' },
+  { icon: 'inProgress', label: 'In progress', value: 'active' },
+  { icon: 'done', label: 'Done', value: 'done' },
 ]
 
 export const customStatusIconOptions = [
-  { icon: 'beacon', label: 'Beacon' },
-  { icon: 'orbit', label: 'Orbit' },
-  { icon: 'eclipse', label: 'Eclipse' },
-  { icon: 'ripple', label: 'Ripple' },
-  { icon: 'cipher', label: 'Cipher' },
-  { icon: 'flag', label: 'Flag' },
-  { icon: 'loop', label: 'Loop' },
-  { icon: 'vault', label: 'Vault' },
+  { icon: 'waiting', label: 'Waiting' },
+  { icon: 'pause', label: 'Pause' },
+  { icon: 'review', label: 'Review' },
+  { icon: 'archive', label: 'Archive' },
+  { icon: 'block', label: 'Block' },
+  { icon: 'someday', label: 'Someday' },
+  { icon: 'focus', label: 'Focus' },
+  { icon: 'important', label: 'Important' },
+  { icon: 'repeat', label: 'Repeat' },
+  { icon: 'spiral', label: 'Spiral' },
+  { icon: 'connection', label: 'Connection' },
+  { icon: 'wave', label: 'Wave' },
+  { icon: 'arrow', label: 'Arrow' },
+  { icon: 'key', label: 'Key' },
+  { icon: 'infinity', label: 'Infinity' },
+  { icon: 'windRose', label: 'Wind rose' },
 ] as const
 
 export function createCustomPropertyStatus(label: string, icon: string): NotePropertyStatus {

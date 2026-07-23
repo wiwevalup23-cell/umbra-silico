@@ -221,7 +221,9 @@ describe('Umbra Silico UI shell', () => {
     expect(rendered.container.querySelector('[role="textbox"]')?.textContent).toContain(
       'A polished glass note.',
     )
-    expect(rendered.container.textContent).toContain('H1')
+    expect(
+      rendered.container.querySelector('button[aria-label="Heading 1"]'),
+    ).not.toBeNull()
     expect(onRequestLock).toHaveBeenCalledWith(plainNoteId)
   })
 
@@ -412,6 +414,72 @@ describe('Umbra Silico UI shell', () => {
     })
 
     expect(onChangeTitle).toHaveBeenCalledWith(plainNoteId, 'Renamed Draft')
+  })
+
+  it('inserts a rendered equation and reopens it for contextual editing', () => {
+    const note = {
+      ...createDraftLocalNote({
+        deviceId,
+        id: plainNoteId,
+        now,
+        title: 'Formula note',
+        userId,
+      }),
+      preview: '',
+    }
+    const rendered = renderUi(
+      <EditorShell
+        note={note}
+        onChangeDocument={vi.fn(async () => undefined)}
+        onChangeTitle={vi.fn(async () => undefined)}
+        onCreateNote={vi.fn()}
+        onRequestLock={vi.fn()}
+        pendingOperations={0}
+        syncStatus="idle"
+      />,
+    )
+    cleanupTasks.push(rendered.cleanup)
+
+    act(() => {
+      rendered.container
+        .querySelector<HTMLButtonElement>('button[aria-label="Insert equation"]')
+        ?.click()
+    })
+
+    const latexInput = rendered.container.querySelector<HTMLInputElement>(
+      'input[aria-label="LaTeX expression"]',
+    )
+
+    expect(latexInput).not.toBeNull()
+
+    act(() => {
+      if (!latexInput) throw new Error('Expected LaTeX input.')
+      setInputValue(latexInput, String.raw`x^2 + y^2 = z^2`)
+    })
+
+    expect(rendered.container.querySelector('.sn-math-editor__preview .katex')).not.toBeNull()
+
+    act(() => {
+      Array.from(rendered.container.querySelectorAll<HTMLButtonElement>('button'))
+        .find((button) => button.textContent === 'Insert')
+        ?.click()
+    })
+
+    const formula = rendered.container.querySelector<HTMLElement>(
+      '.tiptap-mathematics-render[data-type="block-math"]',
+    )
+
+    expect(formula?.querySelector('.katex')).not.toBeNull()
+
+    act(() => {
+      formula?.click()
+    })
+
+    expect(
+      rendered.container.querySelector<HTMLInputElement>(
+        'input[aria-label="LaTeX expression"]',
+      )?.value,
+    ).toBe(String.raw`x^2 + y^2 = z^2`)
   })
 
   it('saves immediately through the Save button', async () => {
