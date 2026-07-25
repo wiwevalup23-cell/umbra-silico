@@ -187,6 +187,32 @@ describe('useChatViewModel', () => {
     ])
   })
 
+  it('can write a message as the interlocutor', async () => {
+    const harness = createChatHarness(makeChatNote())
+    const rendered = renderChatProbe(
+      harness.repository,
+      harness.getStoredNote(),
+      harness.updateDocument,
+    )
+
+    await act(async () => {
+      await rendered.viewModel().sendMessage(textMessageContent('other side'), {
+        senderName: 'Kitchen Friend',
+        side: 'other',
+      })
+    })
+
+    const storedNote = harness.getStoredNote()
+    const messages = storedNote.isLocked ? [] : parseChatMessages(storedNote.document)
+
+    expect(messages[0]).toEqual(
+      expect.objectContaining({
+        senderName: 'Kitchen Friend',
+        side: 'other',
+      }),
+    )
+  })
+
   it('edits and deletes messages by id', async () => {
     const harness = createChatHarness(makeChatNote())
     const rendered = renderChatProbe(
@@ -208,6 +234,7 @@ describe('useChatViewModel', () => {
 
     await act(async () => {
       await rendered.viewModel().editMessage(keep!.id, textMessageContent('kept and edited'))
+      await rendered.viewModel().setMessagePinned(keep!.id, true)
       await rendered.viewModel().deleteMessage(drop!.id)
     })
 
@@ -215,6 +242,7 @@ describe('useChatViewModel', () => {
     expect(messages).toHaveLength(1)
     expect(messages[0]?.content).toEqual(textMessageContent('kept and edited'))
     expect(messages[0]?.editedAt).not.toBeNull()
+    expect(messages[0]?.pinnedAt).not.toBeNull()
   })
 
   it('sends image messages as image block nodes', async () => {

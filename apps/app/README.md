@@ -39,9 +39,32 @@ The codebase is split into five layers:
 Supporting layers:
 
 - `src/shared`: pure contracts, types and utilities
+- `src/chat`: paged chat-document algebra
+- `src/chat-import`: isolated Telegram export parser and import service
 - `src/local-store`: SQLite/Dexie adapter contracts and future implementations
 - `src/crypto`: encryption service contracts
 - `src/platform`: browser/Tauri runtime detection
+
+## Telegram chat import
+
+Umbra imports a Telegram Desktop **HTML** chat export through a folder selected
+by the user. The source folder is read-only and is never modified.
+
+1. In Telegram Desktop export one chat as HTML and include photos/media.
+2. In Umbra open the new-page picker and choose **Import Telegram chat**.
+3. Select the exported folder (the folder containing `messages.html`).
+4. Confirm which Telegram participant is you and start the import.
+
+The importer creates a new chat in the currently selected Umbra folder. It
+supports split `messages2.html` pages, joined messages, exact timestamps,
+links, reply context, forwarded labels, photos and stickers. Missing or
+unsupported attachments remain as readable placeholders instead of dropping
+their messages. Imported participant identity is stored per message, allowing
+the chat composer to continue writing from either side.
+
+Safety limits: each HTML page is limited to 64 MB and one import to 250,000
+messages. Existing one-sided chat documents remain compatible and are read as
+messages from the local user.
 
 ## Phase 0 Status
 

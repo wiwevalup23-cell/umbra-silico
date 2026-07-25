@@ -3,6 +3,7 @@ import {
   appendChatMessage,
   parseChatMessages,
   removeChatMessage,
+  setChatMessagePinned,
   updateChatMessage,
 } from '@/chat'
 import {
@@ -10,6 +11,7 @@ import {
   isChatDocument,
   type ChatMessage,
   type ChatMessageContent,
+  type ChatMessageSide,
   type NoteDetail,
   type NoteDocument,
   type NoteId,
@@ -22,13 +24,25 @@ export type ChatImageMessageInput = {
   height: number
 }
 
+export type ChatMessageAuthorInput = {
+  side: ChatMessageSide
+  senderName?: string | null
+}
+
 export type ChatViewModel = {
   isChatNote: boolean
   messages: ChatMessage[]
   deleteMessage(messageId: string): Promise<void>
   editMessage(messageId: string, content: ChatMessageContent): Promise<void>
-  sendImageMessage(image: ChatImageMessageInput): Promise<void>
-  sendMessage(content: ChatMessageContent): Promise<void>
+  sendImageMessage(
+    image: ChatImageMessageInput,
+    author?: ChatMessageAuthorInput,
+  ): Promise<void>
+  sendMessage(
+    content: ChatMessageContent,
+    author?: ChatMessageAuthorInput,
+  ): Promise<void>
+  setMessagePinned(messageId: string, pinned: boolean): Promise<void>
 }
 
 type UpdateDocumentFn = (noteId: NoteId, document: NoteDocument) => Promise<void>
@@ -82,29 +96,37 @@ export function useChatViewModel(
   )
 
   const sendMessage = useCallback(
-    (content: ChatMessageContent) =>
+    (
+      content: ChatMessageContent,
+      author: ChatMessageAuthorInput = { side: 'self' },
+    ) =>
       mutateDocument((document) =>
         appendChatMessage(document, {
           id: crypto.randomUUID(),
           createdAt: new Date().toISOString(),
           content,
+          side: author.side,
+          senderName: author.senderName,
         }),
       ),
     [mutateDocument],
   )
 
   const sendImageMessage = useCallback(
-    (image: ChatImageMessageInput) =>
-      sendMessage([
-        {
-          type: imageBlockNodeName,
-          attrs: {
-            imageId: image.imageId,
-            naturalWidth: image.width,
-            naturalHeight: image.height,
+    (image: ChatImageMessageInput, author?: ChatMessageAuthorInput) =>
+      sendMessage(
+        [
+          {
+            type: imageBlockNodeName,
+            attrs: {
+              imageId: image.imageId,
+              naturalWidth: image.width,
+              naturalHeight: image.height,
+            },
           },
-        },
-      ]),
+        ],
+        author,
+      ),
     [sendMessage],
   )
 
@@ -124,6 +146,18 @@ export function useChatViewModel(
     [mutateDocument],
   )
 
+  const setMessagePinned = useCallback(
+    (messageId: string, pinned: boolean) =>
+      mutateDocument((document) =>
+        setChatMessagePinned(
+          document,
+          messageId,
+          pinned ? new Date().toISOString() : null,
+        ),
+      ),
+    [mutateDocument],
+  )
+
   return {
     isChatNote: chatNote !== null,
     messages,
@@ -131,5 +165,6 @@ export function useChatViewModel(
     editMessage,
     sendImageMessage,
     sendMessage,
+    setMessagePinned,
   }
 }

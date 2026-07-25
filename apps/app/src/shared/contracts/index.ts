@@ -19,11 +19,21 @@ export type {
 } from './automation'
 export {
   chatLogNodeName,
+  chatMessagesPerPage,
   chatMessageNodeName,
   createChatDocument,
   isChatDocument,
 } from './chat'
-export type { ChatMessage, ChatMessageContent } from './chat'
+export type { ChatMessage, ChatMessageContent, ChatMessageSide } from './chat'
+export type {
+  TelegramAttachment,
+  TelegramAttachmentKind,
+  TelegramExportFolder,
+  TelegramImportProgress,
+  TelegramImportResult,
+  TelegramParsedMessage,
+  TelegramParticipant,
+} from './telegram-import'
 export {
   argon2idParamsSchema,
   encryptionAlgorithmSchema,

@@ -33,6 +33,8 @@ export default [
         { type: 'local-store', pattern: 'src/local-store/**' },
         { type: 'sync', pattern: 'src/sync/**' },
         { type: 'automation', pattern: 'src/automation/**' },
+        { type: 'chat-import', pattern: 'src/chat-import/**' },
+        { type: 'chat', pattern: 'src/chat/**' },
         { type: 'images', pattern: 'src/images/**' },
         { type: 'crypto', pattern: 'src/crypto/**' },
         { type: 'platform', pattern: 'src/platform/**' },
@@ -57,6 +59,8 @@ export default [
                     'repository',
                     'sync',
                     'automation',
+                    'chat-import',
+                    'chat',
                     'platform',
                     'shared',
                   ],
@@ -72,7 +76,21 @@ export default [
             {
               from: { type: 'viewmodel' },
               allow: {
-                to: { type: ['viewmodel', 'repository-contracts', 'shared'] },
+                to: { type: ['viewmodel', 'repository-contracts', 'chat', 'shared'] },
+              },
+            },
+            {
+              from: { type: 'chat-import' },
+              allow: {
+                to: {
+                  type: ['chat-import', 'chat', 'repository-contracts', 'shared'],
+                },
+              },
+            },
+            {
+              from: { type: 'chat' },
+              allow: {
+                to: { type: ['chat', 'shared'] },
               },
             },
             {

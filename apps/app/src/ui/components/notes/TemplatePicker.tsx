@@ -13,11 +13,17 @@ const templateIcons = {
 
 type TemplatePickerProps = {
   onClose: () => void
+  onImportTelegram?: (() => void) | null
   onSelect: (templateId: NoteTemplateId) => void
   templates: NoteTemplateSummary[]
 }
 
-export function TemplatePicker({ onClose, onSelect, templates }: TemplatePickerProps) {
+export function TemplatePicker({
+  onClose,
+  onImportTelegram = null,
+  onSelect,
+  templates,
+}: TemplatePickerProps) {
   const firstTemplateRef = useRef<HTMLButtonElement>(null)
 
   return (
@@ -65,6 +71,23 @@ export function TemplatePicker({ onClose, onSelect, templates }: TemplatePickerP
               <UiIcon name="chevronRight" />
             </button>
           ))}
+          {onImportTelegram ? (
+            <button
+              className="sn-template-card sn-template-card--telegram"
+              data-template="telegram-import"
+              onClick={onImportTelegram}
+              type="button"
+            >
+              <span className="sn-template-card__icon" aria-hidden="true">
+                <UiIcon name="arrowDown" />
+              </span>
+              <span>
+                <strong>Import Telegram chat</strong>
+                <small>Select an HTML export folder and preserve both sides.</small>
+              </span>
+              <UiIcon name="chevronRight" />
+            </button>
+          ) : null}
         </div>
       </section>
     </RetroDialogShell>

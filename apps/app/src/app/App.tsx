@@ -1,7 +1,11 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import brandEmblemUrl from '../../src-tauri/icons/128x128@2x.png'
 import { AppProviders } from '@/app/providers'
-import { ChatShell } from '@/ui/components/chat'
+import {
+  importTelegramChat,
+  readTelegramExportFolder,
+} from '@/chat-import'
+import { ChatShell, TelegramImportDialog } from '@/ui/components/chat'
 import { EditorShell, type EditorShellApi } from '@/ui/components/notes/EditorShell'
 import { FolderTree } from '@/ui/components/notes/FolderTree'
 import { noteDragType } from '@/ui/components/notes/note-drag'
@@ -25,6 +29,7 @@ import {
 import {
   useActiveNoteViewModel,
   useChatViewModel,
+  type ChatMessageAuthorInput,
   useFoldersViewModel,
   useLockModalViewModel,
   useNoteImagesViewModel,
@@ -33,6 +38,11 @@ import {
   useTrashViewModel,
 } from '@/viewmodel'
 import { useSettings } from '@/viewmodel/useSettings'
+import {
+  useImageRepository,
+  useNoteRepository,
+} from '@/viewmodel/repository-hooks'
+import { useSyncEngine } from '@/viewmodel/sync-engine-hooks'
 
 type LibraryMode = 'notes' | 'trash'
 type FolderPromptState =
@@ -87,12 +97,16 @@ function AppWorkspace() {
   const [isSettingsOpen, setIsSettingsOpen] = useState(false)
   const [isQuickSwitcherOpen, setIsQuickSwitcherOpen] = useState(false)
   const [isTemplatePickerOpen, setIsTemplatePickerOpen] = useState(false)
+  const [isTelegramImportOpen, setIsTelegramImportOpen] = useState(false)
   const [folderPrompt, setFolderPrompt] = useState<FolderPromptState | null>(null)
   const [folderPendingDelete, setFolderPendingDelete] = useState<FolderDeleteState | null>(null)
   const [notePendingMove, setNotePendingMove] = useState<NoteId | null>(null)
   const [mobileTab, setMobileTab] = useState<MobileTab>('notes')
+  const [chatImageSendError, setChatImageSendError] = useState<string | null>(null)
+  const [isSendingChatImages, setIsSendingChatImages] = useState(false)
   const creatingNoteRef = useRef(false)
   const editorApiRef = useRef<EditorShellApi | null>(null)
+  const chatImageBatchRef = useRef(0)
 
   const foldersViewModel = useFoldersViewModel()
   const notesViewModel = useNotesViewModel({
@@ -109,6 +123,9 @@ function AppWorkspace() {
   )
   const syncViewModel = useSyncViewModel()
   const lockModalViewModel = useLockModalViewModel()
+  const noteRepository = useNoteRepository()
+  const imageRepository = useImageRepository()
+  const syncEngine = useSyncEngine()
   const { settings, updateSetting } = useSettings()
 
   // In the local-only build the outbox is never drained, so a growing
@@ -141,6 +158,7 @@ function AppWorkspace() {
       if ((event.metaKey || event.ctrlKey) && event.key.toLocaleLowerCase() === 'k') {
         event.preventDefault()
         setIsTemplatePickerOpen(false)
+        setIsTelegramImportOpen(false)
         setIsSettingsOpen(false)
         setIsQuickSwitcherOpen((isOpen) => !isOpen)
         return
@@ -251,25 +269,51 @@ function AppWorkspace() {
   const importChatImage = noteImagesViewModel.importImage
   const sendChatImageMessage = chatViewModel.sendImageMessage
   const handleSendChatImages = useCallback(
-    (files: File[]) => {
+    (files: File[], author: ChatMessageAuthorInput) => {
       if (!activeNoteId) return
 
       void (async () => {
+        const batchId = chatImageBatchRef.current + 1
+        chatImageBatchRef.current = batchId
+        setChatImageSendError(null)
+        setIsSendingChatImages(true)
+        const failures: string[] = []
+
         // Each file becomes its own message, mirroring how messengers deliver
         // multi-image drops; a failed import skips that file only.
         for (const file of files) {
           try {
             const imported = await importChatImage(activeNoteId, file)
-            await sendChatImageMessage(imported)
-          } catch {
-            // The image repository already reports storage errors; a chat
-            // send should not take down the whole batch.
+            await sendChatImageMessage(imported, author)
+          } catch (error) {
+            const reason = error instanceof Error ? error.message : 'Unknown storage error.'
+            failures.push(`${file.name || 'Image'}: ${reason}`)
           }
         }
+
+        if (chatImageBatchRef.current !== batchId) {
+          return
+        }
+
+        if (failures.length > 0) {
+          setChatImageSendError(
+            failures.length === 1
+              ? `Could not save ${failures[0]}`
+              : `${failures.length} images could not be saved. ${failures.join(' ')}`,
+          )
+        }
+
+        setIsSendingChatImages(false)
       })()
     },
     [activeNoteId, importChatImage, sendChatImageMessage],
   )
+
+  useEffect(() => {
+    chatImageBatchRef.current += 1
+    setChatImageSendError(null)
+    setIsSendingChatImages(false)
+  }, [activeNoteId])
 
   const handleRevealImage = useCallback((imageId: string) => {
     // On mobile the gallery lives in the Details tab; jump to the editor
@@ -513,7 +557,10 @@ function AppWorkspace() {
           <section className="sn-editor-panel" aria-label="Editor">
             {activeNote && !activeNote.isLocked && chatViewModel.isChatNote ? (
               <ChatShell
+                hasRemote={syncViewModel.hasRemote}
                 imageResolver={noteImagesViewModel.resolver}
+                imageSendError={chatImageSendError}
+                isSendingImages={isSendingChatImages}
                 messages={chatViewModel.messages}
                 note={activeNote}
                 onChangeTitle={activeNoteViewModel.updateTitle}
@@ -523,10 +570,15 @@ function AppWorkspace() {
                 onEditMessage={(messageId, content) => {
                   void chatViewModel.editMessage(messageId, content)
                 }}
+                onDismissImageError={() => setChatImageSendError(null)}
+                onImportTelegram={() => setIsTelegramImportOpen(true)}
                 onRequestLock={notesViewModel.openLockModal}
                 onSendImages={handleSendChatImages}
-                onSendMessage={(content) => {
-                  void chatViewModel.sendMessage(content)
+                onSendMessage={(content, author) => {
+                  void chatViewModel.sendMessage(content, author)
+                }}
+                onSetMessagePinned={(messageId, pinned) => {
+                  void chatViewModel.setMessagePinned(messageId, pinned)
                 }}
               />
             ) : (
@@ -630,8 +682,42 @@ function AppWorkspace() {
       {isTemplatePickerOpen ? (
         <TemplatePicker
           onClose={() => setIsTemplatePickerOpen(false)}
+          onImportTelegram={() => {
+            setIsTemplatePickerOpen(false)
+            setIsTelegramImportOpen(true)
+          }}
           onSelect={handleSelectTemplate}
           templates={noteTemplates}
+        />
+      ) : null}
+
+      {isTelegramImportOpen ? (
+        <TelegramImportDialog
+          destinationLabel={selectedFolderName}
+          onClose={() => setIsTelegramImportOpen(false)}
+          onImport={(exportFolder, selfParticipant, onProgress) =>
+            importTelegramChat(
+              {
+                imageRepository,
+                noteRepository,
+                onProgress,
+                requestSync: () => syncEngine?.requestSync('outbox-change'),
+              },
+              {
+                exportFolder,
+                parentFolderId: foldersViewModel.activeFolderId,
+                selfParticipant,
+              },
+            )
+          }
+          onOpenNote={(noteId) => {
+            setIsTelegramImportOpen(false)
+            setLibraryMode('notes')
+            setIsHomeView(false)
+            setMobileTab('editor')
+            notesViewModel.selectNote(noteId)
+          }}
+          onReadFolder={readTelegramExportFolder}
         />
       ) : null}
 

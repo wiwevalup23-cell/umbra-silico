@@ -3,3 +3,4 @@ export { collectPlainText, isComposerEditableContent } from './chat-content-util
 export { ChatMessageBubble } from './ChatMessageBubble'
 export { ChatMessageContentView } from './chat-message-content'
 export { ChatShell } from './ChatShell'
+export { TelegramImportDialog } from './TelegramImportDialog'

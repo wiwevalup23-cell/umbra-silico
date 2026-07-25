@@ -23,6 +23,7 @@ type ChatMessageBubbleProps = {
   message: ChatMessage
   onCancelEdit: () => void
   onDelete: (messageId: string) => void
+  onSetPinned: (messageId: string, pinned: boolean) => void
   onStartEdit: (messageId: string) => void
   onSubmitEdit: (messageId: string, content: ChatMessageContent) => void
 }
@@ -32,10 +33,12 @@ export function ChatMessageBubble({
   message,
   onCancelEdit,
   onDelete,
+  onSetPinned,
   onStartEdit,
   onSubmitEdit,
 }: ChatMessageBubbleProps) {
   const [isActionsOpen, setIsActionsOpen] = useState(false)
+  const [isDeleteConfirming, setIsDeleteConfirming] = useState(false)
   const actionsRef = useRef<HTMLDivElement>(null)
   const time = formatTime(message.createdAt)
   const plainText = collectPlainText(message.content)
@@ -44,6 +47,7 @@ export function ChatMessageBubble({
 
   useEffect(() => {
     if (!isActionsOpen) {
+      setIsDeleteConfirming(false)
       return
     }
 
@@ -70,7 +74,11 @@ export function ChatMessageBubble({
 
   if (isEditing) {
     return (
-      <div className="sn-chat-bubble sn-chat-bubble--editing" data-message-id={message.id}>
+      <div
+        className="sn-chat-bubble sn-chat-bubble--editing"
+        data-message-id={message.id}
+        data-side={message.side}
+      >
         <ChatComposer
           autoFocus
           initialContent={message.content}
@@ -84,7 +92,11 @@ export function ChatMessageBubble({
   }
 
   return (
-    <div className="sn-chat-bubble" data-message-id={message.id}>
+    <div
+      className="sn-chat-bubble"
+      data-message-id={message.id}
+      data-side={message.side}
+    >
       <div className="sn-chat-bubble__actions" ref={actionsRef}>
         <button
           aria-expanded={isActionsOpen}
@@ -99,51 +111,97 @@ export function ChatMessageBubble({
         </button>
         {isActionsOpen ? (
           <div aria-label="Message actions" className="sn-chat-bubble__action-menu" role="menu">
-            {canCopy ? (
-              <button
-                onClick={() => {
-                  setIsActionsOpen(false)
-                  void navigator.clipboard?.writeText(plainText)
-                }}
-                role="menuitem"
-                type="button"
+            {isDeleteConfirming ? (
+              <div
+                aria-label="Confirm message deletion"
+                className="sn-chat-bubble__delete-confirm"
+                role="alert"
               >
-                <UiIcon height={14} name="copy" width={14} />
-                Copy text
-              </button>
-            ) : null}
-            {canEdit ? (
-              <button
-                onClick={() => {
-                  setIsActionsOpen(false)
-                  onStartEdit(message.id)
-                }}
-                role="menuitem"
-                type="button"
-              >
-                <UiIcon height={14} name="edit" width={14} />
-                Edit
-              </button>
-            ) : null}
-            <button
-              className="sn-chat-bubble__action-danger"
-              onClick={() => {
-                setIsActionsOpen(false)
-                onDelete(message.id)
-              }}
-              role="menuitem"
-              type="button"
-            >
-              <UiIcon height={14} name="trash" width={14} />
-              Delete
-            </button>
+                <strong>Delete this message?</strong>
+                <div>
+                  <button
+                    onClick={() => setIsDeleteConfirming(false)}
+                    role="menuitem"
+                    type="button"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    className="sn-chat-bubble__action-danger"
+                    onClick={() => {
+                      setIsActionsOpen(false)
+                      onDelete(message.id)
+                    }}
+                    role="menuitem"
+                    type="button"
+                  >
+                    Delete
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <>
+                {canCopy ? (
+                  <button
+                    onClick={() => {
+                      setIsActionsOpen(false)
+                      void navigator.clipboard?.writeText(plainText)
+                    }}
+                    role="menuitem"
+                    type="button"
+                  >
+                    <UiIcon height={14} name="copy" width={14} />
+                    Copy text
+                  </button>
+                ) : null}
+                <button
+                  onClick={() => {
+                    setIsActionsOpen(false)
+                    onSetPinned(message.id, message.pinnedAt === null)
+                  }}
+                  role="menuitem"
+                  type="button"
+                >
+                  <UiIcon height={14} name="pin" width={14} />
+                  {message.pinnedAt ? 'Unpin' : 'Pin'}
+                </button>
+                {canEdit ? (
+                  <button
+                    onClick={() => {
+                      setIsActionsOpen(false)
+                      onStartEdit(message.id)
+                    }}
+                    role="menuitem"
+                    type="button"
+                  >
+                    <UiIcon height={14} name="edit" width={14} />
+                    Edit
+                  </button>
+                ) : null}
+                <button
+                  className="sn-chat-bubble__action-danger"
+                  onClick={() => {
+                    setIsDeleteConfirming(true)
+                  }}
+                  role="menuitem"
+                  type="button"
+                >
+                  <UiIcon height={14} name="trash" width={14} />
+                  Delete
+                </button>
+              </>
+            )}
           </div>
         ) : null}
       </div>
 
+      {message.side === 'other' && message.senderName ? (
+        <strong className="sn-chat-bubble__sender">{message.senderName}</strong>
+      ) : null}
       <ChatMessageContentView content={message.content} />
 
       <span className="sn-chat-bubble__meta">
+        {message.pinnedAt ? <em className="sn-chat-bubble__pinned">pinned</em> : null}
         {message.editedAt ? <em>edited</em> : null}
         {time ? <time dateTime={message.createdAt}>{time}</time> : null}
       </span>

@@ -9,6 +9,7 @@ import {
 import type {
   ChatMessage,
   ChatMessageContent,
+  ChatMessageSide,
   ImageSourceResolver,
   NoteId,
   PlaintextLocalNote,
@@ -17,6 +18,7 @@ import { ImageSourceContext } from '@/ui/editor/image-source-context'
 import { UiIcon } from '@/ui/icons/ui/UiIcon'
 import { ChatComposer } from '@/ui/components/chat/ChatComposer'
 import { ChatMessageBubble } from '@/ui/components/chat/ChatMessageBubble'
+import { collectPlainText } from '@/ui/components/chat/chat-content-utils'
 
 const visibleMessagesStep = 100
 
@@ -43,25 +45,63 @@ function formatDayLabel(createdAt: string, now: Date): string {
 }
 
 type ChatDayGroup = {
+  key: string
   label: string
   messages: ChatMessage[]
 }
 
+function formatDayKey(createdAt: string): string {
+  const date = new Date(createdAt)
+
+  if (Number.isNaN(date.getTime())) {
+    return 'unknown'
+  }
+
+  return [
+    date.getFullYear(),
+    String(date.getMonth() + 1).padStart(2, '0'),
+    String(date.getDate()).padStart(2, '0'),
+  ].join('-')
+}
+
 function groupMessagesByDay(messages: ChatMessage[], now: Date): ChatDayGroup[] {
   const groups: ChatDayGroup[] = []
+  const groupsByKey = new Map<string, ChatDayGroup>()
 
   for (const message of messages) {
+    const key = formatDayKey(message.createdAt)
     const label = formatDayLabel(message.createdAt, now)
-    const lastGroup = groups[groups.length - 1]
+    const existingGroup = groupsByKey.get(key)
 
-    if (lastGroup && lastGroup.label === label) {
-      lastGroup.messages.push(message)
+    if (existingGroup) {
+      existingGroup.messages.push(message)
     } else {
-      groups.push({ label, messages: [message] })
+      const group = { key, label, messages: [message] }
+      groupsByKey.set(key, group)
+      groups.push(group)
     }
   }
 
   return groups
+}
+
+function formatStorageStatus(note: PlaintextLocalNote, hasRemote: boolean): string {
+  if (!hasRemote) {
+    return 'LOCAL ONLY'
+  }
+
+  switch (note.syncStatus) {
+    case 'synced':
+      return 'SYNCED'
+    case 'dirty':
+      return 'SYNC PENDING'
+    case 'syncing':
+      return 'SYNCING'
+    case 'conflict':
+      return 'SYNC CONFLICT'
+    case 'error':
+      return 'SYNC ERROR'
+  }
 }
 
 function normalizeTitle(title: string): string {
@@ -69,32 +109,54 @@ function normalizeTitle(title: string): string {
 }
 
 type ChatShellProps = {
+  hasRemote?: boolean
   imageResolver?: ImageSourceResolver | null
+  imageSendError?: string | null
+  isSendingImages?: boolean
   messages: ChatMessage[]
   note: PlaintextLocalNote
   onChangeTitle: (noteId: NoteId, title: string) => Promise<void>
   onDeleteMessage: (messageId: string) => void
   onEditMessage: (messageId: string, content: ChatMessageContent) => void
+  onDismissImageError?: (() => void) | null
+  onImportTelegram?: (() => void) | null
   onRequestLock: (noteId: NoteId) => void
-  onSendImages?: ((files: File[]) => void) | null
-  onSendMessage: (content: ChatMessageContent) => void
+  onSendImages?: ((
+    files: File[],
+    author: { side: ChatMessageSide; senderName?: string | null },
+  ) => void) | null
+  onSendMessage: (
+    content: ChatMessageContent,
+    author: { side: ChatMessageSide; senderName?: string | null },
+  ) => void
+  onSetMessagePinned: (messageId: string, pinned: boolean) => void
 }
 
 export function ChatShell({
+  hasRemote = false,
   imageResolver = null,
+  imageSendError = null,
+  isSendingImages = false,
   messages,
   note,
   onChangeTitle,
   onDeleteMessage,
+  onDismissImageError = null,
   onEditMessage,
+  onImportTelegram = null,
   onRequestLock,
   onSendImages = null,
   onSendMessage,
+  onSetMessagePinned,
 }: ChatShellProps) {
   const feedRef = useRef<HTMLDivElement>(null)
   const [titleDraft, setTitleDraft] = useState(note.title)
   const [isDragActive, setIsDragActive] = useState(false)
   const [editingMessageId, setEditingMessageId] = useState<string | null>(null)
+  const [composeSide, setComposeSide] = useState<ChatMessageSide>('self')
+  const [pinnedOnly, setPinnedOnly] = useState(false)
+  const [searchQuery, setSearchQuery] = useState('')
+  const [pendingDayKey, setPendingDayKey] = useState<string | null>(null)
   const [visibleLimit, setVisibleLimit] = useState(visibleMessagesStep)
   const previousCountRef = useRef(messages.length)
   const previousScrollHeightRef = useRef<number | null>(null)
@@ -102,15 +164,63 @@ export function ChatShell({
   useEffect(() => {
     setTitleDraft(note.title)
     setEditingMessageId(null)
+    setComposeSide('self')
+    setPinnedOnly(false)
+    setPendingDayKey(null)
+    setSearchQuery('')
     setVisibleLimit(visibleMessagesStep)
   }, [note.id, note.title])
 
-  const hiddenCount = Math.max(0, messages.length - visibleLimit)
-  const visibleMessages = hiddenCount > 0 ? messages.slice(hiddenCount) : messages
+  const normalizedSearchQuery = searchQuery.trim().toLocaleLowerCase()
+  const isFiltering = pinnedOnly || normalizedSearchQuery.length > 0
+  const filteredMessages = useMemo(
+    () =>
+      messages.filter((message) => {
+        if (pinnedOnly && !message.pinnedAt) {
+          return false
+        }
+
+        return (
+          normalizedSearchQuery.length === 0 ||
+          collectPlainText(message.content).toLocaleLowerCase().includes(normalizedSearchQuery) ||
+          message.senderName?.toLocaleLowerCase().includes(normalizedSearchQuery) === true
+        )
+      }),
+    [messages, normalizedSearchQuery, pinnedOnly],
+  )
+  const hiddenCount = isFiltering ? 0 : Math.max(0, filteredMessages.length - visibleLimit)
+  const visibleMessages =
+    hiddenCount > 0 ? filteredMessages.slice(hiddenCount) : filteredMessages
+  const allFilteredGroups = useMemo(
+    () => groupMessagesByDay(filteredMessages, new Date()),
+    [filteredMessages],
+  )
   const groups = useMemo(
     () => groupMessagesByDay(visibleMessages, new Date()),
     [visibleMessages],
   )
+  const pinnedCount = useMemo(
+    () => messages.filter((message) => message.pinnedAt).length,
+    [messages],
+  )
+  const otherParticipantName = useMemo(() => {
+    const counts = new Map<string, number>()
+
+    for (const message of messages) {
+      if (message.side === 'other' && message.senderName) {
+        counts.set(message.senderName, (counts.get(message.senderName) ?? 0) + 1)
+      }
+    }
+
+    return (
+      [...counts.entries()].sort((left, right) => right[1] - left[1])[0]?.[0] ??
+      'Interlocutor'
+    )
+  }, [messages])
+  const composeAuthor = {
+    side: composeSide,
+    ...(composeSide === 'other' ? { senderName: otherParticipantName } : {}),
+  }
 
   // Jump to the newest message on open and whenever one is appended; edits
   // and deletions must not yank the scroll position.
@@ -135,6 +245,19 @@ export function ChatShell({
     feed.scrollTop += feed.scrollHeight - previousScrollHeight
     previousScrollHeightRef.current = null
   }, [visibleLimit])
+
+  useEffect(() => {
+    if (!pendingDayKey) {
+      return
+    }
+
+    const target = document.getElementById(`sn-chat-day-${pendingDayKey}`)
+
+    if (target) {
+      target.scrollIntoView({ behavior: 'smooth', block: 'start' })
+      setPendingDayKey(null)
+    }
+  }, [groups, pendingDayKey])
 
   function commitTitle() {
     const nextTitle = normalizeTitle(titleDraft)
@@ -161,7 +284,7 @@ export function ChatShell({
     }
 
     event.preventDefault()
-    onSendImages(files)
+    onSendImages(files, composeAuthor)
   }
 
   function showEarlierMessages() {
@@ -174,7 +297,7 @@ export function ChatShell({
   const microline = [
     noteFingerprint.toUpperCase(),
     `${messages.length} ${messages.length === 1 ? 'MESSAGE' : 'MESSAGES'}`,
-    'LOCAL ONLY',
+    formatStorageStatus(note, hasRemote),
     'SEALED ON LOCK',
   ].join(' · ')
 
@@ -213,6 +336,77 @@ export function ChatShell({
         </header>
         <div className="sn-chat-microline">
           <code>{microline}</code>
+        </div>
+        <div className="sn-chat-tools">
+          <label className="sn-chat-tools__search">
+            <UiIcon height={15} name="search" width={15} />
+            <span className="sn-visually-hidden">Search messages</span>
+            <input
+              onChange={(event) => setSearchQuery(event.target.value)}
+              placeholder="Search messages"
+              type="search"
+              value={searchQuery}
+            />
+          </label>
+          <button
+            aria-pressed={pinnedOnly}
+            className="sn-chat-tools__button"
+            data-active={pinnedOnly}
+            disabled={pinnedCount === 0}
+            onClick={() => setPinnedOnly((current) => !current)}
+            type="button"
+          >
+            <UiIcon height={14} name="pin" width={14} />
+            Pinned {pinnedCount > 0 ? `(${pinnedCount})` : ''}
+          </button>
+          <label className="sn-chat-tools__date">
+            <UiIcon height={14} name="calendar" width={14} />
+            <span className="sn-visually-hidden">Jump to date</span>
+            <select
+              aria-label="Jump to date"
+              disabled={allFilteredGroups.length === 0}
+              onChange={(event) => {
+                const dayKey = event.target.value
+
+                if (!dayKey) {
+                  return
+                }
+
+                const firstMessageIndex = filteredMessages.findIndex(
+                  (message) => formatDayKey(message.createdAt) === dayKey,
+                )
+
+                if (firstMessageIndex >= 0) {
+                  const messagesFromTarget = filteredMessages.length - firstMessageIndex
+                  setVisibleLimit((limit) => Math.max(limit, messagesFromTarget))
+                  setPendingDayKey(dayKey)
+                }
+              }}
+              value=""
+            >
+              <option value="">Jump to date</option>
+              {allFilteredGroups.map((group) => (
+                <option key={group.key} value={group.key}>
+                  {group.label}
+                </option>
+              ))}
+            </select>
+          </label>
+          {onImportTelegram ? (
+            <button
+              className="sn-chat-tools__button"
+              onClick={onImportTelegram}
+              type="button"
+            >
+              <UiIcon height={14} name="arrowDown" width={14} />
+              Import
+            </button>
+          ) : null}
+          {isFiltering ? (
+            <span aria-live="polite" className="sn-chat-tools__results">
+              {filteredMessages.length} found
+            </span>
+          ) : null}
         </div>
 
         <div
@@ -263,14 +457,40 @@ export function ChatShell({
               <strong>Your private stream</strong>
               <p>
                 Drop thoughts, links and images here the way you would in your
-                saved-messages chat. Everything stays local to this device.
+                saved-messages chat.{' '}
+                {hasRemote
+                  ? 'They are stored locally first and synced through your configured remote.'
+                  : 'Everything stays local to this device.'}
               </p>
               <code>DROP · PASTE · ENTER SENDS</code>
             </div>
           ) : null}
+          {messages.length > 0 && visibleMessages.length === 0 ? (
+            <div className="sn-chat-feed__empty sn-chat-feed__empty--compact">
+              <span aria-hidden="true" className="sn-chat-feed__empty-plate">
+                <UiIcon height={24} name="search" width={24} />
+              </span>
+              <strong>No matching messages</strong>
+              <p>Try another search or show all saved messages.</p>
+              <button
+                className="sn-chat-feed__earlier"
+                onClick={() => {
+                  setSearchQuery('')
+                  setPinnedOnly(false)
+                }}
+                type="button"
+              >
+                Clear filters
+              </button>
+            </div>
+          ) : null}
 
           {groups.map((group) => (
-            <section className="sn-chat-day" key={`${group.label}-${group.messages[0]?.id}`}>
+            <section
+              className="sn-chat-day"
+              id={`sn-chat-day-${group.key}`}
+              key={`${group.key}-${group.messages[0]?.id}`}
+            >
               <div className="sn-chat-day__chip-row">
                 <span className="sn-chat-day__chip">{group.label}</span>
               </div>
@@ -281,6 +501,7 @@ export function ChatShell({
                   message={message}
                   onCancelEdit={() => setEditingMessageId(null)}
                   onDelete={onDeleteMessage}
+                  onSetPinned={onSetMessagePinned}
                   onStartEdit={setEditingMessageId}
                   onSubmitEdit={(messageId, content) => {
                     setEditingMessageId(null)
@@ -292,10 +513,53 @@ export function ChatShell({
           ))}
         </div>
 
+        {imageSendError || isSendingImages ? (
+          <div
+            aria-live="polite"
+            className="sn-chat-transfer-status"
+            data-tone={imageSendError ? 'error' : 'progress'}
+            role={imageSendError ? 'alert' : 'status'}
+          >
+            <span>
+              {imageSendError ?? 'Saving image attachments…'}
+            </span>
+            {imageSendError && onDismissImageError ? (
+              <button
+                aria-label="Dismiss image error"
+                onClick={onDismissImageError}
+                type="button"
+              >
+                <UiIcon height={14} name="close" width={14} />
+              </button>
+            ) : null}
+          </div>
+        ) : null}
+
         <footer className="sn-chat-footer">
+          <div className="sn-chat-speaker-switch" role="group" aria-label="Message author">
+            <span>Write as</span>
+            <button
+              aria-pressed={composeSide === 'self'}
+              data-active={composeSide === 'self'}
+              onClick={() => setComposeSide('self')}
+              type="button"
+            >
+              You
+            </button>
+            <button
+              aria-pressed={composeSide === 'other'}
+              data-active={composeSide === 'other'}
+              onClick={() => setComposeSide('other')}
+              type="button"
+            >
+              {otherParticipantName}
+            </button>
+          </div>
           <ChatComposer
-            onPickImageFiles={onSendImages}
-            onSubmit={onSendMessage}
+            onPickImageFiles={
+              onSendImages ? (files) => onSendImages(files, composeAuthor) : null
+            }
+            onSubmit={(content) => onSendMessage(content, composeAuthor)}
             placeholder="Message"
             submitLabel="Send message"
           />

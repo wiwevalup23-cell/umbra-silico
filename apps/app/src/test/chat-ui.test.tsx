@@ -61,11 +61,15 @@ describe('saved messages UI', () => {
 
   it('exposes touch-friendly message actions from a single menu', () => {
     const onDelete = vi.fn()
+    const onSetPinned = vi.fn()
     const onStartEdit = vi.fn()
     const message: ChatMessage = {
       id: 'message-1',
       createdAt: '2026-07-20T00:00:00.000Z',
       editedAt: null,
+      pinnedAt: null,
+      side: 'self',
+      senderName: null,
       content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Saved thought' }] }],
     }
     const container = renderUi(
@@ -74,6 +78,7 @@ describe('saved messages UI', () => {
         message={message}
         onCancelEdit={vi.fn()}
         onDelete={onDelete}
+        onSetPinned={onSetPinned}
         onStartEdit={onStartEdit}
         onSubmitEdit={vi.fn()}
       />,
@@ -94,5 +99,78 @@ describe('saved messages UI', () => {
     })
 
     expect(onStartEdit).toHaveBeenCalledWith('message-1')
+  })
+
+  it('requires explicit confirmation before deleting a message', () => {
+    const onDelete = vi.fn()
+    const message: ChatMessage = {
+      id: 'message-delete',
+      createdAt: '2026-07-20T00:00:00.000Z',
+      editedAt: null,
+      pinnedAt: null,
+      side: 'self',
+      senderName: null,
+      content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Keep me safe' }] }],
+    }
+    const container = renderUi(
+      <ChatMessageBubble
+        isEditing={false}
+        message={message}
+        onCancelEdit={vi.fn()}
+        onDelete={onDelete}
+        onSetPinned={vi.fn()}
+        onStartEdit={vi.fn()}
+        onSubmitEdit={vi.fn()}
+      />,
+    )
+
+    act(() => {
+      container.querySelector<HTMLButtonElement>('button[aria-label="Message actions"]')?.click()
+    })
+    act(() => {
+      Array.from(container.querySelectorAll<HTMLButtonElement>('button'))
+        .find((button) => button.textContent?.trim() === 'Delete')
+        ?.click()
+    })
+
+    expect(onDelete).not.toHaveBeenCalled()
+    expect(container.textContent).toContain('Delete this message?')
+
+    act(() => {
+      container
+        .querySelector<HTMLButtonElement>('[aria-label="Confirm message deletion"] button:last-child')
+        ?.click()
+    })
+
+    expect(onDelete).toHaveBeenCalledWith('message-delete')
+  })
+
+  it('renders an interlocutor message on the opposite side with its sender name', () => {
+    const message: ChatMessage = {
+      id: 'message-other',
+      createdAt: '2026-07-20T00:00:00.000Z',
+      editedAt: null,
+      pinnedAt: null,
+      senderName: 'Kitchen Friend',
+      side: 'other',
+      content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Hello' }] }],
+    }
+    const container = renderUi(
+      <ChatMessageBubble
+        isEditing={false}
+        message={message}
+        onCancelEdit={vi.fn()}
+        onDelete={vi.fn()}
+        onSetPinned={vi.fn()}
+        onStartEdit={vi.fn()}
+        onSubmitEdit={vi.fn()}
+      />,
+    )
+    const bubble = container.querySelector<HTMLElement>('.sn-chat-bubble')
+
+    expect(bubble?.dataset.side).toBe('other')
+    expect(bubble?.querySelector('.sn-chat-bubble__sender')?.textContent).toBe(
+      'Kitchen Friend',
+    )
   })
 })
