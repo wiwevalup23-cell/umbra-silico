@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { publicAsset } from '@/shared/public-asset'
+import { useTranslation } from '@/ui/i18n/use-translation'
 
 type EmptyStatePlayerProps = {
   isCreatingNote?: boolean
@@ -12,11 +13,12 @@ export function EmptyStatePlayer({
   isCreatingNote = false,
   onCreateNote,
 }: EmptyStatePlayerProps) {
+  const { t } = useTranslation()
   const [isPointerInside, setIsPointerInside] = useState(false)
 
   return (
     <div
-      aria-label="Empty notebook player"
+      aria-label={t('player.label')}
       className="sn-empty-player"
       data-pointer-inside={isPointerInside}
       onPointerEnter={() => setIsPointerInside(true)}
@@ -55,18 +57,18 @@ export function EmptyStatePlayer({
           </div>
 
           <div className="sn-empty-player__screen-copy">
-            <strong>Ready to record</strong>
-            <span>Press play to create a new document</span>
+            <strong>{t('player.ready')}</strong>
+            <span>{t('player.hint')}</span>
           </div>
         </div>
       </div>
 
       <button
-        aria-label="Create note"
+        aria-label={t('player.createNote')}
         className="sn-empty-player__hotspot sn-empty-player__hotspot--play"
         disabled={isCreatingNote}
         onClick={onCreateNote}
-        title="Create note"
+        title={t('player.createNote')}
         type="button"
       />
     </div>

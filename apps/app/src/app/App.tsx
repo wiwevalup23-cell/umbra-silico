@@ -1,117 +1,89 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { lazy, Suspense, useCallback, useEffect, useRef, useState } from 'react'
 import brandEmblemUrl from '../../src-tauri/icons/128x128@2x.png'
 import { AppProviders } from '@/app/providers'
-import {
-  importTelegramChat,
-  readTelegramExportFolder,
-} from '@/chat-import'
-import { ChatShell, TelegramImportDialog } from '@/ui/components/chat'
-import { EditorShell, type EditorShellApi } from '@/ui/components/notes/EditorShell'
+import type { EditorShellApi } from '@/ui/components/notes/EditorShell'
 import { FolderTree } from '@/ui/components/notes/FolderTree'
 import { noteDragType } from '@/ui/components/notes/note-drag'
-import { LockModal } from '@/ui/components/notes/LockModal'
-import { MoveToFolderDialog } from '@/ui/components/notes/MoveToFolderDialog'
 import { NoteList } from '@/ui/components/notes/NoteList'
-import { QuickSwitcher } from '@/ui/components/notes/QuickSwitcher'
-import { TemplatePicker } from '@/ui/components/notes/TemplatePicker'
 import { TrashView } from '@/ui/components/notes/TrashView'
 import { WorkspaceInspector } from '@/ui/components/notes/WorkspaceInspector'
-import { SettingsModal } from '@/ui/components/silicon/SettingsModal'
-import { ConfirmationDialog, PromptDialog } from '@/ui/components/silicon'
-import { MobileTabBar, type MobileTab } from '@/ui/components/silicon/MobileTabBar'
+import { MobileTabBar } from '@/ui/components/silicon/MobileTabBar'
 import { UiIcon } from '@/ui/icons/ui/UiIcon'
-import type { CreateNoteInput, FolderId, FolderTreeNode, NoteId } from '@/shared/contracts'
-import {
-  createNoteFromTemplate,
-  noteTemplates,
-  type NoteTemplateId,
-} from '@/shared/note-templates'
-import {
-  useActiveNoteViewModel,
-  useChatViewModel,
-  type ChatMessageAuthorInput,
-  useFoldersViewModel,
-  useLockModalViewModel,
-  useNoteImagesViewModel,
-  useNotesViewModel,
-  useSyncViewModel,
-  useTrashViewModel,
-} from '@/viewmodel'
+import type { CreateNoteInput, FolderTreeNode, NoteId } from '@/shared/contracts'
+import { createNoteFromTemplate, type NoteTemplateId } from '@/shared/note-templates'
+import { WorkspaceDialogs } from '@/app/WorkspaceDialogs'
+import { TranslationProvider } from '@/ui/i18n/TranslationProvider'
+import { useTranslation } from '@/ui/i18n/use-translation'
 import { useSettings } from '@/viewmodel/useSettings'
 import {
-  useImageRepository,
-  useNoteRepository,
-} from '@/viewmodel/repository-hooks'
-import { useSyncEngine } from '@/viewmodel/sync-engine-hooks'
+  useActiveNoteViewModel,
+  useChatImageSender,
+  useChatViewModel,
+  useFoldersViewModel,
+  useNoteImagesViewModel,
+  useNotesViewModel,
+  useOverlayActions,
+  useSyncViewModel,
+  useTrashViewModel,
+  useWorkspaceLayout,
+  searchDebounceMs,
+  useDebouncedValue,
+} from '@/viewmodel'
+
+// The editor drags TipTap, ProseMirror and KaTeX behind it, so it loads on
+// demand and the library renders on first paint instead of waiting for it.
+const EditorShell = lazy(async () => ({
+  default: (await import('@/ui/components/notes/EditorShell')).EditorShell,
+}))
+const ChatShell = lazy(async () => ({
+  default: (await import('@/ui/components/chat')).ChatShell,
+}))
 
 type LibraryMode = 'notes' | 'trash'
-type FolderPromptState =
-  | { mode: 'create'; parentFolderId: FolderId | null }
-  | { folderId: FolderId; initialValue: string; mode: 'rename' }
-
-type FolderDeleteState = {
-  folderId: FolderId
-  name: string
-}
 
 export function App() {
   return (
     <AppProviders>
-      <AppWorkspace />
+      <LocalizedWorkspace />
     </AppProviders>
   )
 }
 
-function useMediaQuery(query: string): boolean {
-  const [matches, setMatches] = useState<boolean>(() => {
-    if (typeof window === 'undefined') return false
-    return window.matchMedia(query).matches
-  })
+/**
+ * The locale lives in settings, which is view-model state, while the
+ * translator has to be reachable from presentational components. This is the
+ * one place both are in scope.
+ */
+function LocalizedWorkspace() {
+  const { settings } = useSettings()
 
-  useEffect(() => {
-    if (typeof window === 'undefined') return
-
-    const mediaQuery = window.matchMedia(query)
-    setMatches(mediaQuery.matches)
-
-    const handler = (event: MediaQueryListEvent) => setMatches(event.matches)
-    mediaQuery.addEventListener('change', handler)
-
-    return () => mediaQuery.removeEventListener('change', handler)
-  }, [query])
-
-  return matches
+  return (
+    <TranslationProvider locale={settings.locale}>
+      <AppWorkspace />
+    </TranslationProvider>
+  )
 }
 
 function AppWorkspace() {
-  const isCompact = useMediaQuery('(max-width: 1279px)')
-  const isNarrow = useMediaQuery('(max-width: 959px)')
+  const { t } = useTranslation()
+  const layout = useWorkspaceLayout()
+  const { close: closeOverlay, open: openOverlay, toggle: toggleOverlay } = useOverlayActions()
   const [searchQuery, setSearchQuery] = useState('')
   const [libraryMode, setLibraryMode] = useState<LibraryMode>('notes')
-  const [isLibraryCollapsed, setLibraryCollapsed] = useState(false)
-  const [isInspectorCollapsed, setInspectorCollapsed] = useState(false)
-  const [isCompactInspectorOpen, setCompactInspectorOpen] = useState(false)
   const [isHomeView, setIsHomeView] = useState(false)
   const [isCreatingNote, setIsCreatingNote] = useState(false)
   const [pendingCreatedNoteId, setPendingCreatedNoteId] = useState<NoteId | null>(null)
-  const [isSettingsOpen, setIsSettingsOpen] = useState(false)
-  const [isQuickSwitcherOpen, setIsQuickSwitcherOpen] = useState(false)
-  const [isTemplatePickerOpen, setIsTemplatePickerOpen] = useState(false)
-  const [isTelegramImportOpen, setIsTelegramImportOpen] = useState(false)
-  const [folderPrompt, setFolderPrompt] = useState<FolderPromptState | null>(null)
-  const [folderPendingDelete, setFolderPendingDelete] = useState<FolderDeleteState | null>(null)
-  const [notePendingMove, setNotePendingMove] = useState<NoteId | null>(null)
-  const [mobileTab, setMobileTab] = useState<MobileTab>('notes')
-  const [chatImageSendError, setChatImageSendError] = useState<string | null>(null)
-  const [isSendingChatImages, setIsSendingChatImages] = useState(false)
   const creatingNoteRef = useRef(false)
   const editorApiRef = useRef<EditorShellApi | null>(null)
-  const chatImageBatchRef = useRef(0)
+  const { isNarrow, mobileTab, setMobileTab } = layout
 
   const foldersViewModel = useFoldersViewModel()
+  // The input stays on searchQuery so typing is instant; the query trails it so
+  // a full-text scan runs once per pause rather than once per character.
+  const debouncedSearchQuery = useDebouncedValue(searchQuery, searchDebounceMs)
   const notesViewModel = useNotesViewModel({
     folderId: libraryMode === 'notes' ? foldersViewModel.activeFolderId : undefined,
-    search: searchQuery,
+    search: debouncedSearchQuery,
   })
   const allNotesViewModel = useNotesViewModel()
   const trashViewModel = useTrashViewModel()
@@ -122,11 +94,6 @@ function AppWorkspace() {
       : null,
   )
   const syncViewModel = useSyncViewModel()
-  const lockModalViewModel = useLockModalViewModel()
-  const noteRepository = useNoteRepository()
-  const imageRepository = useImageRepository()
-  const syncEngine = useSyncEngine()
-  const { settings, updateSetting } = useSettings()
 
   // In the local-only build the outbox is never drained, so a growing
   // pending-operations count would only mislead; show it when a remote exists.
@@ -136,43 +103,25 @@ function AppWorkspace() {
 
   const selectedNoteId = notesViewModel.activeNoteId
   const firstNoteId = notesViewModel.notes[0]?.id ?? null
-  const isCompactDesktop = isCompact && !isNarrow
-  const isInspectorEffectivelyCollapsed = isCompactDesktop
-    ? !isCompactInspectorOpen
-    : isInspectorCollapsed
-  const isFocusLayout = isLibraryCollapsed && isInspectorEffectivelyCollapsed
   const activeNote = isHomeView || libraryMode === 'trash' ? null : activeNoteViewModel.note
   const chatViewModel = useChatViewModel(activeNote, activeNoteViewModel.updateDocument)
-  const noteToMove = notePendingMove
-    ? allNotesViewModel.notes.find((note) => note.id === notePendingMove) ?? null
-    : null
-
-  useEffect(() => {
-    if (!isCompactDesktop) {
-      setCompactInspectorOpen(false)
-    }
-  }, [isCompactDesktop])
 
   useEffect(() => {
     function handleGlobalKeyDown(event: KeyboardEvent) {
       if ((event.metaKey || event.ctrlKey) && event.key.toLocaleLowerCase() === 'k') {
         event.preventDefault()
-        setIsTemplatePickerOpen(false)
-        setIsTelegramImportOpen(false)
-        setIsSettingsOpen(false)
-        setIsQuickSwitcherOpen((isOpen) => !isOpen)
+        toggleOverlay({ kind: 'quickSwitcher' })
         return
       }
 
       if (event.key === 'Escape') {
-        setIsQuickSwitcherOpen(false)
-        setIsTemplatePickerOpen(false)
+        closeOverlay()
       }
     }
 
     window.addEventListener('keydown', handleGlobalKeyDown)
     return () => window.removeEventListener('keydown', handleGlobalKeyDown)
-  }, [])
+  }, [closeOverlay, toggleOverlay])
 
   useEffect(() => {
     if (!isHomeView && !selectedNoteId && firstNoteId) {
@@ -193,10 +142,9 @@ function AppWorkspace() {
     creatingNoteRef.current = true
     setIsCreatingNote(true)
     setLibraryMode('notes')
-    setCompactInspectorOpen(false)
+    layout.collapseInspector()
     setMobileTab('editor')
-    setIsQuickSwitcherOpen(false)
-    setIsTemplatePickerOpen(false)
+    closeOverlay()
 
     void notesViewModel.createNote({
         ...input,
@@ -211,7 +159,7 @@ function AppWorkspace() {
         creatingNoteRef.current = false
         setIsCreatingNote(false)
       })
-  }, [foldersViewModel.activeFolderId, notesViewModel])
+  }, [closeOverlay, foldersViewModel.activeFolderId, layout, notesViewModel, setMobileTab])
 
   const handleSelectNote = useCallback(
     (noteId: NoteId) => {
@@ -220,7 +168,7 @@ function AppWorkspace() {
       setMobileTab('editor')
       notesViewModel.selectNote(noteId)
     },
-    [notesViewModel],
+    [notesViewModel, setMobileTab],
   )
 
   const handleOpenHome = useCallback(() => {
@@ -229,14 +177,14 @@ function AppWorkspace() {
     setMobileTab('editor')
     foldersViewModel.selectFolder(null)
     notesViewModel.selectNote(null)
-  }, [foldersViewModel, notesViewModel])
+  }, [foldersViewModel, notesViewModel, setMobileTab])
 
   const handleOpenTrash = useCallback(() => {
     setLibraryMode('trash')
     setIsHomeView(false)
     setMobileTab('notes')
     notesViewModel.selectNote(null)
-  }, [notesViewModel])
+  }, [notesViewModel, setMobileTab])
 
   const handleSelectFolder = useCallback(
     (folderId: typeof foldersViewModel.activeFolderId) => {
@@ -246,74 +194,37 @@ function AppWorkspace() {
       foldersViewModel.selectFolder(folderId)
       notesViewModel.selectNote(null)
     },
-    [foldersViewModel, notesViewModel],
+    [foldersViewModel, notesViewModel, setMobileTab],
   )
 
   const handleCreateFolder = useCallback(
     (parentFolderId: typeof foldersViewModel.activeFolderId) => {
-      setFolderPrompt({ mode: 'create', parentFolderId })
+      openOverlay({ kind: 'createFolder', parentFolderId })
     },
-    [],
+    [openOverlay],
   )
 
-  const handleOpenTemplates = useCallback(() => {
-    setIsQuickSwitcherOpen(false)
-    setIsTemplatePickerOpen(true)
-  }, [])
-
-  const handleSelectTemplate = useCallback((templateId: NoteTemplateId) => {
-    handleCreateNote(createNoteFromTemplate(templateId))
-  }, [handleCreateNote])
-
-  const activeNoteId = activeNoteViewModel.note?.id ?? null
-  const importChatImage = noteImagesViewModel.importImage
-  const sendChatImageMessage = chatViewModel.sendImageMessage
-  const handleSendChatImages = useCallback(
-    (files: File[], author: ChatMessageAuthorInput) => {
-      if (!activeNoteId) return
-
-      void (async () => {
-        const batchId = chatImageBatchRef.current + 1
-        chatImageBatchRef.current = batchId
-        setChatImageSendError(null)
-        setIsSendingChatImages(true)
-        const failures: string[] = []
-
-        // Each file becomes its own message, mirroring how messengers deliver
-        // multi-image drops; a failed import skips that file only.
-        for (const file of files) {
-          try {
-            const imported = await importChatImage(activeNoteId, file)
-            await sendChatImageMessage(imported, author)
-          } catch (error) {
-            const reason = error instanceof Error ? error.message : 'Unknown storage error.'
-            failures.push(`${file.name || 'Image'}: ${reason}`)
-          }
-        }
-
-        if (chatImageBatchRef.current !== batchId) {
-          return
-        }
-
-        if (failures.length > 0) {
-          setChatImageSendError(
-            failures.length === 1
-              ? `Could not save ${failures[0]}`
-              : `${failures.length} images could not be saved. ${failures.join(' ')}`,
-          )
-        }
-
-        setIsSendingChatImages(false)
-      })()
+  const handleOpenLockedNote = useCallback(
+    (noteId: NoteId) => {
+      setIsHomeView(false)
+      setMobileTab('editor')
+      notesViewModel.openLockModal(noteId)
     },
-    [activeNoteId, importChatImage, sendChatImageMessage],
+    [notesViewModel, setMobileTab],
   )
 
-  useEffect(() => {
-    chatImageBatchRef.current += 1
-    setChatImageSendError(null)
-    setIsSendingChatImages(false)
-  }, [activeNoteId])
+  const handleCreateFromTemplate = useCallback(
+    (templateId?: NoteTemplateId) => {
+      handleCreateNote(templateId ? createNoteFromTemplate(templateId) : {})
+    },
+    [handleCreateNote],
+  )
+
+  const chatImageSender = useChatImageSender({
+    importImage: noteImagesViewModel.importImage,
+    noteId: activeNoteViewModel.note?.id ?? null,
+    sendImageMessage: chatViewModel.sendImageMessage,
+  })
 
   const handleRevealImage = useCallback((imageId: string) => {
     // On mobile the gallery lives in the Details tab; jump to the editor
@@ -322,25 +233,33 @@ function AppWorkspace() {
     requestAnimationFrame(() => {
       editorApiRef.current?.revealImage(imageId)
     })
-  }, [])
+  }, [setMobileTab])
 
-  function findFolderName(nodes: FolderTreeNode[], folderId: string | null): string {
-    if (!folderId) return 'All notes'
+  // Returns null when the folder is gone, rather than the label for "no
+  // folder": a folder actually named "All notes" used to end the search early.
+  function findFolderName(
+    nodes: FolderTreeNode[],
+    folderId: string | null,
+  ): string | null {
+    if (!folderId) return null
+
     for (const node of nodes) {
       if (node.folder.id === folderId) return node.folder.name
+
       const nested = findFolderName(node.children, folderId)
-      if (nested !== 'All notes') return nested
+
+      if (nested !== null) return nested
     }
-    return 'All notes'
+
+    return null
   }
 
-  const activeFolderName = activeNote
-    ? findFolderName(foldersViewModel.folderTree, activeNote.parentFolderId)
-    : 'All notes'
-  const selectedFolderName = findFolderName(
-    foldersViewModel.folderTree,
-    foldersViewModel.activeFolderId,
-  )
+  function folderLabel(folderId: string | null): string {
+    return findFolderName(foldersViewModel.folderTree, folderId) ?? t('library.allNotes')
+  }
+
+  const activeFolderName = activeNote ? folderLabel(activeNote.parentFolderId) : t('library.allNotes')
+  const selectedFolderName = folderLabel(foldersViewModel.activeFolderId)
 
   const handleRestoreNote = useCallback(
     async (noteId: NoteId) => {
@@ -352,22 +271,12 @@ function AppWorkspace() {
     [notesViewModel, trashViewModel],
   )
 
-  const handleToggleFocus = useCallback(() => {
-    const shouldFocus = !(isLibraryCollapsed && isInspectorEffectivelyCollapsed)
-    setLibraryCollapsed(shouldFocus)
-    if (isCompactDesktop) {
-      setCompactInspectorOpen(false)
-    } else {
-      setInspectorCollapsed(shouldFocus)
-    }
-  }, [isCompactDesktop, isInspectorEffectivelyCollapsed, isLibraryCollapsed])
-
   return (
     <main className="sn-app-shell">
       <div className="sn-app-frame">
         <header className="sn-topbar">
           <button
-            aria-label="Open home"
+            aria-label={t('shell.openHome')}
             className="sn-brand"
             data-active={isHomeView}
             onClick={handleOpenHome}
@@ -389,26 +298,26 @@ function AppWorkspace() {
 
           <div className="sn-topbar-actions">
             <button
-              aria-label="Open command menu"
+              aria-label={t('shell.commandMenu')}
               className="sn-icon-button"
-              onClick={() => setIsQuickSwitcherOpen(true)}
-              title="Command menu (Ctrl/⌘ K)"
+              onClick={() => openOverlay({ kind: 'quickSwitcher' })}
+              title={t('shell.commandMenuHint')}
               type="button"
             >
               <UiIcon name="search" />
             </button>
             <button
-              aria-label="Create note"
+              aria-label={t('shell.createNote')}
               className="sn-icon-button sn-icon-button--primary"
               disabled={isCreatingNote}
               onClick={() => handleCreateNote()}
-              title="Create note"
+              title={t('shell.createNote')}
               type="button"
             >
               <UiIcon name="plus" />
             </button>
             <button
-              aria-label="Lock selected note"
+              aria-label={t('shell.lockSelectedNote')}
               className="sn-icon-button"
               disabled={!notesViewModel.activeNoteId}
               onClick={() => {
@@ -416,39 +325,39 @@ function AppWorkspace() {
                   notesViewModel.openLockModal(notesViewModel.activeNoteId)
                 }
               }}
-              title="Lock selected note"
+              title={t('shell.lockSelectedNote')}
               type="button"
             >
               <UiIcon name="lock" />
             </button>
             {syncViewModel.hasRemote ? (
               <button
-                aria-label="Refresh sync"
+                aria-label={t('shell.refreshSync')}
                 className="sn-icon-button"
                 onClick={() => {
                   void syncViewModel.refreshPendingOperations()
                 }}
-                title="Refresh sync"
+                title={t('shell.refreshSync')}
                 type="button"
               >
                 <UiIcon name="refresh" />
               </button>
             ) : null}
             <button
-              aria-label="Toggle focused layout"
+              aria-label={t('shell.toggleFocus')}
               className="sn-icon-button"
-              data-active={isFocusLayout}
-              onClick={handleToggleFocus}
-              title="Toggle focused layout"
+              data-active={layout.isFocusLayout}
+              onClick={layout.toggleFocus}
+              title={t('shell.toggleFocus')}
               type="button"
             >
               <UiIcon name="focus" />
             </button>
             <button
-              aria-label="Settings"
+              aria-label={t('shell.settings')}
               className="sn-icon-button"
-              onClick={() => setIsSettingsOpen(true)}
-              title="Settings"
+              onClick={() => openOverlay({ kind: 'settings' })}
+              title={t('shell.settings')}
               type="button"
             >
               <UiIcon name="settings" />
@@ -457,24 +366,24 @@ function AppWorkspace() {
         </header>
 
         <section
-          aria-label="Notes workspace"
+          aria-label={t('shell.workspace')}
           className="sn-workspace"
-          data-compact={isCompactDesktop}
-          data-focus={isFocusLayout}
-          data-left-collapsed={isLibraryCollapsed}
-          data-right-collapsed={isInspectorEffectivelyCollapsed}
+          data-compact={layout.isCompactDesktop}
+          data-focus={layout.isFocusLayout}
+          data-left-collapsed={layout.isLibraryCollapsed}
+          data-right-collapsed={layout.isInspectorCollapsed}
           data-mobile-tab={isNarrow ? mobileTab : undefined}
         >
-          {!isNarrow && isLibraryCollapsed ? (
+          {!isNarrow && layout.isLibraryCollapsed ? (
             <button
-              aria-label="Show library"
+              aria-label={t('shell.showLibrary')}
               className="sn-rail sn-rail--library"
-              onClick={() => setLibraryCollapsed(false)}
-              title="Show library"
+              onClick={layout.expandLibrary}
+              title={t('shell.showLibrary')}
               type="button"
             >
               <UiIcon name="panelLeft" />
-              <span>{libraryMode === 'trash' ? 'Trash' : notesViewModel.notes.length}</span>
+              <span>{libraryMode === 'trash' ? t('trash.title') : notesViewModel.notes.length}</span>
             </button>
           ) : (
             <aside className="sn-library-panel">
@@ -482,7 +391,7 @@ function AppWorkspace() {
                 <TrashView
                   notes={trashViewModel.trashedNotes}
                   onBack={() => setLibraryMode('notes')}
-                  onCollapse={isNarrow ? undefined : () => setLibraryCollapsed(true)}
+                  onCollapse={isNarrow ? undefined : layout.collapseLibrary}
                   onPurge={(noteId) => {
                     void trashViewModel.purgeNote(noteId)
                   }}
@@ -500,26 +409,23 @@ function AppWorkspace() {
                       nodes={foldersViewModel.folderTree}
                       onCreateFolder={handleCreateFolder}
                       onDeleteFolder={(folderId) => {
-                        setFolderPendingDelete({
+                        openOverlay({
+                          kind: 'deleteFolder',
                           folderId,
-                          name: findFolderName(foldersViewModel.folderTree, folderId),
+                          name: folderLabel(folderId),
                         })
                       }}
                       onMoveNoteToFolder={(noteId, folderId) => {
                         void foldersViewModel.moveNoteToFolder(noteId, folderId)
                       }}
                       onRenameFolder={(folderId, currentName) => {
-                        setFolderPrompt({
-                          folderId,
-                          initialValue: currentName,
-                          mode: 'rename',
-                        })
+                        openOverlay({ kind: 'renameFolder', folderId, currentName })
                       }}
                       onSelectFolder={handleSelectFolder}
                     />
                   }
                   notes={notesViewModel.notes}
-                  onCollapse={isNarrow ? undefined : () => setLibraryCollapsed(true)}
+                  onCollapse={isNarrow ? undefined : layout.collapseLibrary}
                   onCreateNote={handleCreateNote}
                   onDeleteNote={(noteId) => {
                     void notesViewModel.deleteNote(noteId)
@@ -530,23 +436,21 @@ function AppWorkspace() {
                     const preview = document.createElement('div')
                     preview.className = 'sn-note-drag-preview'
                     preview.textContent = event.currentTarget.querySelector('strong')?.textContent
-                      ?? 'Move note'
+                      ?? t('note.untitled')
                     document.body.append(preview)
                     event.dataTransfer.setDragImage(preview, 18, 18)
                     window.setTimeout(() => preview.remove(), 0)
                   }}
-                  onOpenLockedNote={(noteId) => {
-                    setIsHomeView(false)
-                    setMobileTab('editor')
-                    notesViewModel.openLockModal(noteId)
-                  }}
+                  onOpenLockedNote={handleOpenLockedNote}
                   onOpenTrash={handleOpenTrash}
-                  onMoveNote={setNotePendingMove}
+                  onMoveNote={(noteId) => openOverlay({ kind: 'moveNote', noteId })}
                   onSearchChange={setSearchQuery}
                   onSelectNote={handleSelectNote}
                   pendingOperations={visiblePendingOperations}
                   searchQuery={searchQuery}
-                  scopeLabel={selectedFolderName}
+                  scopeLabel={
+                    foldersViewModel.activeFolderId ? selectedFolderName : null
+                  }
                   syncStatus={syncViewModel.status}
                   trashCount={trashViewModel.trashedNotes.length}
                 />
@@ -554,13 +458,14 @@ function AppWorkspace() {
             </aside>
           )}
 
-          <section className="sn-editor-panel" aria-label="Editor">
+          <section className="sn-editor-panel" aria-label={t('shell.editor')}>
+            <Suspense fallback={<div className="sn-editor-loading" aria-hidden="true" />}>
             {activeNote && !activeNote.isLocked && chatViewModel.isChatNote ? (
               <ChatShell
                 hasRemote={syncViewModel.hasRemote}
                 imageResolver={noteImagesViewModel.resolver}
-                imageSendError={chatImageSendError}
-                isSendingImages={isSendingChatImages}
+                imageSendError={chatImageSender.error}
+                isSendingImages={chatImageSender.isSending}
                 messages={chatViewModel.messages}
                 note={activeNote}
                 onChangeTitle={activeNoteViewModel.updateTitle}
@@ -570,10 +475,10 @@ function AppWorkspace() {
                 onEditMessage={(messageId, content) => {
                   void chatViewModel.editMessage(messageId, content)
                 }}
-                onDismissImageError={() => setChatImageSendError(null)}
-                onImportTelegram={() => setIsTelegramImportOpen(true)}
+                onDismissImageError={chatImageSender.dismissError}
+                onImportTelegram={() => openOverlay({ kind: 'telegramImport' })}
                 onRequestLock={notesViewModel.openLockModal}
-                onSendImages={handleSendChatImages}
+                onSendImages={chatImageSender.send}
                 onSendMessage={(content, author) => {
                   void chatViewModel.sendMessage(content, author)
                 }}
@@ -588,7 +493,7 @@ function AppWorkspace() {
                 imageResolver={noteImagesViewModel.resolver}
                 note={activeNote}
                 onChangeDocument={activeNoteViewModel.updateDocument}
-                onBrowseTemplates={handleOpenTemplates}
+                onBrowseTemplates={() => openOverlay({ kind: 'templates' })}
                 onChangeTitle={activeNoteViewModel.updateTitle}
                 onCreateNote={handleCreateNote}
                 isCreatingNote={isCreatingNote}
@@ -598,24 +503,19 @@ function AppWorkspace() {
                 syncStatus={syncViewModel.status}
               />
             )}
+            </Suspense>
           </section>
 
-          {!isNarrow && isInspectorEffectivelyCollapsed ? (
+          {!isNarrow && layout.isInspectorCollapsed ? (
             <button
-              aria-label="Show note details"
+              aria-label={t('shell.showDetails')}
               className="sn-rail sn-rail--inspector"
-              onClick={() => {
-                if (isCompactDesktop) {
-                  setCompactInspectorOpen(true)
-                } else {
-                  setInspectorCollapsed(false)
-                }
-              }}
-              title="Show note details"
+              onClick={layout.expandInspector}
+              title={t('shell.showDetails')}
               type="button"
             >
               <UiIcon name="panelRight" />
-              <span>{activeNote ? 'Info' : 'Details'}</span>
+              <span>{t(activeNote ? 'shell.info' : 'shell.details')}</span>
             </button>
           ) : (
             <aside className="sn-inspector-panel">
@@ -627,14 +527,11 @@ function AppWorkspace() {
                 noteImages={noteImagesViewModel.images}
                 onChangeProperties={activeNoteViewModel.updateProperties}
                 onRevealImage={handleRevealImage}
-                onCollapse={isNarrow ? undefined : () => {
-                  if (isCompactDesktop) {
-                    setCompactInspectorOpen(false)
-                  } else {
-                    setInspectorCollapsed(true)
-                  }
-                }}
-                onOpenSettings={isNarrow ? () => setIsSettingsOpen(true) : undefined}
+                onCollapse={isNarrow ? undefined : layout.collapseInspector}
+                onOpenHistory={activeNote ? () => openOverlay({ kind: 'history' }) : undefined}
+                onOpenSettings={
+                  isNarrow ? () => openOverlay({ kind: 'settings' }) : undefined
+                }
               />
             </aside>
           )}
@@ -651,149 +548,16 @@ function AppWorkspace() {
         ) : null}
       </div>
 
-      {isQuickSwitcherOpen ? (
-        <QuickSwitcher
-          notes={allNotesViewModel.notes}
-          onClose={() => setIsQuickSwitcherOpen(false)}
-          onCreateBlank={() => handleCreateNote()}
-          onOpenSettings={() => {
-            setIsQuickSwitcherOpen(false)
-            setIsSettingsOpen(true)
-          }}
-          onOpenTemplates={handleOpenTemplates}
-          onOpenTrash={() => {
-            setIsQuickSwitcherOpen(false)
-            handleOpenTrash()
-          }}
-          onSelectNote={(noteId) => {
-            setIsQuickSwitcherOpen(false)
-            const note = allNotesViewModel.notes.find((candidate) => candidate.id === noteId)
-            if (note?.isLocked) {
-              setIsHomeView(false)
-              setMobileTab('editor')
-              notesViewModel.openLockModal(noteId)
-            } else {
-              handleSelectNote(noteId)
-            }
-          }}
-        />
-      ) : null}
-
-      {isTemplatePickerOpen ? (
-        <TemplatePicker
-          onClose={() => setIsTemplatePickerOpen(false)}
-          onImportTelegram={() => {
-            setIsTemplatePickerOpen(false)
-            setIsTelegramImportOpen(true)
-          }}
-          onSelect={handleSelectTemplate}
-          templates={noteTemplates}
-        />
-      ) : null}
-
-      {isTelegramImportOpen ? (
-        <TelegramImportDialog
-          destinationLabel={selectedFolderName}
-          onClose={() => setIsTelegramImportOpen(false)}
-          onImport={(exportFolder, selfParticipant, onProgress) =>
-            importTelegramChat(
-              {
-                imageRepository,
-                noteRepository,
-                onProgress,
-                requestSync: () => syncEngine?.requestSync('outbox-change'),
-              },
-              {
-                exportFolder,
-                parentFolderId: foldersViewModel.activeFolderId,
-                selfParticipant,
-              },
-            )
-          }
-          onOpenNote={(noteId) => {
-            setIsTelegramImportOpen(false)
-            setLibraryMode('notes')
-            setIsHomeView(false)
-            setMobileTab('editor')
-            notesViewModel.selectNote(noteId)
-          }}
-          onReadFolder={readTelegramExportFolder}
-        />
-      ) : null}
-
-      {folderPrompt ? (
-        <PromptDialog
-          description={folderPrompt.mode === 'create'
-            ? 'Create a local folder for a smaller, easier-to-scan library.'
-            : 'Choose a clear name. Notes inside the folder will stay in place.'}
-          initialValue={folderPrompt.mode === 'create' ? 'New folder' : folderPrompt.initialValue}
-          key={folderPrompt.mode === 'create'
-            ? `create-${folderPrompt.parentFolderId ?? 'root'}`
-            : `rename-${folderPrompt.folderId}`}
-          label="Folder name"
-          onCancel={() => setFolderPrompt(null)}
-          onSubmit={(name) => {
-            if (folderPrompt.mode === 'create') {
-              void foldersViewModel.createFolder({
-                name,
-                parentFolderId: folderPrompt.parentFolderId,
-              })
-            } else {
-              void foldersViewModel.renameFolder(folderPrompt.folderId, name)
-            }
-            setFolderPrompt(null)
-          }}
-          submitLabel={folderPrompt.mode === 'create' ? 'Create folder' : 'Save name'}
-          title={folderPrompt.mode === 'create' ? 'Create folder' : 'Rename folder'}
-        />
-      ) : null}
-
-      {folderPendingDelete ? (
-        <ConfirmationDialog
-          confirmLabel="Delete folder"
-          description={`“${folderPendingDelete.name}” will be deleted. Its notes and subfolders will move up one level; no notes will be erased.`}
-          onCancel={() => setFolderPendingDelete(null)}
-          onConfirm={() => {
-            void foldersViewModel.deleteFolder(folderPendingDelete.folderId)
-            setFolderPendingDelete(null)
-          }}
-          title="Delete this folder?"
-        />
-      ) : null}
-
-      {noteToMove ? (
-        <MoveToFolderDialog
-          currentFolderId={noteToMove.parentFolderId}
-          folders={foldersViewModel.folderTree}
-          noteTitle={noteToMove.title}
-          onCancel={() => setNotePendingMove(null)}
-          onMove={(folderId) => {
-            void foldersViewModel.moveNoteToFolder(noteToMove.id, folderId)
-            setNotePendingMove(null)
-          }}
-        />
-      ) : null}
-
-      {lockModalViewModel.isOpen && lockModalViewModel.noteId ? (
-        <LockModal
-          error={lockModalViewModel.error}
-          isPending={lockModalViewModel.isPending}
-          mode={lockModalViewModel.mode}
-          noteId={lockModalViewModel.noteId}
-          onClose={lockModalViewModel.close}
-          onSubmit={(masterPassword) => {
-            void lockModalViewModel.submit(masterPassword)
-          }}
-        />
-      ) : null}
-
-      {isSettingsOpen ? (
-        <SettingsModal
-          onClose={() => setIsSettingsOpen(false)}
-          settings={settings}
-          updateSetting={updateSetting}
-        />
-      ) : null}
+      <WorkspaceDialogs
+        activeNote={activeNote}
+        allNotes={allNotesViewModel.notes}
+        destinationFolderLabel={selectedFolderName}
+        foldersViewModel={foldersViewModel}
+        onCreateNote={handleCreateFromTemplate}
+        onOpenLockedNote={handleOpenLockedNote}
+        onOpenNote={handleSelectNote}
+        onOpenTrash={handleOpenTrash}
+      />
     </main>
   )
 }

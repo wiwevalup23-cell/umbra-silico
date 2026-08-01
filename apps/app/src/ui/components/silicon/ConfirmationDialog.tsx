@@ -1,6 +1,7 @@
 import { useRef } from 'react'
 import { UiIcon } from '@/ui/icons/ui/UiIcon'
 import { RetroDialogShell } from './RetroDialogShell'
+import { useTranslation } from '@/ui/i18n/use-translation'
 
 type ConfirmationDialogProps = {
   confirmLabel: string
@@ -19,6 +20,7 @@ export function ConfirmationDialog({
   onConfirm,
   title,
 }: ConfirmationDialogProps) {
+  const { t } = useTranslation()
   const cancelButtonRef = useRef<HTMLButtonElement>(null)
 
   return (
@@ -29,7 +31,7 @@ export function ConfirmationDialog({
       initialFocusRef={cancelButtonRef}
       labelledBy="sn-confirm-dialog-title"
       onClose={onCancel}
-      title="Confirm action"
+      title={t('dialog.confirmAction')}
     >
       <div className="sn-confirm-dialog">
         <span className="sn-modal-icon sn-modal-icon--danger" aria-hidden="true">

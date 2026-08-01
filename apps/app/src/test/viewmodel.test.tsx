@@ -29,11 +29,22 @@ import {
 ;(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true
 
 class MutableLiveQuery<TValue> implements LiveQuery<TValue> {
+  disposed = false
+
   private readonly listeners = new Set<() => void>()
   private snapshot: TValue
 
   constructor(snapshot: TValue) {
     this.snapshot = snapshot
+  }
+
+  dispose(): void {
+    this.disposed = true
+    this.listeners.clear()
+  }
+
+  retain(): void {
+    this.disposed = false
   }
 
   getSnapshot(): TValue {
@@ -124,6 +135,16 @@ function createMockRepository() {
     liveNoteList: vi.fn(() => noteListQuery),
     liveTrashList: vi.fn(() => trashListQuery),
     liveFolderTree: vi.fn(() => folderTreeQuery),
+    readBackupData: vi.fn(async () => ({ cryptoProfile: null, folders: [], notes: [] })),
+    restoreBackupData: vi.fn(async () => ({
+      cryptoProfileRestored: false,
+      foldersAdded: 0,
+      foldersSkipped: 0,
+      notesAdded: 0,
+      notesSkipped: 0,
+    })),
+    listNoteVersions: vi.fn(async () => []),
+    restoreNoteVersion: vi.fn(async () => undefined),
     liveNote: vi.fn((noteId) => {
       const existing = noteQueries.get(noteId)
 
@@ -148,7 +169,7 @@ function createMockRepository() {
     renameFolder: vi.fn(async () => undefined),
     restoreNote: vi.fn(async () => undefined),
     getNote: vi.fn(async () => null),
-    lockNote: vi.fn(async () => undefined),
+    lockNote: vi.fn(async () => ({ recoveryKey: null })),
     unlockNoteForSession: vi.fn(async () => ({
       noteId: firstNoteId,
       expiresAt: now,
@@ -439,7 +460,7 @@ describe('ViewModel hooks', () => {
     const { noteQueries, repository } = createMockRepository()
     const sync = createMockSyncEngine(makeSyncSnapshot())
     const note = makeNote(firstNoteId, 'Lockable')
-    let submit: ((masterPassword: string) => Promise<void>) | null = null
+    let submit: ((credentials: { masterPassword?: string }) => Promise<void>) | null = null
 
     useAppUiStore.getState().openLockModal(firstNoteId)
 
@@ -463,7 +484,7 @@ describe('ViewModel hooks', () => {
     expect(rendered.container.textContent).toBe('lock')
 
     await act(async () => {
-      await submit?.('correct horse battery staple')
+      await submit?.({ masterPassword: 'correct horse battery staple' })
     })
 
     expect(repository.lockNote).toHaveBeenCalledWith(firstNoteId, {
@@ -490,7 +511,7 @@ describe('ViewModel hooks', () => {
         wrapNonce: 'wrap-nonce',
       },
     }
-    let submit: ((masterPassword: string) => Promise<void>) | null = null
+    let submit: ((credentials: { masterPassword?: string }) => Promise<void>) | null = null
 
     useAppUiStore.getState().openLockModal(firstNoteId)
 
@@ -514,7 +535,7 @@ describe('ViewModel hooks', () => {
     expect(rendered.container.textContent).toBe('unlock')
 
     await act(async () => {
-      await submit?.('correct horse battery staple')
+      await submit?.({ masterPassword: 'correct horse battery staple' })
     })
 
     expect(repository.unlockNoteForSession).toHaveBeenCalledWith(firstNoteId, {

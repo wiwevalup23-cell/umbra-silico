@@ -27,6 +27,8 @@ const deliveredAt = '2026-07-05T15:01:00.000Z'
 
 function createStaticLiveQuery<TValue>(value: TValue): LiveQuery<TValue> {
   return {
+    dispose: () => undefined,
+    retain: () => undefined,
     getSnapshot: () => value,
     subscribe: () => () => undefined,
   }
@@ -82,6 +84,16 @@ function createMockRepository(note: NoteDetail | null = makePlainNote()): NoteRe
     liveTrashList: vi.fn(() => createStaticLiveQuery<NoteListItem[]>([])),
     liveFolderTree: vi.fn(() => createStaticLiveQuery([])),
     liveNote: vi.fn(() => createStaticLiveQuery<NoteDetail | null>(note)),
+    readBackupData: vi.fn(async () => ({ cryptoProfile: null, folders: [], notes: [] })),
+    restoreBackupData: vi.fn(async () => ({
+      cryptoProfileRestored: false,
+      foldersAdded: 0,
+      foldersSkipped: 0,
+      notesAdded: 0,
+      notesSkipped: 0,
+    })),
+    listNoteVersions: vi.fn(async () => []),
+    restoreNoteVersion: vi.fn(async () => undefined),
     getNote: vi.fn(async () => note),
     createFolder: vi.fn(async () => {
       throw new Error('Not implemented in automation gateway tests.')
@@ -95,7 +107,7 @@ function createMockRepository(note: NoteDetail | null = makePlainNote()): NoteRe
     purgeNote: vi.fn(async () => undefined),
     renameFolder: vi.fn(async () => undefined),
     restoreNote: vi.fn(async () => undefined),
-    lockNote: vi.fn(async () => undefined),
+    lockNote: vi.fn(async () => ({ recoveryKey: null })),
     unlockNoteForSession: vi.fn(async () => ({
       noteId,
       expiresAt: deliveredAt,

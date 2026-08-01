@@ -1,3 +1,5 @@
+export { BackupPanel } from './BackupPanel'
+export type { BackupPanelProps } from './BackupPanel'
 export { ChromeTitlebar } from './ChromeTitlebar'
 export { ConfirmationDialog } from './ConfirmationDialog'
 export { GlassPanel } from './GlassPanel'

@@ -13,12 +13,37 @@ export { useFoldersViewModel } from './folders-view-model'
 export {
   createStaticLiveQuery,
   useLiveQuery,
+  useOwnedLiveQuery,
 } from './live-query-view-model'
+export { searchDebounceMs, useDebouncedValue } from './use-debounced-value'
 export type {
   LockModalMode,
   LockModalViewModel,
 } from './lock-modal-view-model'
 export { useLockModalViewModel } from './lock-modal-view-model'
+export type { BackupTask, BackupViewModel } from './backup-view-model'
+export { useBackupViewModel } from './backup-view-model'
+export type {
+  CustomBackgroundError,
+  CustomBackgroundState,
+} from './custom-background-view-model'
+export {
+  loadCustomBackground,
+  useCustomBackground,
+  useCustomBackgroundUrl,
+} from './custom-background-view-model'
+export type { ChatImageSender } from './chat-image-sender-view-model'
+export { useChatImageSender } from './chat-image-sender-view-model'
+export type { MobileTab, WorkspaceLayout } from './workspace-layout-view-model'
+export { useMediaQuery, useWorkspaceLayout } from './workspace-layout-view-model'
+export type { OverlayKind, WorkspaceOverlay } from './overlay-store'
+export {
+  useOverlayActions,
+  useOverlayStore,
+  useWorkspaceOverlay,
+} from './overlay-store'
+export type { NoteHistoryViewModel } from './note-history-view-model'
+export { useNoteHistoryViewModel } from './note-history-view-model'
 export type { NoteImagesViewModel } from './note-images-view-model'
 export { useNoteImagesViewModel } from './note-images-view-model'
 export type { ImageUrlCache, ImageUrlCacheOptions } from './image-url-cache'

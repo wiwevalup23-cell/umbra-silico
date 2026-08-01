@@ -43,6 +43,7 @@ import { BlockHandle } from '@/ui/components/notes/BlockHandle'
 import { EmptyStatePlayer } from '@/ui/components/notes/EmptyStatePlayer'
 import { CompassIcon } from '@/ui/icons/compass/CompassIcon'
 import { UiIcon } from '@/ui/icons/ui/UiIcon'
+import { useTranslation } from '@/ui/i18n/use-translation'
 import {
   getLocalSavePresentation,
   getPersistencePresentation,
@@ -492,6 +493,7 @@ function EditorToolbar({
   onInsertImage = null,
   onOpenMath,
 }: EditorToolbarProps) {
+  const { t } = useTranslation()
   const [isHighlightMenuOpen, setIsHighlightMenuOpen] = useState(false)
   const [isMoreMenuOpen, setIsMoreMenuOpen] = useState(false)
   const highlightMenuRef = useRef<HTMLDivElement>(null)
@@ -604,17 +606,17 @@ function EditorToolbar({
     : ''
 
   return (
-    <div className="sn-editor-toolbar" aria-label="Editor toolbar" role="toolbar">
+    <div className="sn-editor-toolbar" aria-label={t('editor.toolbar')} role="toolbar">
       <div
-        aria-label="Typography"
+        aria-label={t('editor.groupTypography')}
         className="sn-editor-toolbar__group sn-editor-toolbar__group--typography"
         role="group"
       >
         <label className="sn-editor-format-field">
           <span aria-hidden="true" className="sn-editor-format-field__prefix">Aa</span>
-          <span className="sn-sr-only">Font family</span>
+          <span className="sn-sr-only">{t('editor.fontFamily')}</span>
           <select
-            aria-label="Font family"
+            aria-label={t('editor.fontFamily')}
             disabled={!editor}
             onChange={(event) => {
               const fontFamily = event.target.value
@@ -630,15 +632,16 @@ function EditorToolbar({
           >
             {editorFontOptions.map((option) => (
               <option key={option.label} value={option.value}>
-                {option.label}
+                {/* Typeface names are proper nouns; only "no choice" is copy. */}
+                {option.value === '' ? t('editor.fontDefault') : option.label}
               </option>
             ))}
           </select>
         </label>
         <label className="sn-editor-format-field sn-editor-format-field--size">
-          <span className="sn-sr-only">Font size</span>
+          <span className="sn-sr-only">{t('editor.fontSize')}</span>
           <select
-            aria-label="Font size"
+            aria-label={t('editor.fontSize')}
             disabled={!editor}
             onChange={(event) => {
               const fontSize = event.target.value
@@ -653,7 +656,7 @@ function EditorToolbar({
           >
             {editorTextSizeOptions.map((option) => (
               <option key={option.label} value={option.value}>
-                {option.label}
+                {option.value === '' ? t('editor.fontAuto') : option.label}
               </option>
             ))}
           </select>
@@ -661,10 +664,10 @@ function EditorToolbar({
       </div>
       <span className="sn-editor-toolbar__divider" aria-hidden="true" />
 
-      <div className="sn-editor-toolbar__group" aria-label="Text formatting" role="group">
+      <div className="sn-editor-toolbar__group" aria-label={t('editor.groupFormatting')} role="group">
         <ToolbarButton
           disabled={!editor}
-          label="Bold"
+          label={t('editor.bold')}
           onPress={() => {
             runCommand(() => editor?.chain().focus().toggleBold().run())
           }}
@@ -674,7 +677,7 @@ function EditorToolbar({
         </ToolbarButton>
         <ToolbarButton
           disabled={!editor}
-          label="Italic"
+          label={t('editor.italic')}
           onPress={() => {
             runCommand(() => editor?.chain().focus().toggleItalic().run())
           }}
@@ -684,7 +687,7 @@ function EditorToolbar({
         </ToolbarButton>
         <ToolbarButton
           disabled={!editor}
-          label="Strike"
+          label={t('editor.strike')}
           onPress={() => {
             runCommand(() => editor?.chain().focus().toggleStrike().run())
           }}
@@ -694,7 +697,7 @@ function EditorToolbar({
         </ToolbarButton>
         <ToolbarButton
           disabled={!editor}
-          label="Inline code"
+          label={t('editor.inlineCode')}
           onPress={() => {
             runCommand(() => editor?.chain().focus().toggleCode().run())
           }}
@@ -705,7 +708,7 @@ function EditorToolbar({
         <div className="sn-editor-highlight-control" ref={highlightMenuRef}>
           <ToolbarButton
             disabled={!editor}
-            label="Text marker color"
+            label={t('editor.markerColor')}
             onPress={() => {
               setIsHighlightMenuOpen((isOpen) => !isOpen)
               setIsMoreMenuOpen(false)
@@ -726,7 +729,7 @@ function EditorToolbar({
           </ToolbarButton>
           {isHighlightMenuOpen ? (
             <div
-              aria-label="Text marker colors"
+              aria-label={t('editor.markerColors')}
               className="sn-editor-highlight-menu"
               role="menu"
             >
@@ -765,10 +768,10 @@ function EditorToolbar({
       </div>
       <span className="sn-editor-toolbar__divider" aria-hidden="true" />
 
-      <div className="sn-editor-toolbar__group" aria-label="Document structure" role="group">
+      <div className="sn-editor-toolbar__group" aria-label={t('editor.groupStructure')} role="group">
         <ToolbarButton
           disabled={!editor}
-          label="Heading 1"
+          label={t('editor.heading1')}
           onPress={() => {
             runCommand(() => editor?.chain().focus().toggleHeading({ level: 1 }).run())
           }}
@@ -778,7 +781,7 @@ function EditorToolbar({
         </ToolbarButton>
         <ToolbarButton
           disabled={!editor}
-          label="Heading 2"
+          label={t('editor.heading2')}
           onPress={() => {
             runCommand(() => editor?.chain().focus().toggleHeading({ level: 2 }).run())
           }}
@@ -788,7 +791,7 @@ function EditorToolbar({
         </ToolbarButton>
         <ToolbarButton
           disabled={!editor}
-          label="Blockquote"
+          label={t('editor.blockquote')}
           onPress={() => {
             runCommand(() => editor?.chain().focus().toggleBlockquote().run())
           }}
@@ -799,7 +802,7 @@ function EditorToolbar({
         {onInsertImage ? (
           <ToolbarButton
             disabled={!editor}
-            label="Insert image"
+            label={t('editor.insertImage')}
             onPress={() => {
               runCommand(() => onInsertImage())
             }}
@@ -809,7 +812,7 @@ function EditorToolbar({
         ) : null}
         <ToolbarButton
           disabled={!editor}
-          label="Insert equation"
+          label={t('editor.insertEquation')}
           onPress={() => onOpenMath('block')}
         >
           <span aria-hidden="true" className="sn-editor-tool-label sn-editor-tool-label--math">
@@ -819,10 +822,10 @@ function EditorToolbar({
       </div>
       <span className="sn-editor-toolbar__divider" aria-hidden="true" />
 
-      <div className="sn-editor-toolbar__group" aria-label="Lists" role="group">
+      <div className="sn-editor-toolbar__group" aria-label={t('editor.groupLists')} role="group">
         <ToolbarButton
           disabled={!editor}
-          label="Bullet list"
+          label={t('editor.bulletList')}
           onPress={() => {
             runCommand(() => editor?.chain().focus().toggleBulletList().run())
           }}
@@ -832,7 +835,7 @@ function EditorToolbar({
         </ToolbarButton>
         <ToolbarButton
           disabled={!editor}
-          label="Ordered list"
+          label={t('editor.orderedList')}
           onPress={() => {
             runCommand(() => editor?.chain().focus().toggleOrderedList().run())
           }}
@@ -849,7 +852,7 @@ function EditorToolbar({
       >
         <ToolbarButton
           disabled={!editor}
-          label="More editor tools"
+          label={t('editor.moreTools')}
           onPress={() => {
             setIsMoreMenuOpen((isOpen) => !isOpen)
             setIsHighlightMenuOpen(false)
@@ -865,7 +868,7 @@ function EditorToolbar({
               <div className="sn-editor-tools-menu__row">
                 <MenuButton
                   disabled={!editor}
-                  label="Strike"
+                  label={t('editor.strike')}
                   onPress={() => runCommand(() => editor?.chain().focus().toggleStrike().run())}
                   pressed={toolbarState.isStrike}
                 >
@@ -873,7 +876,7 @@ function EditorToolbar({
                 </MenuButton>
                 <MenuButton
                   disabled={!editor}
-                  label="Inline code"
+                  label={t('editor.inlineCode')}
                   onPress={() => runCommand(() => editor?.chain().focus().toggleCode().run())}
                   pressed={toolbarState.isCode}
                 >
@@ -881,7 +884,7 @@ function EditorToolbar({
                 </MenuButton>
                 <MenuButton
                   disabled={!editor}
-                  label="Heading 2"
+                  label={t('editor.heading2')}
                   onPress={() => runCommand(() => editor?.chain().focus().toggleHeading({ level: 2 }).run())}
                   pressed={toolbarState.isHeading2}
                 >
@@ -889,7 +892,7 @@ function EditorToolbar({
                 </MenuButton>
                 <MenuButton
                   disabled={!editor}
-                  label="Blockquote"
+                  label={t('editor.blockquote')}
                   onPress={() => runCommand(() => editor?.chain().focus().toggleBlockquote().run())}
                   pressed={toolbarState.isBlockquote}
                 >
@@ -897,7 +900,7 @@ function EditorToolbar({
                 </MenuButton>
                 <MenuButton
                   disabled={!editor}
-                  label="Ordered list"
+                  label={t('editor.orderedList')}
                   onPress={() => runCommand(() => editor?.chain().focus().toggleOrderedList().run())}
                   pressed={toolbarState.isOrderedList}
                 >
@@ -911,7 +914,7 @@ function EditorToolbar({
               <div className="sn-editor-tools-menu__row">
                 <MenuButton
                   disabled={!editor}
-                  label="Insert divider"
+                  label={t('editor.insertDivider')}
                   onPress={() => {
                     runCommand(() => editor?.chain().focus().setHorizontalRule().run())
                   }}
@@ -920,7 +923,7 @@ function EditorToolbar({
                 </MenuButton>
                 <MenuButton
                   disabled={!editor}
-                  label="Code block"
+                  label={t('editor.codeBlock')}
                   onPress={() => {
                     runCommand(() => {
                       if (editor) turnInto(editor, 'codeBlock')
@@ -932,7 +935,7 @@ function EditorToolbar({
                 </MenuButton>
                 <MenuButton
                   disabled={!editor}
-                  label="To-do"
+                  label={t('editor.todo')}
                   onPress={() => {
                     runCommand(() => {
                       if (editor) turnInto(editor, 'taskList')
@@ -944,7 +947,7 @@ function EditorToolbar({
                 </MenuButton>
                 <MenuButton
                   disabled={!editor}
-                  label="Toggle"
+                  label={t('editor.toggle')}
                   onPress={() => {
                     runCommand(() => {
                       if (editor) turnInto(editor, 'toggle')
@@ -956,7 +959,7 @@ function EditorToolbar({
                 </MenuButton>
                 <MenuButton
                   disabled={!editor}
-                  label="Callout"
+                  label={t('editor.callout')}
                   onPress={() => {
                     runCommand(() => {
                       if (editor) turnInto(editor, 'callout')
@@ -968,7 +971,7 @@ function EditorToolbar({
                 </MenuButton>
                 <MenuButton
                   disabled={!editor}
-                  label="Inline equation"
+                  label={t('editor.inlineEquation')}
                   onPress={() => {
                     onOpenMath('inline')
                     setIsMoreMenuOpen(false)
@@ -978,7 +981,7 @@ function EditorToolbar({
                 </MenuButton>
                 <MenuButton
                   disabled={!editor}
-                  label="Equation block"
+                  label={t('editor.equationBlock')}
                   onPress={() => {
                     onOpenMath('block')
                     setIsMoreMenuOpen(false)
@@ -989,7 +992,7 @@ function EditorToolbar({
                 {onInsertImage ? (
                   <MenuButton
                     disabled={!editor}
-                    label="Insert image"
+                    label={t('editor.insertImage')}
                     onPress={() => {
                       runCommand(() => onInsertImage())
                     }}
@@ -1005,7 +1008,7 @@ function EditorToolbar({
               <div className="sn-editor-tools-menu__row">
                 <MenuButton
                   disabled={!editor || toolbarState.isTable}
-                  label="Insert table"
+                  label={t('editor.insertTable')}
                   onPress={() => {
                     runCommand(() =>
                       editor
@@ -1020,7 +1023,7 @@ function EditorToolbar({
                 </MenuButton>
                 <MenuButton
                   disabled={!editor || !toolbarState.canAddTableColumn}
-                  label="Add column"
+                  label={t('editor.addColumn')}
                   onPress={() => {
                     runCommand(() => editor?.chain().focus().addColumnAfter().run())
                   }}
@@ -1029,7 +1032,7 @@ function EditorToolbar({
                 </MenuButton>
                 <MenuButton
                   disabled={!editor || !toolbarState.canAddTableRow}
-                  label="Add row"
+                  label={t('editor.addRow')}
                   onPress={() => {
                     runCommand(() => editor?.chain().focus().addRowAfter().run())
                   }}
@@ -1038,7 +1041,7 @@ function EditorToolbar({
                 </MenuButton>
                 <MenuButton
                   disabled={!editor || !toolbarState.isTable}
-                  label="Toggle header row"
+                  label={t('editor.toggleHeaderRow')}
                   onPress={() => {
                     runCommand(() => editor?.chain().focus().toggleHeaderRow().run())
                   }}
@@ -1047,7 +1050,7 @@ function EditorToolbar({
                 </MenuButton>
                 <MenuButton
                   disabled={!editor || !toolbarState.canDeleteTable}
-                  label="Delete table"
+                  label={t('editor.deleteTable')}
                   onPress={() => {
                     runCommand(() => editor?.chain().focus().deleteTable().run())
                   }}
@@ -1062,14 +1065,14 @@ function EditorToolbar({
               <div className="sn-editor-tools-menu__row">
                 <MenuButton
                   disabled={!editor || !toolbarState.canUndo}
-                  label="Undo"
+                  label={t('editor.undo')}
                   onPress={() => runCommand(() => editor?.chain().focus().undo().run())}
                 >
                   Undo
                 </MenuButton>
                 <MenuButton
                   disabled={!editor || !toolbarState.canRedo}
-                  label="Redo"
+                  label={t('editor.redo')}
                   onPress={() => runCommand(() => editor?.chain().focus().redo().run())}
                 >
                   Redo
@@ -1084,26 +1087,26 @@ function EditorToolbar({
 
       <div
         className="sn-editor-toolbar__group sn-editor-toolbar__group--history"
-        aria-label="History"
+        aria-label={t('editor.groupHistory')}
         role="group"
       >
         <ToolbarButton
           disabled={!editor || !toolbarState.canUndo}
-          label="Undo"
+          label={t('editor.undo')}
           onPress={() => {
             runCommand(() => editor?.chain().focus().undo().run())
           }}
         >
-          <span className="sn-editor-tool-label">Undo</span>
+          <span className="sn-editor-tool-label">{t('editor.undo')}</span>
         </ToolbarButton>
         <ToolbarButton
           disabled={!editor || !toolbarState.canRedo}
-          label="Redo"
+          label={t('editor.redo')}
           onPress={() => {
             runCommand(() => editor?.chain().focus().redo().run())
           }}
         >
-          <span className="sn-editor-tool-label">Redo</span>
+          <span className="sn-editor-tool-label">{t('editor.redo')}</span>
         </ToolbarButton>
       </div>
     </div>
@@ -1111,6 +1114,7 @@ function EditorToolbar({
 }
 
 function MathPreview({ kind, latex }: { kind: MathKind; latex: string }) {
+  const { t } = useTranslation()
   const previewRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -1133,7 +1137,7 @@ function MathPreview({ kind, latex }: { kind: MathKind; latex: string }) {
 
   return (
     <div
-      aria-label="Equation preview"
+      aria-label={t('editor.equationPreview')}
       className="sn-math-editor__preview"
       data-empty={!latex.trim()}
       ref={previewRef}
@@ -1156,15 +1160,19 @@ function MathEditorPanel({
   onDelete,
   onSave,
 }: MathEditorPanelProps) {
+  const { t } = useTranslation()
+
   return (
-    <section aria-label="Equation editor" className="sn-math-editor">
+    <section aria-label={t('editor.equationEditor')} className="sn-math-editor">
       <div className="sn-math-editor__header">
         <div>
           <span className="sn-math-editor__eyebrow">KaTeX · LaTeX</span>
-          <strong>{draft.kind === 'block' ? 'Equation block' : 'Inline equation'}</strong>
+          <strong>
+            {t(draft.kind === 'block' ? 'editor.equationBlock' : 'editor.inlineEquation')}
+          </strong>
         </div>
         <button
-          aria-label="Close equation editor"
+          aria-label={t('editor.closeEquationEditor')}
           className="sn-math-editor__close"
           onClick={onCancel}
           type="button"
@@ -1174,9 +1182,9 @@ function MathEditorPanel({
       </div>
       <MathPreview kind={draft.kind} latex={draft.latex} />
       <label className="sn-math-editor__field">
-        <span className="sn-sr-only">LaTeX expression</span>
+        <span className="sn-sr-only">{t('editor.latexExpression')}</span>
         <input
-          aria-label="LaTeX expression"
+          aria-label={t('editor.latexExpression')}
           autoFocus
           onChange={(event) => onChange(event.target.value)}
           onKeyDown={(event) => {
@@ -1251,6 +1259,7 @@ function EditableNoteEditor({
   imageResolver = null,
   onImportImage = null,
 }: EditableNoteEditorProps) {
+  const { t } = useTranslation()
   const [titleDraft, setTitleDraft] = useState(note.title)
   const [autosaveState, setAutosaveState] = useState<AutosaveState>('saved')
   const [importNotice, setImportNotice] = useState<string | null>(null)
@@ -1302,10 +1311,10 @@ function EditableNoteEditor({
     content: initialContent,
     editorProps: {
       attributes: {
-        'aria-label': 'Note body',
+        'aria-label': t('editor.noteBody'),
         'aria-multiline': 'true',
         class: 'sn-tiptap-prosemirror',
-        'data-placeholder': 'Start writing…',
+        'data-placeholder': t('editor.placeholder'),
         role: 'textbox',
         spellcheck: 'true',
       },
@@ -1420,13 +1429,13 @@ function EditableNoteEditor({
   const statusBadges = [
     {
       icon: savePresentation.icon,
-      label: savePresentation.badge,
-      title: `Save: ${savePresentation.label}`,
+      label: t(savePresentation.badgeKey),
+      title: t('editor.saveTitle', { state: t(savePresentation.labelKey) }),
     },
     {
       icon: 'shield' as const,
-      label: 'Local only',
-      title: 'Privacy: Local note · not encrypted',
+      label: t('editor.localOnly'),
+      title: t('editor.privacyLocal'),
     },
   ]
 
@@ -1573,6 +1582,24 @@ function EditableNoteEditor({
     onChangeDocumentRef.current = onChangeDocument
   }, [onChangeDocument])
 
+  // The editor is built once, so its accessible name and placeholder would
+  // otherwise keep the locale that happened to be active at mount.
+  useEffect(() => {
+    if (!editor) return
+
+    editor.setOptions({
+      editorProps: {
+        ...editor.options.editorProps,
+        attributes: {
+          ...(editor.options.editorProps.attributes as Record<string, string>),
+          'aria-label': t('editor.noteBody'),
+          'data-placeholder': t('editor.placeholder'),
+        },
+      },
+    })
+    editor.view.dispatch(editor.state.tr)
+  }, [editor, t])
+
   useEffect(() => {
     if (
       !editor
@@ -1670,9 +1697,9 @@ function EditableNoteEditor({
               <UiIcon name="document" />
             </span>
             <label className="sn-editor-title-label" htmlFor="sn-editor-title">
-              <span className="sn-sr-only">Note title</span>
+              <span className="sn-sr-only">{t('editor.noteTitle')}</span>
               <input
-                aria-label="Note title"
+                aria-label={t('editor.noteTitle')}
                 className="sn-editor-document-title sn-editor-title-input"
                 id="sn-editor-title"
                 onBlur={() => {
@@ -1702,7 +1729,7 @@ function EditableNoteEditor({
               />
             </label>
           </div>
-          <div className="sn-editor-status-badges" aria-label="Note status">
+          <div className="sn-editor-status-badges" aria-label={t('editor.noteStatus')}>
             {statusBadges.map((badge) => (
               <span className="sn-editor-status-badge" key={badge.title} title={badge.title}>
                 <UiIcon name={badge.icon} />
@@ -1712,19 +1739,19 @@ function EditableNoteEditor({
           </div>
           <div className="sn-editor-actions">
             <button
-              aria-label="Save note"
+              aria-label={t('editor.saveNote')}
               className="sn-icon-button"
               disabled={autosaveState === 'saved' || autosaveState === 'saving'}
               onClick={() => {
                 void Promise.all([titleAutosave.flush(), documentAutosave.flush()])
               }}
-              title="Save note (Ctrl+S)"
+              title={t('editor.saveNoteHint')}
               type="button"
             >
               <UiIcon name="save" />
             </button>
             <button
-              aria-label="Lock note"
+              aria-label={t('editor.lockNote')}
               className="sn-icon-button"
               onClick={() => {
                 void Promise.all([
@@ -1734,7 +1761,7 @@ function EditableNoteEditor({
                   onRequestLock(note.id)
                 })
               }}
-              title="Lock note"
+              title={t('editor.lockNote')}
               type="button"
             >
               <UiIcon name="lock" />
@@ -1762,7 +1789,7 @@ function EditableNoteEditor({
       {canInsertImages ? (
         <input
           accept={acceptedImageTypes}
-          aria-label="Add images"
+          aria-label={t('editor.addImages')}
           hidden
           multiple
           onChange={(event) => {
@@ -1787,7 +1814,7 @@ function EditableNoteEditor({
             <>
               <span>{importNotice}</span>
               <button
-                aria-label="Dismiss message"
+                aria-label={t('editor.dismissMessage')}
                 onClick={() => setImportNotice(null)}
                 type="button"
               >
@@ -1836,11 +1863,13 @@ export function EditorShell({
   imageResolver = null,
   onImportImage = null,
 }: EditorShellProps) {
+  const { t } = useTranslation()
+
   if (!note) {
     return (
       <article
         className="sn-editor-shell sn-editor-shell--empty"
-        aria-label="Editor"
+        aria-label={t('editor.region')}
       >
         {/* Desktop: decorative player (hidden on mobile via CSS) */}
         <EmptyStatePlayer
@@ -1856,7 +1885,7 @@ export function EditorShell({
           <strong>Start with a note</strong>
           <p>Create a blank page or choose a template to begin writing.</p>
         </div>
-        <div className="sn-empty-actions" aria-label="Create a note">
+        <div className="sn-empty-actions" aria-label={t('editor.createNote')}>
           <button
             className="sn-empty-actions__primary"
             disabled={isCreatingNote}
@@ -1884,18 +1913,18 @@ export function EditorShell({
   const lockedStatusBadges = [
     {
       icon: 'lock' as const,
-      label: 'Locked',
-      title: 'Privacy: Locked note',
+      label: t('editor.locked'),
+      title: t('editor.privacyLocked'),
     },
     {
       icon: lockedPersistence.icon,
-      label: lockedPersistence.badge,
-      title: `State: ${lockedPersistence.label}`,
+      label: t(lockedPersistence.badgeKey),
+      title: t('editor.stateTitle', { state: t(lockedPersistence.labelKey) }),
     },
   ]
 
   return (
-    <article className="sn-editor-shell" aria-label="Editor">
+    <article className="sn-editor-shell" aria-label={t('editor.region')}>
       {note.isLocked ? (
         <div className="sn-editor-paper-sheet">
           <header className="sn-editor-topbar">
@@ -1906,7 +1935,7 @@ export function EditorShell({
                 </span>
                 <h1 className="sn-editor-document-title">Locked note</h1>
               </div>
-              <div className="sn-editor-status-badges" aria-label="Note status">
+              <div className="sn-editor-status-badges" aria-label={t('editor.noteStatus')}>
                 {lockedStatusBadges.map((badge) => (
                   <span className="sn-editor-status-badge" key={badge.title} title={badge.title}>
                     <UiIcon name={badge.icon} />
@@ -1915,7 +1944,7 @@ export function EditorShell({
                 ))}
               </div>
               <div className="sn-editor-actions">
-                <button className="sn-icon-button" disabled title="Already locked" type="button">
+                <button className="sn-icon-button" disabled title={t('editor.alreadyLocked')} type="button">
                   <UiIcon name="lock" />
                 </button>
               </div>

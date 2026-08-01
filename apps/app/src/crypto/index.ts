@@ -10,6 +10,12 @@ export {
   derivePasswordWrappingKey,
 } from './password-kdf'
 export type { PasswordKdfParams } from './password-kdf'
+export {
+  formatRecoveryKey,
+  generateRecoveryKey,
+  isPlausibleRecoveryKey,
+  normalizeRecoveryKey,
+} from './recovery-key'
 export { createKeyring, InMemoryKeyring } from './keyring'
 export type {
   Keyring,

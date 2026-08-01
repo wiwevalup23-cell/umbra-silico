@@ -16,6 +16,7 @@ import {
   type InsertBlockTarget,
 } from '@/ui/editor'
 import { turnInto, type TurnIntoTarget } from '@/ui/editor/turn-into'
+import { useTranslation } from '@/ui/i18n/use-translation'
 import { UiIcon } from '@/ui/icons/ui/UiIcon'
 
 type BlockHandleProps = {
@@ -50,6 +51,7 @@ const turnTargets: Array<{ label: string; target: TurnIntoTarget }> = [
 ]
 
 export function BlockHandle({ editor, onInsertImage = null }: BlockHandleProps) {
+  const { t } = useTranslation()
   const rootRef = useRef<HTMLDivElement>(null)
   const draggedSourceRef = useRef<number | null>(null)
   const [activeMenu, setActiveMenu] = useState<HandleMenu | null>(null)
@@ -210,16 +212,16 @@ export function BlockHandle({ editor, onInsertImage = null }: BlockHandleProps) 
       style={{ '--sn-block-handle-top': `${top ?? 48}px` } as CSSProperties}
     >
       <button
-        aria-label="Insert block"
+        aria-label={t('block.insert')}
         className="sn-block-handle__button sn-block-handle__button--insert"
         onClick={() => setActiveMenu((menu) => (menu === 'insert' ? null : 'insert'))}
-        title="Insert block"
+        title={t('block.insert')}
         type="button"
       >
         <UiIcon name="plus" />
       </button>
       <button
-        aria-label="Block actions"
+        aria-label={t('block.actions')}
         className="sn-block-handle__button sn-block-handle__button--grip"
         draggable
         onClick={() => setActiveMenu((menu) => (menu === 'actions' ? null : 'actions'))}
@@ -237,7 +239,7 @@ export function BlockHandle({ editor, onInsertImage = null }: BlockHandleProps) 
           event.dataTransfer.effectAllowed = 'move'
           event.dataTransfer.setData('text/plain', String(range.from))
         }}
-        title="Block actions"
+        title={t('block.actions')}
         type="button"
       >
         <UiIcon name="gripVertical" />
@@ -285,17 +287,17 @@ export function BlockHandle({ editor, onInsertImage = null }: BlockHandleProps) 
             </button>
             <button onClick={() => runAction(() => moveCurrentBlock(editor, 'up'))} type="button">
               <UiIcon name="arrowUp" />
-              Move up
+              {t('block.moveUp')}
             </button>
             <button
               onClick={() => runAction(() => moveCurrentBlock(editor, 'down'))}
               type="button"
             >
               <UiIcon name="arrowDown" />
-              Move down
+              {t('block.moveDown')}
             </button>
           </div>
-          <span className="sn-block-handle-menu__label">Turn into</span>
+          <span className="sn-block-handle-menu__label">{t('block.turnInto')}</span>
           <div className="sn-block-handle-menu__turn-grid">
             {turnTargets.map((item) => (
               <button

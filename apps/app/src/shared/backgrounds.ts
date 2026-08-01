@@ -67,8 +67,34 @@ export const backgroundImageOptions = [
   { label: 'Ripple weave · concentric', value: backgroundEffectFiles[7] },
 ] satisfies Array<{ label: string; value: string | null }>
 
-export const allowedBackgroundImages = new Set(
-  backgroundImageOptions
+/**
+ * Marks "use the image the user uploaded" rather than a bundled asset.
+ *
+ * The image itself is far too large for the settings blob in `localStorage`,
+ * so settings store this sentinel and the picture lives in IndexedDB.
+ */
+export const customBackgroundValue = 'custom'
+
+/** Large enough for a desktop wallpaper, small enough to stay responsive. */
+export const customBackgroundMaxBytes = 20 * 1024 * 1024
+
+export const supportedBackgroundMimeTypes = [
+  'image/jpeg',
+  'image/png',
+  'image/webp',
+  'image/avif',
+  'image/gif',
+] as const
+
+/**
+ * Why a code and not a sentence: the store that raises it has no translator,
+ * and the message has to render in whichever locale the user picked.
+ */
+export type CustomBackgroundErrorCode = 'unsupported' | 'tooLarge' | 'failed'
+
+export const allowedBackgroundImages = new Set([
+  customBackgroundValue,
+  ...backgroundImageOptions
     .map((option) => option.value)
     .filter((value): value is string => value !== null),
-)
+])

@@ -1,3 +1,4 @@
+import type { MessageKey } from '@/shared/i18n'
 import { createChatDocument } from '@/shared/contracts/chat'
 import {
   createNoteInputSchema,
@@ -10,9 +11,9 @@ export const noteTemplateIds = ['blank', 'chat', 'daily', 'meeting', 'project'] 
 export type NoteTemplateId = (typeof noteTemplateIds)[number]
 
 export type NoteTemplateSummary = {
-  description: string
+  descriptionKey: MessageKey
   id: NoteTemplateId
-  label: string
+  labelKey: MessageKey
   status: NotePropertyStatus
   tags: string[]
 }
@@ -20,36 +21,36 @@ export type NoteTemplateSummary = {
 export const noteTemplates: NoteTemplateSummary[] = [
   {
     id: 'blank',
-    label: 'Blank note',
-    description: 'A clean page with no structure.',
+    labelKey: 'template.blank',
+    descriptionKey: 'template.blankHint',
     status: 'none',
     tags: [],
   },
   {
     id: 'chat',
-    label: 'Chat',
-    description: 'A private message stream, like your saved-messages chat.',
+    labelKey: 'template.chat',
+    descriptionKey: 'template.chatHint',
     status: 'none',
     tags: [],
   },
   {
     id: 'daily',
-    label: 'Daily note',
-    description: 'A light structure for plans, notes and reflections.',
+    labelKey: 'template.daily',
+    descriptionKey: 'template.dailyHint',
     status: 'active',
     tags: ['daily'],
   },
   {
     id: 'meeting',
-    label: 'Meeting notes',
-    description: 'Agenda, decisions and follow-up actions.',
+    labelKey: 'template.meeting',
+    descriptionKey: 'template.meetingHint',
     status: 'active',
     tags: ['meeting'],
   },
   {
     id: 'project',
-    label: 'Project brief',
-    description: 'Outcome, context, next steps and open questions.',
+    labelKey: 'template.project',
+    descriptionKey: 'template.projectHint',
     status: 'idea',
     tags: ['project'],
   },

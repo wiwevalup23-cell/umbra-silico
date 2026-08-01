@@ -4,17 +4,43 @@ import type {
   CreateNoteInput,
   FolderId,
   FolderTreeNode,
+  LocalCryptoProfile,
+  LocalFolder,
   LockCredentials,
   NoteDetail,
   NoteId,
   NoteListItem,
   NoteListQuery,
+  NoteVersion,
   RemoteNoteChange,
   SyncOperation,
   UnlockCredentials,
   UnlockedNoteSession,
   UpdateNotePatch,
 } from '@/shared/contracts'
+
+/**
+ * `recoveryKey` is non-null only on the lock that created the vault, which is
+ * the single moment the key can be shown: it is never stored in clear.
+ */
+export type LockNoteResult = {
+  recoveryKey: string | null
+}
+
+/** Raw library contents, for building and restoring a backup bundle. */
+export type NoteBackupData = {
+  cryptoProfile: LocalCryptoProfile | null
+  folders: LocalFolder[]
+  notes: NoteDetail[]
+}
+
+export type NoteBackupRestoreReport = {
+  cryptoProfileRestored: boolean
+  foldersAdded: number
+  foldersSkipped: number
+  notesAdded: number
+  notesSkipped: number
+}
 
 export interface NoteRepository {
   liveNoteList(query?: NoteListQuery): LiveQuery<NoteListItem[]>
@@ -34,11 +60,18 @@ export interface NoteRepository {
   purgeNote(noteId: NoteId): Promise<void>
   restoreNote(noteId: NoteId): Promise<void>
 
-  lockNote(noteId: NoteId, credentials: LockCredentials): Promise<void>
+  lockNote(noteId: NoteId, credentials: LockCredentials): Promise<LockNoteResult>
   unlockNoteForSession(
     noteId: NoteId,
     credentials: UnlockCredentials,
   ): Promise<UnlockedNoteSession>
+
+  readBackupData(): Promise<NoteBackupData>
+  /** Adds what is missing and never overwrites or deletes existing notes. */
+  restoreBackupData(data: NoteBackupData): Promise<NoteBackupRestoreReport>
+
+  listNoteVersions(noteId: NoteId): Promise<NoteVersion[]>
+  restoreNoteVersion(noteId: NoteId, opId: string): Promise<void>
 
   getPendingOps(limit: number): Promise<SyncOperation[]>
   getLastServerRevision(): Promise<number>

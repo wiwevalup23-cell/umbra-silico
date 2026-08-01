@@ -12,6 +12,8 @@ export type ResolveMasterKeyResult = {
   createdProfile: boolean
   masterKey: CryptoKey
   profile: LocalCryptoProfile
+  /** Set only when this call created the profile, for one-time display. */
+  recoveryKey: string | null
 }
 
 export interface Keyring {
@@ -74,6 +76,7 @@ export class InMemoryKeyring implements Keyring {
         createdProfile: true,
         masterKey: created.masterKey,
         profile: created.profile,
+        recoveryKey: created.recoveryKey,
       }
     }
 
@@ -86,6 +89,7 @@ export class InMemoryKeyring implements Keyring {
       createdProfile: false,
       masterKey,
       profile,
+      recoveryKey: null,
     }
   }
 
@@ -98,6 +102,14 @@ export class InMemoryKeyring implements Keyring {
     profile: LocalCryptoProfile
     userId: UserId
   }): Promise<CryptoKey> {
+    // A recovery key always re-derives: it is used precisely when the cached
+    // key is gone, and honouring a stale cache would mask a wrong key.
+    if (credentials.recoveryKey) {
+      const recovered = await this.cryptoService.unlockMasterKey(profile, credentials)
+      this.masterKeys.set(userId, recovered)
+      return recovered
+    }
+
     if (!credentials.masterPassword) {
       const cachedMasterKey = this.masterKeys.get(userId)
 

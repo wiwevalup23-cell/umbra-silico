@@ -2,6 +2,7 @@ import { useEffect, useId, useMemo, useRef, useState, type KeyboardEvent } from 
 import type { NoteId, NoteListItem } from '@/shared/contracts/note'
 import { RetroDialogShell } from '@/ui/components/silicon'
 import { UiIcon, type UiIconName } from '@/ui/icons/ui/UiIcon'
+import { useTranslation } from '@/ui/i18n/use-translation'
 
 type QuickSwitcherProps = {
   notes: NoteListItem[]
@@ -15,7 +16,7 @@ type QuickSwitcherProps = {
 
 type SwitcherItem = {
   description: string
-  group: 'Actions' | 'Notes'
+  group: 'actions' | 'notes'
   icon: UiIconName
   id: string
   label: string
@@ -32,6 +33,7 @@ export function QuickSwitcher({
   onOpenTrash,
   onSelectNote,
 }: QuickSwitcherProps) {
+  const { t } = useTranslation()
   const listboxId = useId()
   const inputRef = useRef<HTMLInputElement>(null)
   const itemRefs = useRef<Array<HTMLButtonElement | null>>([])
@@ -42,49 +44,49 @@ export function QuickSwitcher({
   const items = useMemo<SwitcherItem[]>(() => {
     const noteItems = notes.map((note) => ({
       description: note.isLocked
-        ? 'Encrypted note'
-        : note.preview || (note.tags?.length ? note.tags.join(' · ') : 'Empty note'),
-      group: 'Notes' as const,
+        ? t('switcher.encryptedNote')
+        : note.preview || (note.tags?.length ? note.tags.join(' · ') : t('switcher.emptyNote')),
+      group: 'notes' as const,
       icon: note.isLocked ? 'lock' as const : 'document' as const,
       id: `note-${note.id}`,
-      label: note.title || 'Untitled',
+      label: note.title || t('note.untitled'),
       run: () => onSelectNote(note.id),
       searchText: `${note.title} ${note.preview} ${(note.tags ?? []).join(' ')}`.toLocaleLowerCase(),
     }))
     const actionItems: SwitcherItem[] = [
       {
-        description: 'Start with a clean page',
-        group: 'Actions',
+        description: t('switcher.newBlankHint'),
+        group: 'actions',
         icon: 'plus',
         id: 'action-new',
-        label: 'New blank note',
+        label: t('switcher.newBlank'),
         run: onCreateBlank,
         searchText: 'new blank note create page',
       },
       {
-        description: 'Daily, meeting or project',
-        group: 'Actions',
+        description: t('switcher.newTemplateHint'),
+        group: 'actions',
         icon: 'template',
         id: 'action-template',
-        label: 'New from template',
+        label: t('switcher.newTemplate'),
         run: onOpenTemplates,
         searchText: 'new template daily meeting project',
       },
       {
-        description: 'Restore or permanently remove notes',
-        group: 'Actions',
+        description: t('switcher.openTrashHint'),
+        group: 'actions',
         icon: 'trash',
         id: 'action-trash',
-        label: 'Open trash',
+        label: t('switcher.openTrash'),
         run: onOpenTrash,
         searchText: 'open trash deleted restore remove',
       },
       {
-        description: 'Empty screen background',
-        group: 'Actions',
+        description: t('switcher.settingsHint'),
+        group: 'actions',
         icon: 'settings',
         id: 'action-settings',
-        label: 'Settings',
+        label: t('shell.settings'),
         run: onOpenSettings,
         searchText: 'settings preferences background appearance',
       },
@@ -97,7 +99,7 @@ export function QuickSwitcher({
       (item) => !search || item.searchText.includes(search),
     )
     return [...filteredNotes, ...filteredActions]
-  }, [notes, onCreateBlank, onOpenSettings, onOpenTemplates, onOpenTrash, onSelectNote, search])
+  }, [notes, onCreateBlank, onOpenSettings, onOpenTemplates, onOpenTrash, onSelectNote, search, t])
 
   useEffect(() => {
     setActiveIndex(0)
@@ -148,13 +150,13 @@ export function QuickSwitcher({
       labelledBy="quick-switcher-title"
       onClose={onClose}
       showTitlebar={false}
-      title="Quick switcher"
+      title={t('switcher.title')}
     >
       <section className="sn-command-window sn-quick-switcher">
         <header className="sn-command-window__header sn-command-window__header--search">
           <UiIcon name="search" />
           <label className="sr-only" htmlFor="quick-switcher-search" id="quick-switcher-title">
-            Quick switcher
+            {t('switcher.title')}
           </label>
           <input
             aria-activedescendant={items[activeIndex] ? `${listboxId}-${items[activeIndex].id}` : undefined}
@@ -164,7 +166,7 @@ export function QuickSwitcher({
             id="quick-switcher-search"
             onChange={(event) => setQuery(event.target.value)}
             onKeyDown={handleKeyboardNavigation}
-            placeholder="Find a note or choose an action…"
+            placeholder={t('switcher.placeholder')}
             ref={inputRef}
             role="combobox"
             type="search"
@@ -172,12 +174,12 @@ export function QuickSwitcher({
           />
           <kbd className="sn-command-window__desktop-hint" id="quick-switcher-hint">Esc</kbd>
           <button
-            aria-label="Close quick switcher"
+            aria-label={t('switcher.close')}
             className="sn-command-window__mobile-close"
             onClick={onClose}
             type="button"
           >
-            Close
+            {t('action.close')}
           </button>
         </header>
 
@@ -189,7 +191,13 @@ export function QuickSwitcher({
               <div className="sn-command-result" key={item.id}>
                 {showGroup ? (
                   <span className="sn-command-list__label">
-                    {item.group === 'Notes' && !query ? 'Recent notes' : item.group}
+                    {t(
+                      item.group === 'notes'
+                        ? query
+                          ? 'switcher.groupNotes'
+                          : 'switcher.recentNotes'
+                        : 'switcher.groupActions',
+                    )}
                   </span>
                 ) : null}
                 <button

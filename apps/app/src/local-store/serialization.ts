@@ -1,3 +1,4 @@
+import { createNoteSearchText } from '@/shared/document-text'
 import type {
   StoredAutomationEventRow,
   StoredCryptoProfileRow,
@@ -11,6 +12,7 @@ import {
   localFolderSchema,
   localImageMetaSchema,
   localNoteSchema,
+  noteListItemSchema,
   parseAutomationEventRecord,
   parseSyncOperation,
   syncOperationSchema,
@@ -22,6 +24,7 @@ import {
   type LocalImageMeta,
   type LocalNote,
   type NoteListItem,
+  type NoteProperties,
   type SyncOperation,
 } from '@/shared/contracts'
 
@@ -42,6 +45,7 @@ export function noteToRow(note: LocalNote): StoredNoteRow {
     preview: note.preview,
     isLocked: note.isLocked ? 1 : 0,
     document: note.document ? stringify(note.document) : null,
+    searchText: note.isLocked ? null : createNoteSearchText(note.document),
     properties: note.isLocked ? null : stringify(note.properties ?? { status: 'none', tags: [] }),
     encryptedPayload: note.encryptedPayload,
     encryption: note.encryption ? stringify(note.encryption) : null,
@@ -161,6 +165,121 @@ export function noteToListItem(note: LocalNote): NoteListItem {
   return note.isLocked ? toLockedListItem(note) : toPlaintextListItem(note)
 }
 
+/**
+ * The subset of a note row a list item is built from. Declaring it separately
+ * lets SQL adapters project only these columns, so the document never leaves
+ * the database for a list query.
+ */
+export type StoredNoteListRow = Pick<
+  StoredNoteRow,
+  | 'id'
+  | 'title'
+  | 'preview'
+  | 'isLocked'
+  | 'properties'
+  | 'parentFolderId'
+  | 'updatedAt'
+  | 'syncStatus'
+>
+
+export const storedNoteListColumns = [
+  'id',
+  'title',
+  'preview',
+  'isLocked',
+  'properties',
+  'parentFolderId',
+  'updatedAt',
+  'syncStatus',
+] as const satisfies ReadonlyArray<keyof StoredNoteListRow>
+
+/**
+ * Builds a list item straight from the stored row, without ever touching the
+ * `document` column. List queries only need the metadata, and a note document
+ * can be megabytes, so going through `rowToNote` would spend a full JSON.parse
+ * plus document validation per note only to discard the result.
+ */
+export function rowToListItem(row: StoredNoteListRow): NoteListItem {
+  if (row.isLocked === 1) {
+    return noteListItemSchema.parse({
+      id: row.id,
+      title: 'Locked note',
+      preview: '',
+      isLocked: true,
+      parentFolderId: row.parentFolderId ?? null,
+      updatedAt: row.updatedAt,
+      syncStatus: row.syncStatus,
+    })
+  }
+
+  const properties = row.properties
+    ? (parseJson(row.properties) as Partial<NoteProperties>)
+    : null
+
+  return noteListItemSchema.parse({
+    id: row.id,
+    title: row.title,
+    preview: row.preview,
+    isLocked: false,
+    parentFolderId: row.parentFolderId ?? null,
+    updatedAt: row.updatedAt,
+    syncStatus: row.syncStatus,
+    kind: properties?.kind,
+    propertyStatus: properties?.status,
+    tags: properties?.tags,
+  })
+}
+
+/** The columns a search has to look at. */
+export type StoredNoteSearchRow = Pick<
+  StoredNoteRow,
+  'id' | 'title' | 'preview' | 'searchText' | 'properties' | 'deletedAt'
+>
+
+export const storedNoteSearchColumns = [
+  'id',
+  'title',
+  'preview',
+  'searchText',
+  'properties',
+  'deletedAt',
+] as const satisfies ReadonlyArray<keyof StoredNoteSearchRow>
+
+/**
+ * Decides whether a stored note matches a search term, shared by every adapter
+ * so search means the same thing on SQLite and IndexedDB.
+ *
+ * `searchText` is absent on rows written before full-text search existed; those
+ * fall back to title and preview and are upgraded the next time they are saved.
+ * A locked note stores no search text at all, so it can only match on metadata.
+ */
+export function rowMatchesSearch(
+  row: StoredNoteSearchRow,
+  normalizedTerm: string,
+): boolean {
+  if (!normalizedTerm) {
+    return true
+  }
+
+  if (row.title?.toLocaleLowerCase().includes(normalizedTerm)) {
+    return true
+  }
+
+  // searchText already holds the whole body lowercased; preview is the legacy
+  // fallback and only covers the first 180 characters.
+  const body = row.searchText ?? row.preview?.toLocaleLowerCase() ?? null
+
+  if (body?.includes(normalizedTerm)) {
+    return true
+  }
+
+  const tags = row.properties
+    ? (parseJson(row.properties) as Partial<NoteProperties>).tags
+    : null
+
+  return tags?.some((tag) => tag.toLocaleLowerCase().includes(normalizedTerm)) ?? false
+}
+
 export function operationToRow(op: SyncOperation): StoredSyncOperationRow {
   return {
     opId: op.opId,
@@ -203,6 +322,7 @@ export function cryptoProfileToRow(
     salt: profile.salt,
     wrappedMasterKey: profile.wrappedMasterKey,
     wrapNonce: profile.wrapNonce,
+    recovery: profile.recovery ? stringify(profile.recovery) : null,
     updatedAt: profile.updatedAt,
   }
 }
@@ -215,6 +335,7 @@ export function rowToCryptoProfile(row: StoredCryptoProfileRow): LocalCryptoProf
     salt: row.salt,
     wrappedMasterKey: row.wrappedMasterKey,
     wrapNonce: row.wrapNonce,
+    recovery: row.recovery ? parseJson(row.recovery) : null,
     updatedAt: row.updatedAt,
   })
 }

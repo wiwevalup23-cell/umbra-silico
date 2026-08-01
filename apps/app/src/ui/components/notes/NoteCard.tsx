@@ -1,5 +1,7 @@
 import { useEffect, useRef, useState, type CSSProperties, type DragEvent } from 'react'
 import type { NoteId, NoteListItem } from '@/shared/contracts/note'
+import type { MessageKey } from '@/shared/i18n'
+import { useTranslation } from '@/ui/i18n/use-translation'
 import { UiIcon } from '@/ui/icons/ui/UiIcon'
 import { StatusGlyph } from '@/ui/icons/status/StatusGlyph'
 import { getPropertyStatusPresentation } from '@/ui/note-property-presentation'
@@ -23,11 +25,11 @@ const timeFormatter = new Intl.DateTimeFormat(undefined, {
 // 'dirty' is intentionally absent: in the local-first flow it only means
 // "not replicated to a remote yet" while the note is already persisted on
 // disk, so surfacing it as "Unsaved" would misinform the user.
-const exceptionalSyncStatusLabels: Record<string, string> = {
-  conflict: 'Review needed',
-  error: 'Review needed',
-  saving: 'Saving',
-  syncing: 'Saving',
+const exceptionalSyncStatusKeys: Record<string, MessageKey> = {
+  conflict: 'state.reviewNeeded',
+  error: 'state.reviewNeeded',
+  saving: 'state.badgeSaving',
+  syncing: 'state.badgeSaving',
 }
 
 function formatUpdatedAt(updatedAt: string): string {
@@ -40,9 +42,7 @@ function formatUpdatedAt(updatedAt: string): string {
   return timeFormatter.format(date)
 }
 
-function formatSyncStatus(status: string): string {
-  return exceptionalSyncStatusLabels[status] ?? ''
-}
+
 
 export function NoteCard({
   active = false,
@@ -54,18 +54,24 @@ export function NoteCard({
   onMove,
   onSelect,
 }: NoteCardProps) {
+  const { t } = useTranslation()
   const actionsRef = useRef<HTMLDivElement>(null)
   const [isActionsOpen, setActionsOpen] = useState(false)
   const [isDragging, setDragging] = useState(false)
   const title = note.title.trim()
   const isUntitled = title.length === 0 || title.toLocaleLowerCase() === 'untitled'
-  const displayTitle = isUntitled ? 'Untitled' : title
-  const actionLabel = note.isLocked ? `Unlock ${displayTitle}` : `Open ${displayTitle}`
-  const syncStatus = formatSyncStatus(note.syncStatus)
+  const displayTitle = isUntitled ? t('note.untitled') : title
+  const actionLabel = t(note.isLocked ? 'note.unlock' : 'note.open', { title: displayTitle })
+  const syncStatusKey = exceptionalSyncStatusKeys[note.syncStatus]
+  const syncStatus = syncStatusKey ? t(syncStatusKey) : ''
   const shouldShowSyncStatus = syncStatus.length > 0
-  const preview = note.isLocked ? 'Encrypted local note' : note.preview.trim()
+  const preview = note.isLocked ? t('note.encryptedPreview') : note.preview.trim()
   const shouldShowPreview = preview.length > 0
   const pageStatus = getPropertyStatusPresentation(note.propertyStatus)
+  // A user-created status keeps the wording they typed.
+  const pageStatusLabel = pageStatus.labelKey
+    ? t(pageStatus.labelKey)
+    : pageStatus.label ?? ''
   const shouldShowPageStatus = !note.isLocked && pageStatus.value !== 'none'
   const visibleTags = note.isLocked ? [] : note.tags?.slice(0, 2) ?? []
   const hiddenTagCount = Math.max(0, (note.tags?.length ?? 0) - visibleTags.length)
@@ -120,7 +126,7 @@ export function NoteCard({
       >
         <span className="sn-note-card__topline">
           {note.kind === 'chat' ? (
-            <span aria-label="Chat note" className="sn-note-card__kind" title="Chat">
+            <span aria-label={t('note.chatNote')} className="sn-note-card__kind" title={t('note.chat')}>
               <UiIcon height={13} name="chat" width={13} />
             </span>
           ) : null}
@@ -128,7 +134,7 @@ export function NoteCard({
           <time className="sn-note-card__date" dateTime={note.updatedAt}>
             {formatUpdatedAt(note.updatedAt)}
           </time>
-          <span className="sn-note-card__signals" aria-label="Note state">
+          <span className="sn-note-card__signals" aria-label={t('note.state')}>
             {shouldShowSyncStatus ? (
               <span
                 className="sn-status-dot"
@@ -150,16 +156,16 @@ export function NoteCard({
               <span
                 className="sn-note-card__page-status"
                 data-tone={pageStatus.value}
-                title={`Status: ${pageStatus.label}`}
+                title={t('note.statusTitle', { status: pageStatusLabel })}
               >
                 <span aria-hidden="true" className="sn-property-status-icon" data-tone={pageStatus.value}>
                   <StatusGlyph symbol={pageStatus.icon} />
                 </span>
-                {pageStatus.label}
+                {pageStatusLabel}
               </span>
             ) : null}
             {visibleTags.length > 0 ? (
-              <span className="sn-note-card__tags" aria-label="Tags">
+              <span className="sn-note-card__tags" aria-label={t('note.tags')}>
                 {visibleTags.map((tag) => <span key={tag}>{tag}</span>)}
                 {hiddenTagCount > 0 ? (
                   <span className="sn-note-card__tag-overflow">+{hiddenTagCount}</span>
@@ -177,10 +183,10 @@ export function NoteCard({
           <button
             aria-expanded={isActionsOpen}
             aria-haspopup="menu"
-            aria-label={`Note actions for ${displayTitle}`}
+            aria-label={t('note.actionsFor', { title: displayTitle })}
             className="sn-note-card__actions-trigger"
             onClick={() => setActionsOpen((open) => !open)}
-            title="Note actions"
+            title={t('note.actions')}
             type="button"
           >
             <span aria-hidden="true" className="sn-note-card__actions-dots">
@@ -201,7 +207,7 @@ export function NoteCard({
                   type="button"
                 >
                   <UiIcon name="folder" />
-                  Move to folder
+                  {t('note.moveToFolder')}
                 </button>
               ) : null}
               <button
@@ -214,7 +220,7 @@ export function NoteCard({
                 type="button"
               >
                 <UiIcon name="trash" />
-                Move to trash
+                {t('note.moveToTrash')}
               </button>
             </div>
           ) : null}

@@ -2,6 +2,7 @@ import type { LiveQuery } from '@/repository/contracts/live-query'
 import type {
   ImageId,
   ImageTier,
+  LocalImageMeta,
   LockCredentials,
   NoteId,
   NoteImageListItem,
@@ -17,6 +18,11 @@ export type ImportedImage = {
   imageId: ImageId
   width: number
   height: number
+}
+
+export type BackupImagePayload = {
+  meta: LocalImageMeta
+  tiers: Record<string, Uint8Array>
 }
 
 export interface ImageRepository {
@@ -36,4 +42,7 @@ export interface ImageRepository {
   purgeNoteImages(noteId: NoteId): Promise<void>
   purgeExpiredImages(): Promise<number>
   recoverPendingImageOperations(): Promise<void>
+  readBackupImages(): Promise<BackupImagePayload[]>
+  /** Adds images whose id is not present yet; existing ones are left alone. */
+  restoreBackupImages(images: readonly BackupImagePayload[]): Promise<number>
 }

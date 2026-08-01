@@ -7,11 +7,12 @@ import {
 import type { ImageProcessor } from '@/images'
 import type { LocalImagesStore, LocalNotesStore } from '@/local-store/contracts'
 import type {
+  BackupImagePayload,
   ImageRepository,
   ImportedImage,
   ImportImageInput,
 } from '@/repository/contracts/image-repository'
-import { StoreBackedLiveQuery, type RefreshableLiveQuery } from '@/repository/live-query'
+import { LiveQueryRegistry, StoreBackedLiveQuery } from '@/repository/live-query'
 import {
   deviceIdSchema,
   imageIdSchema,
@@ -69,10 +70,6 @@ const tierFallbackOrder: Record<ImageTier, ImageTier[]> = {
   thumb: ['thumb', 'display', 'original'],
 }
 
-function sameJson<TValue>(left: TValue, right: TValue): boolean {
-  return JSON.stringify(left) === JSON.stringify(right)
-}
-
 export class DefaultImageRepository implements ImageRepository {
   private readonly store: LocalImagesStore
   private readonly processor: ImageProcessor
@@ -84,7 +81,7 @@ export class DefaultImageRepository implements ImageRepository {
   private readonly clock: ImageRepositoryClock
   private readonly idFactory: ImageRepositoryIdFactory
   private readonly gracePeriodMs: number
-  private readonly liveQueries = new Set<RefreshableLiveQuery>()
+  private readonly liveQueries = new LiveQueryRegistry()
 
   constructor(dependencies: DefaultImageRepositoryDependencies) {
     this.store = dependencies.localImagesStore
@@ -101,14 +98,16 @@ export class DefaultImageRepository implements ImageRepository {
 
   liveNoteImages(noteId: NoteId) {
     const parsedNoteId = noteIdSchema.parse(noteId)
-    const liveQuery = new StoreBackedLiveQuery<NoteImageListItem[]>(
-      [],
-      async () =>
+    const liveQuery = new StoreBackedLiveQuery<NoteImageListItem[]>({
+      initialSnapshot: [],
+      loadSnapshot: async () =>
         (await this.store.listNoteImages(parsedNoteId)).map(toNoteImageListItem),
-      sameJson,
-    )
+      onDispose: (disposed) => this.liveQueries.unregister(disposed),
+        onRetain: (retained) => this.liveQueries.register(retained),
+      tags: [`note:${parsedNoteId}`],
+    })
 
-    this.liveQueries.add(liveQuery)
+    this.liveQueries.register(liveQuery)
     return liveQuery
   }
 
@@ -203,7 +202,7 @@ export class DefaultImageRepository implements ImageRepository {
       throw error
     }
 
-    await this.refreshLiveQueries()
+    await this.invalidateNote(noteId)
 
     return {
       imageId,
@@ -267,7 +266,7 @@ export class DefaultImageRepository implements ImageRepository {
     }
 
     if (changed) {
-      await this.refreshLiveQueries()
+      await this.invalidateNote(noteId)
     }
   }
 
@@ -278,7 +277,7 @@ export class DefaultImageRepository implements ImageRepository {
     await this.preparePlaintextImages(parsedNoteId, masterKey)
     await this.commitPreparedNoteImagesLock(parsedNoteId)
 
-    await this.refreshLiveQueries()
+    await this.invalidateNote(parsedNoteId)
   }
 
   async prepareNoteImagesLock(
@@ -382,8 +381,65 @@ export class DefaultImageRepository implements ImageRepository {
     }
 
     if (all.length > 0) {
+      await this.invalidateNote(parsedNoteId)
+    }
+  }
+
+  /**
+   * Reads every stored image, tier by tier, exactly as persisted. Encrypted
+   * tiers stay encrypted: a backup must not become a way to smuggle locked
+   * attachments out in the clear.
+   */
+  async readBackupImages(): Promise<BackupImagePayload[]> {
+    const all = await this.store.listAllImages()
+    const payloads: BackupImagePayload[] = []
+
+    for (const meta of all) {
+      const tiers: Record<string, Uint8Array> = {}
+
+      for (const tier of imageTierValues) {
+        const blob = await this.store.getImageBlob(meta.id, tier)
+
+        if (blob) {
+          tiers[tier] = new Uint8Array(await blob.arrayBuffer())
+        }
+      }
+
+      if (Object.keys(tiers).length > 0) {
+        payloads.push({ meta, tiers })
+      }
+    }
+
+    return payloads
+  }
+
+  async restoreBackupImages(images: readonly BackupImagePayload[]): Promise<number> {
+    let restored = 0
+
+    for (const image of images) {
+      if (await this.store.getImageMeta(image.meta.id)) {
+        continue
+      }
+
+      for (const [tier, bytes] of Object.entries(image.tiers)) {
+        await this.store.putImageBlob(
+          image.meta.id,
+          tier as ImageTier,
+          new Blob([bytes as BlobPart], { type: image.meta.mimeType }),
+        )
+      }
+
+      // Metadata last: an interrupted restore then leaves orphan blobs, which
+      // the existing GC sweeps, rather than metadata pointing at missing bytes.
+      await this.store.putImageMeta(image.meta)
+      restored += 1
+    }
+
+    if (restored > 0) {
       await this.refreshLiveQueries()
     }
+
+    return restored
   }
 
   async purgeExpiredImages(): Promise<number> {
@@ -536,7 +592,12 @@ export class DefaultImageRepository implements ImageRepository {
     })
   }
 
-  private async refreshLiveQueries(): Promise<void> {
-    await Promise.all([...this.liveQueries].map((query) => query.refresh()))
+  private invalidateNote(noteId: NoteId): Promise<void> {
+    return this.liveQueries.invalidate([`note:${noteId}`])
+  }
+
+  /** Used by sweeps that can touch images belonging to any note. */
+  private refreshLiveQueries(): Promise<void> {
+    return this.liveQueries.refreshAll()
   }
 }

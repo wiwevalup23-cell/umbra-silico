@@ -6,6 +6,7 @@ import { useEffect, useRef, useState } from 'react'
 import { documentNodeSchema, type ChatMessageContent } from '@/shared/contracts'
 import { NoteTextStyleExtensions } from '@/ui/editor/rich-text'
 import { UiIcon } from '@/ui/icons/ui/UiIcon'
+import { useTranslation } from '@/ui/i18n/use-translation'
 
 export type ChatComposerProps = {
   autoFocus?: boolean
@@ -29,9 +30,14 @@ export function ChatComposer({
   onCancel = null,
   onPickImageFiles = null,
   onSubmit,
-  placeholder = 'Message',
-  submitLabel = 'Send message',
+  placeholder: placeholderProp,
+  submitLabel: submitLabelProp,
 }: ChatComposerProps) {
+  const { t } = useTranslation()
+  // Defaulted here rather than in the parameter list: the fallback copy has to
+  // come from the translator, which is only in scope inside the component.
+  const placeholder = placeholderProp ?? t('chat.message')
+  const submitLabel = submitLabelProp ?? t('chat.sendMessage')
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [isEmpty, setIsEmpty] = useState(
     !initialContent || initialContent.length === 0,
@@ -50,7 +56,7 @@ export function ChatComposer({
         : undefined,
     editorProps: {
       attributes: {
-        'aria-label': 'Message input',
+        'aria-label': t('chat.messageInput'),
         'aria-multiline': 'true',
         class: 'sn-chat-composer__prosemirror',
         role: 'textbox',
@@ -149,10 +155,10 @@ export function ChatComposer({
             type="file"
           />
           <button
-            aria-label="Attach image"
+            aria-label={t('chat.attachImage')}
             className="sn-icon-button sn-chat-composer__attach"
             onClick={() => fileInputRef.current?.click()}
-            title="Attach image"
+            title={t('chat.attachImage')}
             type="button"
           >
             <UiIcon name="image" />
@@ -171,7 +177,7 @@ export function ChatComposer({
 
       {onCancel ? (
         <button
-          aria-label="Cancel editing"
+          aria-label={t('chat.cancelEditing')}
           className="sn-icon-button sn-chat-composer__cancel"
           onClick={onCancel}
           title="Cancel (Esc)"

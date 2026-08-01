@@ -1112,17 +1112,23 @@
   }
 
   .sn-background-picker {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    max-height: min(40dvh, 300px);
   }
 
-  .sn-background-picker--pattern {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+  /* Swatches are square, so the touch target grows with the column width. */
+  .sn-background-option {
+    min-width: 0;
   }
 
-  .sn-background-option,
   .sn-pattern-option {
     min-width: 0;
     min-height: 44px;
+  }
+
+  .sn-custom-background__action,
+  .sn-settings-tab {
+    min-height: 40px;
   }
 
   .sn-status-picker__popover {
@@ -1250,7 +1256,7 @@
   }
 
   .sn-background-picker {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: repeat(4, minmax(0, 1fr));
   }
 }
 

@@ -1,11 +1,19 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useEffect } from 'react'
+import { create } from 'zustand'
 import {
   allowedBackgroundImages,
   allowedBackgroundPatterns,
+  customBackgroundValue,
   type BackgroundPattern,
 } from '@/shared/backgrounds'
+import { detectLocale, isLocale, type Locale } from '@/shared/i18n'
+import {
+  loadCustomBackground,
+  useCustomBackgroundUrl,
+} from '@/viewmodel/custom-background-view-model'
 
 type AppSettings = {
+  locale: Locale
   backgroundImage: string | null
   backgroundPattern: BackgroundPattern
   backgroundOpacity: number
@@ -14,6 +22,8 @@ type AppSettings = {
 }
 
 const DEFAULT_SETTINGS: AppSettings = {
+  // Guessed from the browser on first run, then whatever the user picked.
+  locale: detectLocale(),
   backgroundImage: null,
   backgroundPattern: 'grid',
   backgroundOpacity: 55,
@@ -42,6 +52,7 @@ function normalizeSettings(value: Partial<AppSettings>): AppSettings {
   return {
     ...DEFAULT_SETTINGS,
     ...value,
+    locale: isLocale(value.locale) ? value.locale : DEFAULT_SETTINGS.locale,
     backgroundImage:
       typeof value.backgroundImage === 'string' && allowedBackgroundImages.has(value.backgroundImage)
         ? value.backgroundImage
@@ -71,28 +82,68 @@ function normalizeSettings(value: Partial<AppSettings>): AppSettings {
   }
 }
 
+function readStoredSettings(): AppSettings {
+  if (typeof window === 'undefined') return DEFAULT_SETTINGS
+
+  try {
+    const stored = window.localStorage.getItem(SETTINGS_KEY)
+    return stored ? normalizeSettings(JSON.parse(stored)) : DEFAULT_SETTINGS
+  } catch {
+    return DEFAULT_SETTINGS
+  }
+}
+
+type SettingsState = {
+  settings: AppSettings
+  updateSetting: <K extends keyof AppSettings>(key: K, value: AppSettings[K]) => void
+}
+
+/**
+ * Settings are shared, not per-component.
+ *
+ * They used to live in a `useState` inside this hook, which gave every caller
+ * its own private copy: changing the language in the settings dialog left the
+ * workspace on the old one. Background settings hid the problem because they
+ * are written straight onto :root as a side effect.
+ */
+const useSettingsStore = create<SettingsState>((set) => ({
+  settings: readStoredSettings(),
+  updateSetting: (key, value) =>
+    set((state) => ({
+      settings: normalizeSettings({ ...state.settings, [key]: value }),
+    })),
+}))
+
 export function useSettings() {
-  const [settings, setSettings] = useState<AppSettings>(() => {
-    if (typeof window === 'undefined') return DEFAULT_SETTINGS
-    try {
-      const stored = window.localStorage.getItem(SETTINGS_KEY)
-      return stored ? normalizeSettings(JSON.parse(stored)) : DEFAULT_SETTINGS
-    } catch {
-      return DEFAULT_SETTINGS
-    }
-  })
+  const settings = useSettingsStore((state) => state.settings)
+  const updateSetting = useSettingsStore((state) => state.updateSetting)
+  const customBackgroundUrl = useCustomBackgroundUrl()
+  const wantsCustomBackground = settings.backgroundImage === customBackgroundValue
 
   // Sync settings to localStorage whenever they change
   useEffect(() => {
     window.localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings))
   }, [settings])
 
+  // A session that opens with a custom background selected has to read the
+  // blob before the settings dialog (which owns the hook) is ever opened.
+  useEffect(() => {
+    if (wantsCustomBackground) {
+      void loadCustomBackground()
+    }
+  }, [wantsCustomBackground])
+
   // Apply settings to CSS variables on :root
   useEffect(() => {
     const root = document.documentElement
+    // The uploaded image is an object URL resolved at runtime; every other
+    // option is already a URL.
+    const backgroundUrl = wantsCustomBackground
+      ? customBackgroundUrl
+      : settings.backgroundImage
 
-    if (settings.backgroundImage) {
-      root.style.setProperty('--sn-user-background-image', `url("${settings.backgroundImage}")`)
+    if (backgroundUrl) {
+      root.style.setProperty('--sn-user-background-image', `url("${backgroundUrl}")`)
     } else {
       root.style.removeProperty('--sn-user-background-image')
     }
@@ -131,11 +182,7 @@ export function useSettings() {
 
     root.style.setProperty('--sidebar-width', `${settings.sidebarWidth}px`)
     root.style.setProperty('--inspector-width', `${settings.inspectorWidth}px`)
-  }, [settings])
-
-  const updateSetting = useCallback(<K extends keyof AppSettings>(key: K, value: AppSettings[K]) => {
-    setSettings((prev) => normalizeSettings({ ...prev, [key]: value }))
-  }, [])
+  }, [customBackgroundUrl, settings, wantsCustomBackground])
 
   return {
     settings,

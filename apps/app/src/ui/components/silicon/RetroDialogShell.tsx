@@ -1,5 +1,6 @@
 import { useEffect, useRef, type ReactNode, type RefObject } from 'react'
 import { UiIcon } from '@/ui/icons/ui/UiIcon'
+import { useTranslation } from '@/ui/i18n/use-translation'
 
 type RetroDialogShellProps = {
   children: ReactNode
@@ -24,6 +25,7 @@ export function RetroDialogShell({
   showTitlebar = true,
   title,
 }: RetroDialogShellProps) {
+  const { t } = useTranslation()
   const dialogRef = useRef<HTMLDialogElement>(null)
 
   useEffect(() => {
@@ -94,7 +96,7 @@ export function RetroDialogShell({
               aria-label={`Close ${title.toLocaleLowerCase()}`}
               disabled={closeDisabled}
               onClick={onClose}
-              title="Close"
+              title={t('action.close')}
               type="button"
             >
               <UiIcon name="close" />

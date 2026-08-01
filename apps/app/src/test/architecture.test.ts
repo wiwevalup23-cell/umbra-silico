@@ -151,6 +151,34 @@ describe('cross-layer boundary discipline', () => {
     ).toEqual([])
   })
 
+  it('keeps the appearance store self-contained', () => {
+    const files = import.meta.glob<string>('/src/appearance/**/*.{ts,tsx}', {
+      eager: true,
+      import: 'default',
+      query: '?raw',
+    })
+
+    // The appearance store is a pure browser-API service (IndexedDB) owning
+    // the user's own background image: no React, no stores, no other layers.
+    expect(
+      findImportViolations(files, [
+        '@/ui',
+        '@/viewmodel',
+        '@/repository',
+        '@/local-store',
+        '@/sync',
+        '@/crypto',
+        '@/platform',
+        '@/images',
+        "from 'react'",
+        'zustand',
+        'dexie',
+        '@tauri-apps',
+        'supabase',
+      ]),
+    ).toEqual([])
+  })
+
   it('keeps the chat log service self-contained', () => {
     const files = import.meta.glob<string>('/src/chat/**/*.{ts,tsx}', {
       eager: true,

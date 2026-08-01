@@ -7,6 +7,7 @@ create table if not exists notes (
   is_locked integer not null default 0,
   document text,
   properties text,
+  search_text text,
   encrypted_payload text,
   encryption text,
   created_at text not null,
@@ -62,6 +63,7 @@ create table if not exists crypto_profiles (
   salt text not null,
   wrapped_master_key text not null,
   wrap_nonce text not null,
+  recovery text,
   updated_at text not null
 );
 

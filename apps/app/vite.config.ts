@@ -1,13 +1,21 @@
+import { createRequire } from 'node:module'
 import { fileURLToPath, URL } from 'node:url'
 import react from '@vitejs/plugin-react'
 import { defineConfig } from 'vitest/config'
 import { VitePWA } from 'vite-plugin-pwa'
 
 const base = process.env.VITE_BASE_PATH ?? '/'
+const { version: appVersion } = createRequire(import.meta.url)('./package.json') as {
+  version: string
+}
 
 // https://vite.dev/config/
 export default defineConfig({
   base,
+  // Stamped into backup files so a bundle records which build wrote it.
+  define: {
+    __APP_VERSION__: JSON.stringify(appVersion),
+  },
   plugins: [
     react(),
     VitePWA({

@@ -2,6 +2,7 @@ import type { DragEvent, ReactNode } from 'react'
 import type { NoteId, NoteListItem } from '@/shared/contracts/note'
 import { NoteCard } from '@/ui/components/notes/NoteCard'
 import { UiIcon } from '@/ui/icons/ui/UiIcon'
+import { useTranslation } from '@/ui/i18n/use-translation'
 import { getPersistencePresentation } from '@/ui/note-presentation'
 
 type NoteListProps = {
@@ -20,7 +21,8 @@ type NoteListProps = {
   onSelectNote: (noteId: NoteId) => void
   pendingOperations?: number
   searchQuery?: string
-  scopeLabel?: string
+  /** Folder name, or null for the whole library. */
+  scopeLabel?: string | null
   syncStatus?: string
   trashCount?: number
 }
@@ -41,11 +43,12 @@ export function NoteList({
   onSelectNote,
   pendingOperations = 0,
   searchQuery = '',
-  scopeLabel = 'All notes',
+  scopeLabel = null,
   syncStatus = 'synced',
   trashCount = 0,
 }: NoteListProps) {
-  const noteCountLabel = notes.length === 1 ? '1 note' : `${notes.length} notes`
+  const { plural, t } = useTranslation()
+  const noteCountLabel = plural('library.noteCount', notes.length)
   const libraryStatus = getPersistencePresentation({
     hasRemote,
     pendingOperations,
@@ -53,25 +56,25 @@ export function NoteList({
   })
 
   return (
-    <section className="sn-note-list-shell" aria-label="Notes">
+    <section className="sn-note-list-shell" aria-label={t('library.notes')}>
       <header className="sn-panel-heading">
         <div>
           <div className="sn-panel-heading__title-row">
-            <h2 title={scopeLabel}>{scopeLabel === 'All notes' ? 'Library' : scopeLabel}</h2>
+            <h2 title={scopeLabel ?? t('library.title')}>{scopeLabel ?? t('library.title')}</h2>
             <span className="sn-panel-heading__right">{noteCountLabel}</span>
           </div>
           <p className="sn-panel-status" aria-live="polite">
             <span className="sn-status-dot" data-tone={libraryStatus.tone} />
-            <span>{libraryStatus.label}</span>
+            <span>{t(libraryStatus.labelKey)}</span>
           </p>
         </div>
         {onCollapse ? (
           <div className="sn-panel-heading__actions">
             <button
-              aria-label="Collapse notes panel"
+              aria-label={t('library.collapse')}
               className="sn-icon-button"
               onClick={onCollapse}
-              title="Collapse notes panel"
+              title={t('library.collapse')}
               type="button"
             >
               <UiIcon name="chevronLeft" />
@@ -82,10 +85,10 @@ export function NoteList({
 
       <label className="sn-search-field">
         <UiIcon name="search" />
-        <span className="sr-only">Search notes</span>
+        <span className="sr-only">{t('library.searchNotes')}</span>
         <input
           onChange={(event) => onSearchChange?.(event.target.value)}
-          placeholder="Search notes"
+          placeholder={t('library.searchNotes')}
           type="search"
           value={searchQuery}
         />
@@ -96,8 +99,8 @@ export function NoteList({
       {notes.length === 0 ? (
         <div className="sn-empty-list">
           <UiIcon name="document" />
-          <strong>{searchQuery ? 'No matching notes' : 'No notes yet'}</strong>
-          <p>{searchQuery ? 'Try a different search.' : 'Your local library is ready for its first page.'}</p>
+          <strong>{t(searchQuery ? 'library.noMatches' : 'library.emptyTitle')}</strong>
+          <p>{t(searchQuery ? 'library.noMatchesHint' : 'library.emptyBody')}</p>
           {!searchQuery ? (
             <button className="sn-empty-list__action" onClick={onCreateNote} type="button">
               New blank note
@@ -138,7 +141,7 @@ export function NoteList({
           >
             <span>
               <UiIcon name="trash" />
-              Trash
+              {t('trash.title')}
             </span>
             <span>{trashCount}</span>
           </button>

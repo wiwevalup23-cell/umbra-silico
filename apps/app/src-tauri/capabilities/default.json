@@ -10,8 +10,6 @@
     "sql:allow-execute",
     "sql:allow-select",
     "sql:allow-close",
-    "stronghold:default",
-    "stronghold:allow-remove-store-record",
     "fs:allow-mkdir",
     "fs:allow-exists",
     "fs:allow-read-file",

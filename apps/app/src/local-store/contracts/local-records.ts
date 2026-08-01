@@ -7,6 +7,11 @@ export type StoredNoteRow = {
   isLocked: 0 | 1
   document: string | null
   properties?: string | null
+  /**
+   * Lowercased plain text of the note body, for search. Null for locked
+   * notes: ciphertext must not leave a searchable shadow behind.
+   */
+  searchText?: string | null
   encryptedPayload: string | null
   encryption: string | null
   createdAt: string
@@ -91,6 +96,8 @@ export type StoredCryptoProfileRow = {
   salt: string
   wrappedMasterKey: string
   wrapNonce: string
+  /** JSON of the recovery-key wrapping, or null on pre-recovery profiles. */
+  recovery?: string | null
   updatedAt: string
 }
 

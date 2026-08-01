@@ -1,8 +1,7 @@
-import { useMemo } from 'react'
 import type { FolderId, NoteId } from '@/shared/contracts'
 import type { NoteRepository } from '@/repository/contracts'
 import { useAppUiStore } from '@/viewmodel/app-ui-store'
-import { useLiveQuery } from '@/viewmodel/live-query-view-model'
+import { useLiveQuery, useOwnedLiveQuery } from '@/viewmodel/live-query-view-model'
 import { useNoteRepository } from '@/viewmodel/repository-hooks'
 import { useSyncEngine } from '@/viewmodel/sync-engine-hooks'
 
@@ -26,7 +25,7 @@ export function useFoldersViewModel(): FoldersViewModel {
   const syncEngine = useSyncEngine()
   const activeFolderId = useAppUiStore((state) => state.activeFolderId)
   const selectFolder = useAppUiStore((state) => state.setActiveFolder)
-  const liveQuery = useMemo(() => repository.liveFolderTree(), [repository])
+  const liveQuery = useOwnedLiveQuery(() => repository.liveFolderTree(), [repository])
   const folderTree = useLiveQuery(liveQuery)
 
   return {

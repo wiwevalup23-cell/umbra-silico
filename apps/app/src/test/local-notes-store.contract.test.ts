@@ -67,6 +67,41 @@ function makeNote(id: string, title: string, updatedAt = now): PlaintextLocalNot
   }
 }
 
+function documentWithText(text: string) {
+  return {
+    schemaVersion: 1 as const,
+    editor: 'tiptap' as const,
+    content: {
+      type: 'doc',
+      content: [{ type: 'paragraph', content: [{ type: 'text', text }] }],
+    },
+  }
+}
+
+/** Stands in for what the repository writes after encrypting a note. */
+function lockedVersionOf(note: PlaintextLocalNote): LocalNote {
+  // A locked row carries no plaintext properties, so drop them rather than
+  // letting an `undefined` sneak past the discriminated union.
+  const rest = { ...note, properties: undefined }
+  delete rest.properties
+
+  return {
+    ...rest,
+    isLocked: true,
+    title: null,
+    preview: null,
+    document: null,
+    encryptedPayload: 'Y2lwaGVydGV4dA==',
+    encryption: {
+      version: 1,
+      algorithm: 'AES-GCM-256',
+      payloadNonce: 'bm9uY2U=',
+      wrappedDek: 'ZGVr',
+      wrapNonce: 'd3JhcA==',
+    },
+  }
+}
+
 function makeFolder(
   id: string,
   name: string,
@@ -216,6 +251,9 @@ class MemorySqlDatabase implements SqlDatabase {
         properties: bindValues[19] === null || bindValues[19] === undefined
           ? null
           : String(bindValues[19]),
+        searchText: bindValues[20] === null || bindValues[20] === undefined
+          ? null
+          : String(bindValues[20]),
       }
 
       this.notes.set(row.id, row)
@@ -368,6 +406,10 @@ class MemorySqlDatabase implements SqlDatabase {
         wrappedMasterKey: String(bindValues[4]),
         wrapNonce: String(bindValues[5]),
         updatedAt: String(bindValues[6]),
+        recovery:
+          bindValues[7] === null || bindValues[7] === undefined
+            ? null
+            : String(bindValues[7]),
       }
 
       this.cryptoProfiles.set(row.userId, row)
@@ -425,6 +467,11 @@ class MemorySqlDatabase implements SqlDatabase {
         { name: 'id' },
         { name: 'parent_folder_id' },
       ] as unknown as TRow[]
+    }
+
+    if (normalized === 'pragma table_info(crypto_profiles)') {
+      // Reported without `recovery` so initialization exercises the migration.
+      return [{ name: 'user_id' }] as unknown as TRow[]
     }
 
     if (normalized.includes('from folders') && normalized.includes('where deleted_at is null')) {
@@ -583,8 +630,14 @@ it('migrates legacy note columns before creating dependent SQLite indexes', asyn
       return { rowsAffected: 0 }
     },
     async select<TRow extends Record<string, unknown>>(query: string) {
-      if (query.trim().toLowerCase() === 'pragma table_info(notes)') {
+      const normalized = query.trim().toLowerCase()
+
+      if (normalized === 'pragma table_info(notes)') {
         return [...columns].map((name) => ({ name })) as unknown as TRow[]
+      }
+
+      if (normalized === 'pragma table_info(crypto_profiles)') {
+        return [{ name: 'user_id' }] as unknown as TRow[]
       }
 
       throw new Error(`Unsupported SQL select: ${query}`)
@@ -634,6 +687,69 @@ describe.each(harnesses)('$name contract', (harness) => {
 
       expect((await store.listNotes()).map((note) => note.id)).toEqual([first.id])
       expect((await store.getNote(second.id))?.deletedAt).not.toBeNull()
+    } finally {
+      await cleanup()
+    }
+  })
+
+  it('searches note bodies, not just the preview', async () => {
+    const { store, cleanup } = await harness.create()
+
+    try {
+      // The needle sits well past the 180-character preview cut-off, so a
+      // preview-only search could never have found it.
+      const filler = 'padding sentence that fills the preview. '.repeat(12)
+      const note = makeNote('note_body', 'Groceries')
+      await store.putNote({
+        ...note,
+        document: documentWithText(`${filler} the codeword is zarnitsa.`),
+      })
+      await store.putNote(makeNote('note_other', 'Unrelated'))
+
+      expect(await store.searchNoteIds('zarnitsa')).toEqual([note.id])
+      // Matching is case-insensitive and still covers the title.
+      expect(await store.searchNoteIds('ZARNITSA')).toEqual([note.id])
+      expect(await store.searchNoteIds('groceries')).toEqual([note.id])
+      expect(await store.searchNoteIds('nothing-matches-this')).toEqual([])
+      expect(await store.searchNoteIds('   ')).toEqual([])
+    } finally {
+      await cleanup()
+    }
+  })
+
+  it('matches note tags and skips deleted notes', async () => {
+    const { store, cleanup } = await harness.create()
+
+    try {
+      const tagged = makeNote('note_tagged', 'Tagged note')
+      await store.putNote({
+        ...tagged,
+        properties: { kind: 'standard', status: 'none', tags: ['Reisen'] },
+      })
+      const removed = makeNote('note_removed', 'Reisen in the title')
+      await store.putNote(removed)
+      await store.softDeleteNote(removed.id)
+
+      expect(await store.searchNoteIds('reisen')).toEqual([tagged.id])
+    } finally {
+      await cleanup()
+    }
+  })
+
+  it('never exposes a locked note body to search', async () => {
+    const { store, cleanup } = await harness.create()
+
+    try {
+      const secret = 'zarnitsa'
+      const plain = makeNote('note_to_lock', 'Will be locked')
+      await store.putNote({ ...plain, document: documentWithText(secret) })
+      expect(await store.searchNoteIds(secret)).toEqual([plain.id])
+
+      // Locking replaces the row with ciphertext; the searchable shadow of the
+      // old plaintext must disappear with it.
+      await store.putNote(lockedVersionOf(plain))
+
+      expect(await store.searchNoteIds(secret)).toEqual([])
     } finally {
       await cleanup()
     }
@@ -858,6 +974,16 @@ describe.each(harnesses)('$name contract', (harness) => {
         salt: 'salt.base64',
         wrappedMasterKey: 'wrapped-master-key.base64',
         wrapNonce: 'wrap-nonce.base64',
+        recovery: {
+          kdf: {
+            name: 'PBKDF2',
+            hash: 'SHA-256',
+            iterations: 310000,
+          },
+          salt: 'recovery-salt.base64',
+          wrappedMasterKey: 'recovery-wrapped-master-key.base64',
+          wrapNonce: 'recovery-wrap-nonce.base64',
+        },
         updatedAt: now,
       })
 
@@ -872,7 +998,43 @@ describe.each(harnesses)('$name contract', (harness) => {
         salt: 'salt.base64',
         wrappedMasterKey: 'wrapped-master-key.base64',
         wrapNonce: 'wrap-nonce.base64',
+        recovery: {
+          kdf: {
+            name: 'PBKDF2',
+            hash: 'SHA-256',
+            iterations: 310000,
+          },
+          salt: 'recovery-salt.base64',
+          wrappedMasterKey: 'recovery-wrapped-master-key.base64',
+          wrapNonce: 'recovery-wrap-nonce.base64',
+        },
         updatedAt: now,
+      })
+    } finally {
+      await cleanup()
+    }
+  })
+
+  it('reads a profile written before recovery keys existed', async () => {
+    const { store, cleanup } = await harness.create()
+
+    try {
+      await store.setCryptoProfile({
+        userId,
+        version: 1,
+        kdf: { name: 'PBKDF2', hash: 'SHA-256', iterations: 310000 },
+        salt: 'salt.base64',
+        wrappedMasterKey: 'wrapped-master-key.base64',
+        wrapNonce: 'wrap-nonce.base64',
+        recovery: null,
+        updatedAt: now,
+      })
+
+      // Such a vault still opens with its master password; it simply has no
+      // second way in until the user creates one.
+      expect(await store.getCryptoProfile(userId)).toMatchObject({
+        recovery: null,
+        wrappedMasterKey: 'wrapped-master-key.base64',
       })
     } finally {
       await cleanup()

@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import type { ImageSourceResolver, NoteImageListItem } from '@/shared/contracts'
 import { UiIcon } from '@/ui/icons/ui/UiIcon'
+import { useTranslation } from '@/ui/i18n/use-translation'
 
 type NoteImageGalleryProps = {
   images: NoteImageListItem[]
@@ -15,6 +16,7 @@ type GalleryThumbProps = {
 }
 
 function GalleryThumb({ image, resolver, onSelect }: GalleryThumbProps) {
+  const { t } = useTranslation()
   const buttonRef = useRef<HTMLButtonElement>(null)
   const [isVisible, setVisible] = useState(
     () => typeof IntersectionObserver === 'undefined',
@@ -68,11 +70,11 @@ function GalleryThumb({ image, resolver, onSelect }: GalleryThumbProps) {
 
   return (
     <button
-      aria-label="Show image in note"
+      aria-label={t('gallery.showImageInNote')}
       className="sn-note-gallery__thumb"
       onClick={() => onSelect(image.id)}
       ref={buttonRef}
-      title="Show in note"
+      title={t('gallery.showInNote')}
       type="button"
     >
       {url ? (
@@ -97,12 +99,13 @@ export function NoteImageGallery({
   resolver,
   onSelectImage,
 }: NoteImageGalleryProps) {
+  const { t } = useTranslation()
   if (images.length === 0) {
     return (
       <div className="sn-note-gallery__empty">
         <UiIcon name="image" />
-        <strong>No photos yet</strong>
-        <p>Images added to this note appear here for quick navigation.</p>
+        <strong>{t('gallery.empty')}</strong>
+        <p>{t('gallery.emptyHint')}</p>
       </div>
     )
   }

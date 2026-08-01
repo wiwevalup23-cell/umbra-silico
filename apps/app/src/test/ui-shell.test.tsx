@@ -70,8 +70,17 @@ describe('Umbra Silico UI shell', () => {
     const updateSetting = vi.fn<ComponentProps<typeof SettingsModal>['updateSetting']>()
     const rendered = renderUi(
       <SettingsModal
+        customBackground={{
+          error: null,
+          isBusy: false,
+          onDismissError: vi.fn(),
+          onRemove: vi.fn(),
+          onUpload: vi.fn(),
+          url: null,
+        }}
         onClose={vi.fn()}
         settings={{
+          locale: 'en' as const,
           backgroundImage: null,
           backgroundOpacity: 100,
           backgroundPattern: 'grid',
@@ -91,8 +100,12 @@ describe('Umbra Silico UI shell', () => {
     expect(buttons).toHaveLength(backgroundImageOptions.length)
 
     for (const option of backgroundImageOptions) {
-      const button = buttons.find((candidate) =>
-        candidate.textContent?.includes(option.label),
+      // The swatches carry their name as the accessible name rather than
+      // visible text, so two dozen of them stay compact.
+      const button = buttons.find(
+        (candidate) =>
+          candidate.getAttribute('aria-label') ===
+          (option.value ? option.label : 'No image'),
       )
 
       expect(button).toBeDefined()
@@ -351,6 +364,66 @@ describe('Umbra Silico UI shell', () => {
     expect(rendered.container.textContent).toContain('Numbered list')
     expect(rendered.container.textContent).not.toContain('M+')
     expect(rendered.container.textContent).not.toContain('72px')
+  })
+
+  it('inserts a table into a note and persists it through manual save', async () => {
+    const onChangeDocument = vi.fn<
+      ComponentProps<typeof EditorShell>['onChangeDocument']
+    >(async () => undefined)
+    const note = {
+      ...createDraftLocalNote({
+        deviceId,
+        id: plainNoteId,
+        now,
+        title: 'Table draft',
+        userId,
+      }),
+      preview: '',
+    }
+    const rendered = renderUi(
+      <EditorShell
+        note={note}
+        onChangeDocument={onChangeDocument}
+        onChangeTitle={vi.fn(async () => undefined)}
+        onCreateNote={vi.fn()}
+        onRequestLock={vi.fn()}
+        pendingOperations={0}
+        syncStatus="idle"
+      />,
+    )
+    cleanupTasks.push(rendered.cleanup)
+
+    act(() => {
+      rendered.container
+        .querySelector<HTMLButtonElement>('button[aria-label="More editor tools"]')
+        ?.click()
+    })
+
+    const insertTableButton = rendered.container.querySelector<HTMLButtonElement>(
+      'button[aria-label="Insert table"]',
+    )
+
+    expect(insertTableButton?.disabled).toBe(false)
+
+    act(() => {
+      insertTableButton?.click()
+    })
+
+    expect(rendered.container.querySelectorAll('table')).toHaveLength(1)
+    expect(rendered.container.querySelectorAll('table tr')).toHaveLength(3)
+    expect(rendered.container.querySelectorAll('table th')).toHaveLength(3)
+    expect(rendered.container.querySelectorAll('table td')).toHaveLength(6)
+
+    await act(async () => {
+      rendered.container
+        .querySelector<HTMLButtonElement>('button[aria-label="Save note"]')
+        ?.click()
+      await Promise.resolve()
+    })
+
+    const savedDocument = onChangeDocument.mock.calls.at(-1)?.[1]
+
+    expect(savedDocument?.content.content?.some((node) => node.type === 'table')).toBe(true)
   })
 
   it('debounces title autosave through editor callbacks', async () => {

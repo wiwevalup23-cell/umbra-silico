@@ -19,6 +19,11 @@ import { UiIcon } from '@/ui/icons/ui/UiIcon'
 import { ChatComposer } from '@/ui/components/chat/ChatComposer'
 import { ChatMessageBubble } from '@/ui/components/chat/ChatMessageBubble'
 import { collectPlainText } from '@/ui/components/chat/chat-content-utils'
+import type { Translator } from '@/shared/i18n'
+import { useTranslation } from '@/ui/i18n/use-translation'
+
+/** Just the lookup half of the translator, for module-level helpers. */
+type Translate = Translator['t']
 
 const visibleMessagesStep = 100
 
@@ -28,19 +33,19 @@ const dayLabelFormatter = new Intl.DateTimeFormat(undefined, {
   year: 'numeric',
 })
 
-function formatDayLabel(createdAt: string, now: Date): string {
+function formatDayLabel(createdAt: string, now: Date, t: Translate): string {
   const date = new Date(createdAt)
 
   if (Number.isNaN(date.getTime())) {
-    return 'Earlier'
+    return t('chat.earlier')
   }
 
   const startOfDay = (value: Date) =>
     new Date(value.getFullYear(), value.getMonth(), value.getDate()).getTime()
   const dayDiff = Math.round((startOfDay(now) - startOfDay(date)) / 86_400_000)
 
-  if (dayDiff === 0) return 'Today'
-  if (dayDiff === 1) return 'Yesterday'
+  if (dayDiff === 0) return t('chat.today')
+  if (dayDiff === 1) return t('chat.yesterday')
   return dayLabelFormatter.format(date)
 }
 
@@ -64,13 +69,13 @@ function formatDayKey(createdAt: string): string {
   ].join('-')
 }
 
-function groupMessagesByDay(messages: ChatMessage[], now: Date): ChatDayGroup[] {
+function groupMessagesByDay(messages: ChatMessage[], now: Date, t: Translate): ChatDayGroup[] {
   const groups: ChatDayGroup[] = []
   const groupsByKey = new Map<string, ChatDayGroup>()
 
   for (const message of messages) {
     const key = formatDayKey(message.createdAt)
-    const label = formatDayLabel(message.createdAt, now)
+    const label = formatDayLabel(message.createdAt, now, t)
     const existingGroup = groupsByKey.get(key)
 
     if (existingGroup) {
@@ -85,27 +90,31 @@ function groupMessagesByDay(messages: ChatMessage[], now: Date): ChatDayGroup[] 
   return groups
 }
 
-function formatStorageStatus(note: PlaintextLocalNote, hasRemote: boolean): string {
+function formatStorageStatus(
+  note: PlaintextLocalNote,
+  hasRemote: boolean,
+  t: Translate,
+): string {
   if (!hasRemote) {
-    return 'LOCAL ONLY'
+    return t('chat.localOnly')
   }
 
   switch (note.syncStatus) {
     case 'synced':
-      return 'SYNCED'
+      return t('chat.synced')
     case 'dirty':
-      return 'SYNC PENDING'
+      return t('chat.syncPending')
     case 'syncing':
-      return 'SYNCING'
+      return t('chat.syncing')
     case 'conflict':
-      return 'SYNC CONFLICT'
+      return t('chat.syncConflict')
     case 'error':
-      return 'SYNC ERROR'
+      return t('chat.syncError')
   }
 }
 
-function normalizeTitle(title: string): string {
-  return title.trim() || 'Untitled'
+function normalizeTitle(title: string, t: Translate): string {
+  return title.trim() || t('note.untitled')
 }
 
 type ChatShellProps = {
@@ -149,6 +158,7 @@ export function ChatShell({
   onSendMessage,
   onSetMessagePinned,
 }: ChatShellProps) {
+  const { t } = useTranslation()
   const feedRef = useRef<HTMLDivElement>(null)
   const [titleDraft, setTitleDraft] = useState(note.title)
   const [isDragActive, setIsDragActive] = useState(false)
@@ -192,12 +202,12 @@ export function ChatShell({
   const visibleMessages =
     hiddenCount > 0 ? filteredMessages.slice(hiddenCount) : filteredMessages
   const allFilteredGroups = useMemo(
-    () => groupMessagesByDay(filteredMessages, new Date()),
-    [filteredMessages],
+    () => groupMessagesByDay(filteredMessages, new Date(), t),
+    [filteredMessages, t],
   )
   const groups = useMemo(
-    () => groupMessagesByDay(visibleMessages, new Date()),
-    [visibleMessages],
+    () => groupMessagesByDay(visibleMessages, new Date(), t),
+    [visibleMessages, t],
   )
   const pinnedCount = useMemo(
     () => messages.filter((message) => message.pinnedAt).length,
@@ -214,9 +224,9 @@ export function ChatShell({
 
     return (
       [...counts.entries()].sort((left, right) => right[1] - left[1])[0]?.[0] ??
-      'Interlocutor'
+      t('chat.interlocutor')
     )
-  }, [messages])
+  }, [messages, t])
   const composeAuthor = {
     side: composeSide,
     ...(composeSide === 'other' ? { senderName: otherParticipantName } : {}),
@@ -260,7 +270,7 @@ export function ChatShell({
   }, [groups, pendingDayKey])
 
   function commitTitle() {
-    const nextTitle = normalizeTitle(titleDraft)
+    const nextTitle = normalizeTitle(titleDraft, t)
     setTitleDraft(nextTitle)
 
     if (nextTitle !== note.title) {
@@ -297,8 +307,8 @@ export function ChatShell({
   const microline = [
     noteFingerprint.toUpperCase(),
     `${messages.length} ${messages.length === 1 ? 'MESSAGE' : 'MESSAGES'}`,
-    formatStorageStatus(note, hasRemote),
-    'SEALED ON LOCK',
+    formatStorageStatus(note, hasRemote, t),
+    t('chat.sealedOnLock'),
   ].join(' · ')
 
   return (
@@ -310,7 +320,7 @@ export function ChatShell({
           </span>
           <span aria-hidden="true" className="sn-chat-titlebar__ridge" />
           <input
-            aria-label="Chat title"
+            aria-label={t('chat.title')}
             className="sn-chat-titlebar__title"
             onBlur={commitTitle}
             onChange={(event) => setTitleDraft(event.target.value)}
@@ -325,10 +335,10 @@ export function ChatShell({
           />
           <span aria-hidden="true" className="sn-chat-titlebar__ridge" />
           <button
-            aria-label="Lock this chat"
+            aria-label={t('chat.lock')}
             className="sn-icon-button sn-chat-titlebar__lock"
             onClick={() => onRequestLock(note.id)}
-            title="Lock this chat"
+            title={t('chat.lock')}
             type="button"
           >
             <UiIcon name="lock" />
@@ -343,7 +353,7 @@ export function ChatShell({
             <span className="sn-visually-hidden">Search messages</span>
             <input
               onChange={(event) => setSearchQuery(event.target.value)}
-              placeholder="Search messages"
+              placeholder={t('chat.searchMessages')}
               type="search"
               value={searchQuery}
             />
@@ -363,7 +373,7 @@ export function ChatShell({
             <UiIcon height={14} name="calendar" width={14} />
             <span className="sn-visually-hidden">Jump to date</span>
             <select
-              aria-label="Jump to date"
+              aria-label={t('chat.jumpToDate')}
               disabled={allFilteredGroups.length === 0}
               onChange={(event) => {
                 const dayKey = event.target.value
@@ -384,7 +394,7 @@ export function ChatShell({
               }}
               value=""
             >
-              <option value="">Jump to date</option>
+              <option value="">{t('chat.jumpToDate')}</option>
               {allFilteredGroups.map((group) => (
                 <option key={group.key} value={group.key}>
                   {group.label}
@@ -436,7 +446,7 @@ export function ChatShell({
           {isDragActive ? (
             <div aria-live="polite" className="sn-chat-feed__drop-target" role="status">
               <UiIcon name="image" />
-              <strong>Drop images to save them here</strong>
+              <strong>{t('chat.dropImages')}</strong>
             </div>
           ) : null}
           {hiddenCount > 0 ? (
@@ -454,13 +464,13 @@ export function ChatShell({
               <span aria-hidden="true" className="sn-chat-feed__empty-plate">
                 <UiIcon height={24} name="chat" width={24} />
               </span>
-              <strong>Your private stream</strong>
+              <strong>{t('chat.emptyTitle')}</strong>
               <p>
                 Drop thoughts, links and images here the way you would in your
                 saved-messages chat.{' '}
                 {hasRemote
-                  ? 'They are stored locally first and synced through your configured remote.'
-                  : 'Everything stays local to this device.'}
+                  ? t('chat.emptyRemote')
+                  : t('chat.emptyLocal')}
               </p>
               <code>DROP · PASTE · ENTER SENDS</code>
             </div>
@@ -470,8 +480,8 @@ export function ChatShell({
               <span aria-hidden="true" className="sn-chat-feed__empty-plate">
                 <UiIcon height={24} name="search" width={24} />
               </span>
-              <strong>No matching messages</strong>
-              <p>Try another search or show all saved messages.</p>
+              <strong>{t('chat.noMatches')}</strong>
+              <p>{t('chat.noMatchesHint')}</p>
               <button
                 className="sn-chat-feed__earlier"
                 onClick={() => {
@@ -521,11 +531,11 @@ export function ChatShell({
             role={imageSendError ? 'alert' : 'status'}
           >
             <span>
-              {imageSendError ?? 'Saving image attachments…'}
+              {imageSendError ?? t('chat.savingImages')}
             </span>
             {imageSendError && onDismissImageError ? (
               <button
-                aria-label="Dismiss image error"
+                aria-label={t('chat.dismissImageError')}
                 onClick={onDismissImageError}
                 type="button"
               >
@@ -536,8 +546,8 @@ export function ChatShell({
         ) : null}
 
         <footer className="sn-chat-footer">
-          <div className="sn-chat-speaker-switch" role="group" aria-label="Message author">
-            <span>Write as</span>
+          <div className="sn-chat-speaker-switch" role="group" aria-label={t('chat.messageAuthor')}>
+            <span>{t('chat.writeAs')}</span>
             <button
               aria-pressed={composeSide === 'self'}
               data-active={composeSide === 'self'}
@@ -560,8 +570,8 @@ export function ChatShell({
               onSendImages ? (files) => onSendImages(files, composeAuthor) : null
             }
             onSubmit={(content) => onSendMessage(content, composeAuthor)}
-            placeholder="Message"
-            submitLabel="Send message"
+            placeholder={t('chat.message')}
+            submitLabel={t('chat.sendMessage')}
           />
         </footer>
       </section>

@@ -1,13 +1,7 @@
 /// <reference types="node" />
 
-import { readFileSync } from 'node:fs'
-import { describe, expect, it, vi } from 'vitest'
-import {
-  createTauriStrongholdSecretStore,
-  createUnavailableSecureSecretStore,
-} from '@/platform'
-
-const textDecoder = new TextDecoder()
+import { existsSync, readFileSync } from 'node:fs'
+import { describe, expect, it } from 'vitest'
 
 function readJson<T>(path: string): T {
   return JSON.parse(readFileSync(path, 'utf8')) as T
@@ -62,6 +56,66 @@ describe('phase 12 Tauri desktop packaging readiness', () => {
     expect(tauriConfig.plugins).not.toHaveProperty('stronghold')
   })
 
+  it('locks the webview down with a CSP that still allows the app to run', () => {
+    const security = readJson<{
+      app: { security: { csp: string | null; devCsp: string | null } }
+    }>('src-tauri/tauri.conf.json').app.security
+
+    function directives(policy: string | null): Map<string, string[]> {
+      expect(policy).toBeTruthy()
+      return new Map(
+        (policy as string)
+          .split(';')
+          .map((part) => part.trim())
+          .filter(Boolean)
+          .map((part) => {
+            const [name, ...values] = part.split(/\s+/)
+            return [name, values] as const
+          }),
+      )
+    }
+
+    const csp = directives(security.csp)
+
+    // Nothing loads from a foreign origin, and no plugin/iframe surface exists.
+    expect(csp.get('default-src')).toEqual(["'self'"])
+    expect(csp.get('object-src')).toEqual(["'none'"])
+    expect(csp.get('frame-ancestors')).toEqual(["'none'"])
+    expect(csp.get('base-uri')).toEqual(["'self'"])
+
+    // A Telegram export can only ever become inert DOM: no injected script can
+    // execute, however the parser is changed later.
+    expect(csp.get('script-src')).toEqual(["'self'"])
+
+    // Image renditions reach <img> as object URLs and Tauri commands travel
+    // over the ipc: protocol, so both have to stay reachable.
+    expect(csp.get('img-src')).toEqual(expect.arrayContaining(['blob:']))
+    expect(csp.get('connect-src')).toEqual(
+      expect.arrayContaining(['ipc:', 'http://ipc.localhost']),
+    )
+
+    // Inline styles are unavoidable: the theme drives CSS custom properties
+    // through style attributes. Scripts get no such exemption.
+    expect(csp.get('style-src')).toEqual(
+      expect.arrayContaining(["'self'", "'unsafe-inline'"]),
+    )
+
+    // The dev policy may be looser for HMR, but only towards the dev server.
+    const devCsp = directives(security.devCsp)
+    expect(devCsp.get('script-src')).toEqual(
+      expect.arrayContaining(["'self'", 'http://localhost:1420']),
+    )
+    expect(devCsp.get('connect-src')).toEqual(
+      expect.arrayContaining(['ws://localhost:1420']),
+    )
+    for (const [name, values] of devCsp) {
+      expect({ name, wildcard: values.includes('*') }).toEqual({
+        name,
+        wildcard: false,
+      })
+    }
+  })
+
   it('grants only the desktop capabilities needed by the shipped plugins', () => {
     const capability = readJson<{
       description: string
@@ -80,8 +134,6 @@ describe('phase 12 Tauri desktop packaging readiness', () => {
       'sql:allow-execute',
       'sql:allow-select',
       'sql:allow-close',
-      'stronghold:default',
-      'stronghold:allow-remove-store-record',
       'fs:allow-mkdir',
       'fs:allow-exists',
       'fs:allow-read-file',
@@ -95,20 +147,43 @@ describe('phase 12 Tauri desktop packaging readiness', () => {
     ])
   })
 
-  it('registers SQL, Stronghold and FS plugins in the native shell', () => {
+  it('registers SQL and FS plugins in the native shell', () => {
     const cargoToml = readFileSync('src-tauri/Cargo.toml', 'utf8')
     const libRs = readFileSync('src-tauri/src/lib.rs', 'utf8')
 
     expect(cargoToml).toContain('tauri-plugin-sql')
-    expect(cargoToml).toContain('tauri-plugin-stronghold')
     expect(cargoToml).toContain('tauri-plugin-fs')
-    expect(cargoToml).toContain('argon2')
-    expect(libRs).toContain('tauri_plugin_stronghold::Builder::new')
-    expect(libRs).toContain('silicon-nostalgia-stronghold-v1')
     expect(libRs).toContain('tauri_plugin_sql::Builder::default')
     expect(libRs).toContain('tauri_plugin_fs::init()')
     expect(libRs).toContain('pool.begin()')
     expect(libRs).toContain('execute_sqlite_transaction')
+  })
+
+  it('ships no secret-vault plugin, since nothing ever used one', () => {
+    // Stronghold was wired end to end — Rust plugin, capabilities, a TypeScript
+    // wrapper and a bundled npm package — but no app code ever called it. It
+    // was pure attack surface, and its key derivation used a salt hardcoded in
+    // the binary. Keep it gone rather than half-present.
+    const sources = {
+      'src-tauri/Cargo.toml': readFileSync('src-tauri/Cargo.toml', 'utf8'),
+      'src-tauri/src/lib.rs': readFileSync('src-tauri/src/lib.rs', 'utf8'),
+      'src-tauri/capabilities/default.json': readFileSync(
+        'src-tauri/capabilities/default.json',
+        'utf8',
+      ),
+      'package.json': readFileSync('package.json', 'utf8'),
+    }
+
+    for (const [name, contents] of Object.entries(sources)) {
+      expect({ name, mentionsStronghold: /stronghold/i.test(contents) }).toEqual({
+        name,
+        mentionsStronghold: false,
+      })
+    }
+
+    // The salt that went with it must not survive either.
+    expect(sources['src-tauri/src/lib.rs']).not.toContain('argon2')
+    expect(existsSync('src/platform/secure-secret-store.ts')).toBe(false)
   })
 
   it('uses the same SQLite database name in Tauri runtime and SQL preload', () => {
@@ -145,70 +220,4 @@ describe('phase 12 Tauri desktop packaging readiness', () => {
     expect(syncProviderSource).toContain('void syncEngine.stop()')
   })
 
-  it('wraps Tauri Stronghold as a save-on-write secure secret store', async () => {
-    const saved = vi.fn(async () => undefined)
-    const values = new Map<string, Uint8Array>()
-    const store = {
-      async get(key: string) {
-        return values.get(key) ?? null
-      },
-      async insert(key: string, value: number[]) {
-        values.set(key, new Uint8Array(value))
-      },
-      async remove(key: string) {
-        const previous = values.get(key) ?? null
-        values.delete(key)
-        return previous
-      },
-    }
-    const client = {
-      getStore: () => store,
-      getVault: vi.fn(),
-    }
-    const strongholdInstance = {
-      createClient: vi.fn(async () => client),
-      loadClient: vi.fn(async () => {
-        throw new Error('client missing')
-      }),
-      save: saved,
-    }
-    const Stronghold = {
-      load: vi.fn(async () => strongholdInstance),
-    }
-
-    const secretStore = await createTauriStrongholdSecretStore('vault password', {
-      path: {
-        appDataDir: vi.fn(async () => '/tmp/silicon-nostalgia'),
-        join: vi.fn(async (...paths: string[]) => paths.join('/')),
-      },
-      stronghold: {
-        Stronghold,
-      },
-    })
-
-    await secretStore.setSecret('supabase-refresh-token', new TextEncoder().encode('secret'))
-
-    const secret = await secretStore.getSecret('supabase-refresh-token')
-
-    expect(Stronghold.load).toHaveBeenCalledWith(
-      '/tmp/silicon-nostalgia/silicon-nostalgia.vault.hold',
-      'vault password',
-    )
-    expect(strongholdInstance.createClient).toHaveBeenCalledWith('silicon-nostalgia')
-    expect(textDecoder.decode(secret ?? new Uint8Array())).toBe('secret')
-    expect(saved).toHaveBeenCalledTimes(2)
-
-    await secretStore.removeSecret('supabase-refresh-token')
-
-    expect(await secretStore.getSecret('supabase-refresh-token')).toBeNull()
-    expect(saved).toHaveBeenCalledTimes(3)
-  })
-
-  it('does not expose secure storage in browser runtime by accident', async () => {
-    const store = createUnavailableSecureSecretStore()
-
-    await expect(store.getSecret('anything')).rejects.toThrow(
-      'Secure secret storage is available only in Tauri runtime.',
-    )
-  })
 })

@@ -6,10 +6,26 @@ import {
   type Keyring,
 } from '@/crypto'
 import type { LocalNotesStore } from '@/local-store/contracts'
-import type { NoteRepository } from '@/repository/contracts/note-repository'
-import { StoreBackedLiveQuery, type RefreshableLiveQuery } from '@/repository/live-query'
+import type {
+  LockNoteResult,
+  NoteBackupData,
+  NoteBackupRestoreReport,
+  NoteRepository,
+} from '@/repository/contracts/note-repository'
+import {
+  LiveQueryRegistry,
+  noteListSignature,
+  StoreBackedLiveQuery,
+  type LiveQueryTag,
+} from '@/repository/live-query'
 import { mapLocalNoteToSyncPayload } from '@/repository/mappers/local-note-mapper'
 import { mapRemoteChangeToLocalNote } from '@/repository/mappers/remote-note-mapper'
+import {
+  defaultNoteHistoryRetention,
+  selectExpiredNoteOps,
+  type NoteHistoryRetentionPolicy,
+} from '@/repository/note-history'
+import { createNotePreview, createNoteSearchText } from '@/shared/document-text'
 import {
   createDraftLocalNote,
   createNoteInputSchema,
@@ -20,7 +36,9 @@ import {
   lockCredentialsSchema,
   noteDocumentSchema,
   notePropertiesSchema,
+  localNoteSchema,
   noteIdSchema,
+  noteVersionSchema,
   operationIdSchema,
   plaintextLocalNoteSchema,
   toPlaintextListItem,
@@ -36,10 +54,10 @@ import {
   type FolderTreeNode,
   type LocalFolder,
   type LocalNote,
-  type NoteDocument,
   type NoteId,
   type NoteListItem,
   type NoteListQuery,
+  type NoteVersion,
   type OperationId,
   type PlaintextLocalNote,
   type SyncOperation,
@@ -65,6 +83,9 @@ export type DefaultNoteRepositoryDependencies = {
   deviceId: DeviceId | string
   clock?: RepositoryClock
   idFactory?: RepositoryIdFactory
+  historyRetention?: NoteHistoryRetentionPolicy
+  /** How many writes to a note pass before its history is re-evaluated. */
+  historyPruneEveryWrites?: number
 }
 
 const defaultIdFactory: RepositoryIdFactory = (prefix) =>
@@ -72,6 +93,7 @@ const defaultIdFactory: RepositoryIdFactory = (prefix) =>
 
 const defaultClock: RepositoryClock = () => new Date().toISOString()
 const unlockedSessionDurationMs = 15 * 60 * 1000
+const defaultPruneEveryWrites = 20
 
 const lockedNotePayloadSchema = z.object({
   version: z.literal(1),
@@ -83,52 +105,28 @@ const lockedNotePayloadSchema = z.object({
 
 type LockedNotePayload = z.infer<typeof lockedNotePayloadSchema>
 
-function sameJson<TValue>(left: TValue, right: TValue): boolean {
-  return JSON.stringify(left) === JSON.stringify(right)
+/**
+ * Reads the note snapshot an outbox operation carries, tolerating payloads
+ * written by older builds rather than failing a whole history listing.
+ */
+function readOperationSnapshot(op: SyncOperation): LocalNote | null {
+  const payload = op.payload as { note?: unknown }
+  const parsed = localNoteSchema.safeParse(payload.note)
+
+  return parsed.success ? parsed.data : null
 }
 
-function isTextNode(node: unknown): node is { type: 'text'; text: string } {
-  return (
-    node !== null &&
-    typeof node === 'object' &&
-    'type' in node &&
-    'text' in node &&
-    node.type === 'text' &&
-    typeof node.text === 'string'
-  )
-}
-
-function collectText(node: unknown, output: string[]): void {
-  if (!node || typeof node !== 'object') {
-    return
-  }
-
-  if (isTextNode(node)) {
-    output.push(node.text)
-    return
-  }
-
-  if (
-    !('content' in node) ||
-    !Array.isArray(node.content)
-  ) {
-    return
-  }
-
-  for (const child of node.content) {
-    collectText(child, output)
-  }
-}
-
-function createPreview(document: NoteDocument): string {
-  const text: string[] = []
-  collectText(document.content, text)
-  return text.join(' ').replace(/\s+/g, ' ').trim().slice(0, 180)
-}
-
+/**
+ * Both callers hand in either a plaintext note or the decrypted note from an
+ * unlock session, so reaching the throw means that substitution was missed
+ * rather than that the user did anything wrong — `requireUnlockedSession`
+ * already reports the missing-session case.
+ */
 function assertPlaintextNote(note: LocalNote): PlaintextLocalNote {
   if (note.isLocked) {
-    throw new Error('Locked notes cannot be edited until the crypto phase is implemented.')
+    throw new Error(
+      `Note ${note.id} is still encrypted here; an unlock session must supply its plaintext first.`,
+    )
   }
 
   return note
@@ -197,7 +195,12 @@ export class DefaultNoteRepository implements NoteRepository {
   private readonly clock: RepositoryClock
   private readonly idFactory: RepositoryIdFactory
   private readonly keyring: Keyring
-  private readonly liveQueries = new Set<RefreshableLiveQuery>()
+  private readonly liveQueries = new LiveQueryRegistry()
+  private readonly historyRetention: NoteHistoryRetentionPolicy
+  private readonly historyPruneEveryWrites: number
+  // Pruning reads a note's whole op list, so it runs on a cadence rather than
+  // on every keystroke-driven save.
+  private readonly writesSincePrune = new Map<NoteId, number>()
   private readonly unlockedSessions = new Map<
     NoteId,
     {
@@ -215,55 +218,80 @@ export class DefaultNoteRepository implements NoteRepository {
     this.clock = dependencies.clock ?? defaultClock
     this.idFactory = dependencies.idFactory ?? defaultIdFactory
     this.keyring = dependencies.keyring ?? createKeyring(this.cryptoService)
+    this.historyRetention = dependencies.historyRetention ?? defaultNoteHistoryRetention
+    this.historyPruneEveryWrites =
+      dependencies.historyPruneEveryWrites ?? defaultPruneEveryWrites
   }
 
   liveNoteList(query: NoteListQuery = {}) {
-    const liveQuery = new StoreBackedLiveQuery<NoteListItem[]>(
-      [],
-      async () =>
-        this.filterNoteList(
-          await this.getVisibleNoteList(),
-          query,
-          await this.localStore.listFolders(),
-        ),
-      sameJson,
+    return this.registerLiveQuery(
+      new StoreBackedLiveQuery<NoteListItem[]>({
+        initialSnapshot: [],
+        loadSnapshot: async () =>
+          this.filterNoteList(
+            await this.getVisibleNoteList(),
+            query,
+            await this.localStore.listFolders(),
+          ),
+        onDispose: (disposed) => this.liveQueries.unregister(disposed),
+        onRetain: (retained) => this.liveQueries.register(retained),
+        signature: noteListSignature,
+        tags: ['notes'],
+      }),
     )
-
-    this.liveQueries.add(liveQuery)
-    return liveQuery
   }
 
   liveTrashList() {
-    const liveQuery = new StoreBackedLiveQuery<NoteListItem[]>(
-      [],
-      () => this.getVisibleTrashList(),
-      sameJson,
+    return this.registerLiveQuery(
+      new StoreBackedLiveQuery<NoteListItem[]>({
+        initialSnapshot: [],
+        loadSnapshot: () => this.getVisibleTrashList(),
+        onDispose: (disposed) => this.liveQueries.unregister(disposed),
+        onRetain: (retained) => this.liveQueries.register(retained),
+        signature: noteListSignature,
+        tags: ['trash'],
+      }),
     )
-
-    this.liveQueries.add(liveQuery)
-    return liveQuery
   }
 
   liveFolderTree() {
-    const liveQuery = new StoreBackedLiveQuery<FolderTreeNode[]>(
-      [],
-      async () =>
-        buildFolderTree(await this.localStore.listFolders(), await this.localStore.listNotes()),
-      sameJson,
+    return this.registerLiveQuery(
+      new StoreBackedLiveQuery<FolderTreeNode[]>({
+        initialSnapshot: [],
+        loadSnapshot: async () =>
+          buildFolderTree(await this.localStore.listFolders(), await this.localStore.listNotes()),
+        onDispose: (disposed) => this.liveQueries.unregister(disposed),
+        onRetain: (retained) => this.liveQueries.register(retained),
+        tags: ['folders'],
+      }),
     )
-
-    this.liveQueries.add(liveQuery)
-    return liveQuery
   }
 
   liveNote(noteId: NoteId) {
-    const liveQuery = new StoreBackedLiveQuery<LocalNote | null>(
-      null,
-      () => this.getVisibleNote(noteId),
-      sameJson,
+    return this.registerLiveQuery(
+      new StoreBackedLiveQuery<LocalNote | null>({
+        initialSnapshot: null,
+        loadSnapshot: () => this.getVisibleNote(noteId),
+        onDispose: (disposed) => this.liveQueries.unregister(disposed),
+        onRetain: (retained) => this.liveQueries.register(retained),
+        // Serializing the note would mean serializing its whole document on
+        // every refresh. localRevision already advances on each write, and
+        // isLocked covers unlock sessions, which reuse the stored revision.
+        signature: (note) =>
+          note
+            ? `${note.id}|${note.localRevision}|${note.remoteRevision ?? ''}|${
+                note.updatedAt
+              }|${note.syncStatus}|${note.isLocked ? 1 : 0}|${note.parentFolderId ?? ''}`
+            : '',
+        tags: [`note:${noteId}`],
+      }),
     )
+  }
 
-    this.liveQueries.add(liveQuery)
+  private registerLiveQuery<TValue>(
+    liveQuery: StoreBackedLiveQuery<TValue>,
+  ): StoreBackedLiveQuery<TValue> {
+    this.liveQueries.register(liveQuery)
     return liveQuery
   }
 
@@ -289,15 +317,15 @@ export class DefaultNoteRepository implements NoteRepository {
 
     const noteWithOp: PlaintextLocalNote = {
       ...note,
-      preview: createPreview(note.document),
+      preview: createNotePreview(note.document),
       localRevision: 1,
       lastOpId: opId,
     }
     const op = this.createOperation('note.create', noteWithOp, opId)
 
-    await this.localStore.putNoteWithOp(noteWithOp, op)
+    await this.persistNoteWithOp(noteWithOp, op)
     await this.emitAutomationEvent({ type: 'note.created', noteId })
-    await this.refreshLiveQueries()
+    await this.invalidateNote(noteId, ['folders'])
 
     return noteId
   }
@@ -335,7 +363,7 @@ export class DefaultNoteRepository implements NoteRepository {
     }
 
     await this.localStore.putFolder(folder)
-    await this.refreshLiveQueries()
+    await this.liveQueries.invalidate(['folders'])
     return folder.id
   }
 
@@ -354,7 +382,7 @@ export class DefaultNoteRepository implements NoteRepository {
       localRevision: folder.localRevision + 1,
       syncStatus: 'dirty',
     })
-    await this.refreshLiveQueries()
+    await this.liveQueries.invalidate(['folders'])
   }
 
   async moveFolder(folderId: FolderId, parentFolderId: FolderId | null): Promise<void> {
@@ -380,7 +408,7 @@ export class DefaultNoteRepository implements NoteRepository {
       localRevision: folder.localRevision + 1,
       syncStatus: 'dirty',
     })
-    await this.refreshLiveQueries()
+    await this.liveQueries.invalidate(['folders'])
   }
 
   async deleteFolder(folderId: FolderId): Promise<void> {
@@ -406,7 +434,7 @@ export class DefaultNoteRepository implements NoteRepository {
     }
 
     await this.localStore.softDeleteFolder(folderId, now)
-    await this.refreshLiveQueries()
+    await this.liveQueries.invalidate(['folders', 'notes'])
   }
 
   moveNoteToFolder(noteId: NoteId, folderId: FolderId | null): Promise<void> {
@@ -440,14 +468,14 @@ export class DefaultNoteRepository implements NoteRepository {
     }
     const op = this.createOperation('note.update', reparentedNote, opId)
 
-    await this.localStore.putNoteWithOp(reparentedNote, op)
+    await this.persistNoteWithOp(reparentedNote, op)
     this.reparentUnlockedSession(noteId, folderId, now, reparentedNote.localRevision)
     await this.emitAutomationEvent({
       type: 'note.updated',
       noteId,
       changedFields: ['parentFolderId'],
     })
-    await this.refreshLiveQueries()
+    await this.invalidateNote(noteId, ['folders'])
   }
 
   /**
@@ -492,7 +520,7 @@ export class DefaultNoteRepository implements NoteRepository {
         parsedPatch.parentFolderId !== undefined
           ? parsedPatch.parentFolderId
           : plaintextNote.parentFolderId,
-      preview: createPreview(document),
+      preview: createNotePreview(document),
       document,
       properties: parsedPatch.properties ?? plaintextNote.properties,
       updatedAt: this.clock(),
@@ -500,6 +528,10 @@ export class DefaultNoteRepository implements NoteRepository {
       syncStatus: 'dirty',
       lastOpId: opId,
     }
+    // The folder tree carries per-folder note counts, so it only needs
+    // refreshing when this write actually moved the note between folders.
+    const folderTags: LiveQueryTag[] =
+      updatedNote.parentFolderId === existing.parentFolderId ? [] : ['folders']
 
     if (existing.isLocked) {
       const encryptedNote = await this.encryptPlaintextNote(
@@ -510,26 +542,26 @@ export class DefaultNoteRepository implements NoteRepository {
       )
       const op = this.createOperation('note.update', encryptedNote, opId)
 
-      await this.localStore.putNoteWithOp(encryptedNote, op)
+      await this.persistNoteWithOp(encryptedNote, op)
       this.storeUnlockedSession(updatedNote)
       await this.emitAutomationEvent({
         type: 'note.updated',
         noteId,
         changedFields: Object.keys(parsedPatch),
       })
-      await this.refreshLiveQueries()
+      await this.invalidateNote(noteId, folderTags)
       return
     }
 
     const op = this.createOperation('note.update', updatedNote, opId)
 
-    await this.localStore.putNoteWithOp(updatedNote, op)
+    await this.persistNoteWithOp(updatedNote, op)
     await this.emitAutomationEvent({
       type: 'note.updated',
       noteId,
       changedFields: Object.keys(parsedPatch),
     })
-    await this.refreshLiveQueries()
+    await this.invalidateNote(noteId, folderTags)
   }
 
   async deleteNote(noteId: NoteId): Promise<void> {
@@ -546,10 +578,10 @@ export class DefaultNoteRepository implements NoteRepository {
     }
     const op = this.createOperation('note.delete', deletedNote, opId)
 
-    await this.localStore.putNoteWithOp(deletedNote, op)
+    await this.persistNoteWithOp(deletedNote, op)
     this.unlockedSessions.delete(noteId)
     await this.emitAutomationEvent({ type: 'note.deleted', noteId })
-    await this.refreshLiveQueries()
+    await this.invalidateNote(noteId, ['trash', 'folders'])
   }
 
   async restoreNote(noteId: NoteId): Promise<void> {
@@ -566,26 +598,26 @@ export class DefaultNoteRepository implements NoteRepository {
     }
     const op = this.createOperation('note.update', restoredNote, opId)
 
-    await this.localStore.putNoteWithOp(restoredNote, op)
+    await this.persistNoteWithOp(restoredNote, op)
     await this.emitAutomationEvent({
       type: 'note.updated',
       noteId,
       changedFields: ['deletedAt'],
     })
-    await this.refreshLiveQueries()
+    await this.invalidateNote(noteId, ['trash', 'folders'])
   }
 
   async purgeNote(noteId: NoteId): Promise<void> {
     await this.localStore.hardDeleteNote(noteId)
     // Purge is local cleanup only; the remote side keeps the tombstone written by note.delete.
     this.unlockedSessions.delete(noteId)
-    await this.refreshLiveQueries()
+    await this.invalidateNote(noteId, ['trash', 'folders'])
   }
 
   async lockNote(
     noteId: NoteId,
     credentials: Parameters<NoteRepository['lockNote']>[1],
-  ): Promise<void> {
+  ): Promise<LockNoteResult> {
     const parsedCredentials = lockCredentialsSchema.parse(credentials)
     const existing = await this.requireNote(noteId)
     const plaintextNote = assertPlaintextNote(
@@ -623,7 +655,9 @@ export class DefaultNoteRepository implements NoteRepository {
     await this.localStore.putNoteWithOpReplacingNoteOps(encryptedNote, op)
     this.unlockedSessions.delete(noteId)
     await this.emitAutomationEvent({ type: 'note.locked', noteId })
-    await this.refreshLiveQueries()
+    await this.invalidateNote(noteId)
+
+    return { recoveryKey: resolvedMasterKey.recoveryKey }
   }
 
   async unlockNoteForSession(
@@ -635,7 +669,7 @@ export class DefaultNoteRepository implements NoteRepository {
 
     if (!existing.isLocked) {
       const session = this.storeUnlockedSession(existing)
-      await this.refreshLiveQueries()
+      await this.invalidateNote(noteId)
       return session
     }
 
@@ -654,8 +688,165 @@ export class DefaultNoteRepository implements NoteRepository {
     const session = this.storeUnlockedSession(plaintextNote)
 
     await this.emitAutomationEvent({ type: 'note.unlocked', noteId })
-    await this.refreshLiveQueries()
+    await this.invalidateNote(noteId)
     return session
+  }
+
+  async readBackupData(): Promise<NoteBackupData> {
+    const [cryptoProfile, folders, notes] = await Promise.all([
+      this.localStore.getCryptoProfile(this.userId),
+      this.localStore.listFolders(),
+      this.localStore.listAllNotes(),
+    ])
+
+    return { cryptoProfile, folders, notes }
+  }
+
+  /**
+   * Merges a backup into the live library.
+   *
+   * Restoring is additive on purpose: a backup is usually opened after
+   * something went wrong, and silently overwriting a note that is newer than
+   * the file would turn a recovery into a second loss. Existing ids are
+   * reported as skipped instead.
+   */
+  async restoreBackupData(data: NoteBackupData): Promise<NoteBackupRestoreReport> {
+    const report: NoteBackupRestoreReport = {
+      cryptoProfileRestored: false,
+      foldersAdded: 0,
+      foldersSkipped: 0,
+      notesAdded: 0,
+      notesSkipped: 0,
+    }
+
+    // Without the profile, restored locked notes would be undecryptable, so it
+    // is written first — but never over an existing one, which would strand
+    // every note already encrypted on this device.
+    if (data.cryptoProfile && !(await this.localStore.getCryptoProfile(this.userId))) {
+      await this.localStore.setCryptoProfile({
+        ...data.cryptoProfile,
+        userId: this.userId,
+      })
+      report.cryptoProfileRestored = true
+    }
+
+    const existingFolderIds = new Set(
+      (await this.localStore.listFolders()).map((folder) => folder.id),
+    )
+
+    for (const folder of data.folders) {
+      if (existingFolderIds.has(folder.id)) {
+        report.foldersSkipped += 1
+        continue
+      }
+
+      await this.localStore.putFolder({ ...folder, userId: this.userId })
+      report.foldersAdded += 1
+    }
+
+    const existingNoteIds = new Set(
+      (await this.localStore.listAllNotes()).map((note) => note.id),
+    )
+
+    for (const note of data.notes) {
+      if (existingNoteIds.has(note.id)) {
+        report.notesSkipped += 1
+        continue
+      }
+
+      await this.localStore.putNote({
+        ...note,
+        userId: this.userId,
+        // The restored copy is local-only until sync sees it.
+        syncStatus: 'dirty',
+      } as LocalNote)
+      report.notesAdded += 1
+    }
+
+    await this.liveQueries.invalidate(['notes', 'trash', 'folders'])
+    return report
+  }
+
+  /**
+   * A note's retained edit history, newest first, read out of the operations
+   * the outbox already stores. Locked snapshots list without title or preview.
+   */
+  async listNoteVersions(noteId: NoteId): Promise<NoteVersion[]> {
+    const parsedNoteId = noteIdSchema.parse(noteId)
+    const [ops, current] = await Promise.all([
+      this.localStore.listNoteOps(parsedNoteId),
+      this.localStore.getNote(parsedNoteId),
+    ])
+
+    return ops.map((op) => {
+      const snapshot = readOperationSnapshot(op)
+
+      return noteVersionSchema.parse({
+        opId: op.opId,
+        noteId: parsedNoteId,
+        createdAt: op.createdAt,
+        changeType: op.type,
+        title: snapshot?.isLocked === false ? snapshot.title : null,
+        preview: snapshot?.isLocked === false ? snapshot.preview : null,
+        isLocked: snapshot?.isLocked ?? false,
+        isCurrent: current?.lastOpId === op.opId,
+      })
+    })
+  }
+
+  /**
+   * Rewinds a note to a retained version by writing that snapshot back as a
+   * new revision, so the restore is itself an entry in the history and can be
+   * undone. Encrypted snapshots are written back as ciphertext: their data key
+   * is wrapped by the same master key, so no unlock is needed to restore one.
+   */
+  async restoreNoteVersion(noteId: NoteId, opId: string): Promise<void> {
+    const parsedNoteId = noteIdSchema.parse(noteId)
+    const ops = await this.localStore.listNoteOps(parsedNoteId)
+    const op = ops.find((candidate) => candidate.opId === opId)
+
+    if (!op) {
+      throw new Error(`Version ${opId} is no longer available for note ${parsedNoteId}.`)
+    }
+
+    const snapshot = readOperationSnapshot(op)
+
+    if (!snapshot) {
+      throw new Error(`Version ${opId} does not carry a restorable snapshot.`)
+    }
+
+    const existing = await this.requireNote(parsedNoteId)
+    const restoreOpId = this.createOperationId()
+    const now = this.clock()
+    // Content comes from the snapshot; identity, placement and sync bookkeeping
+    // stay with the live row so a restore cannot resurrect a deleted note or
+    // rewind the note past a revision the server already knows about.
+    const restored = {
+      ...snapshot,
+      id: existing.id,
+      userId: existing.userId,
+      createdAt: existing.createdAt,
+      deletedAt: existing.deletedAt,
+      parentFolderId: existing.parentFolderId,
+      remoteRevision: existing.remoteRevision,
+      baseRemoteRevision: existing.baseRemoteRevision,
+      deviceId: this.deviceId,
+      updatedAt: now,
+      localRevision: existing.localRevision + 1,
+      syncStatus: 'dirty' as const,
+      lastOpId: restoreOpId,
+    } as LocalNote
+    const restoreOp = this.createOperation('note.update', restored, restoreOpId)
+
+    await this.persistNoteWithOp(restored, restoreOp)
+    // The cached plaintext belongs to the revision we just replaced.
+    this.unlockedSessions.delete(parsedNoteId)
+    await this.emitAutomationEvent({
+      type: 'note.updated',
+      noteId: parsedNoteId,
+      changedFields: ['document', 'title'],
+    })
+    await this.invalidateNote(parsedNoteId)
   }
 
   getPendingOps(limit: number) {
@@ -685,7 +876,7 @@ export class DefaultNoteRepository implements NoteRepository {
   async applyRemoteChange(change: Parameters<NoteRepository['applyRemoteChange']>[0]) {
     this.unlockedSessions.delete(change.noteId)
     await this.localStore.putNote(mapRemoteChangeToLocalNote(change))
-    await this.refreshLiveQueries()
+    await this.invalidateNote(change.noteId, ['trash', 'folders'])
   }
 
   async markConflict(
@@ -704,7 +895,7 @@ export class DefaultNoteRepository implements NoteRepository {
     }
 
     await this.emitAutomationEvent({ type: 'sync.conflict', noteId })
-    await this.refreshLiveQueries()
+    await this.invalidateNote(noteId, ['trash', 'folders'])
   }
 
   private createConflictCopy(
@@ -902,11 +1093,11 @@ export class DefaultNoteRepository implements NoteRepository {
     })
   }
 
-  private filterNoteList(
+  private async filterNoteList(
     notes: NoteListItem[],
     query: NoteListQuery,
     folders: LocalFolder[],
-  ): NoteListItem[] {
+  ): Promise<NoteListItem[]> {
     let filteredNotes = notes
 
     if (query.folderId !== undefined) {
@@ -920,17 +1111,50 @@ export class DefaultNoteRepository implements NoteRepository {
       )
     }
 
-    if (!query.search) {
+    const search = query.search?.trim()
+
+    if (!search) {
       return filteredNotes
     }
 
-    const search = query.search.toLowerCase()
-    return filteredNotes.filter(
-      (note) =>
-        note.title.toLowerCase().includes(search) ||
-        note.preview.toLowerCase().includes(search) ||
-        note.tags?.some((tag) => tag.toLocaleLowerCase().includes(search)),
-    )
+    // The store matches whole note bodies; the session set covers notes that
+    // are only readable in memory right now, whose stored row is ciphertext.
+    const matched = new Set<NoteId>(await this.localStore.searchNoteIds(search))
+
+    for (const noteId of this.matchUnlockedSessions(search)) {
+      matched.add(noteId)
+    }
+
+    return filteredNotes.filter((note) => matched.has(note.id))
+  }
+
+  /** Ids of unlocked-session notes matching `search`, using in-memory plaintext. */
+  private matchUnlockedSessions(search: string): NoteId[] {
+    const normalizedSearch = search.toLocaleLowerCase()
+    const matched: NoteId[] = []
+
+    for (const noteId of this.unlockedSessions.keys()) {
+      const session = this.getUnlockedSession(noteId)
+
+      if (!session) {
+        continue
+      }
+
+      const { note } = session
+      const matches =
+        note.title.toLocaleLowerCase().includes(normalizedSearch) ||
+        createNoteSearchText(note.document).includes(normalizedSearch) ||
+        (note.properties?.tags.some((tag) =>
+          tag.toLocaleLowerCase().includes(normalizedSearch),
+        ) ??
+          false)
+
+      if (matches) {
+        matched.push(noteId)
+      }
+    }
+
+    return matched
   }
 
   private async requireFolder(folderId: FolderId): Promise<LocalFolder> {
@@ -983,8 +1207,46 @@ export class DefaultNoteRepository implements NoteRepository {
     }
   }
 
-  private async refreshLiveQueries(): Promise<void> {
-    await Promise.all([...this.liveQueries].map((query) => query.refresh()))
+  /**
+   * Every note write changes the note itself and its row in any note list.
+   * Callers add `trash`/`folders` when the write also crossed one of those.
+   */
+  private invalidateNote(
+    noteId: NoteId,
+    extraTags: readonly LiveQueryTag[] = [],
+  ): Promise<void> {
+    return this.liveQueries.invalidate(['notes', `note:${noteId}`, ...extraTags])
+  }
+
+  /**
+   * Every op-producing write goes through here so history retention cannot be
+   * forgotten at a new call site.
+   */
+  private async persistNoteWithOp(note: LocalNote, op: SyncOperation): Promise<void> {
+    await this.localStore.putNoteWithOp(note, op)
+    await this.pruneNoteHistory(note.id)
+  }
+
+  /**
+   * Thins a note's retained history once enough writes have piled up. Without
+   * this the outbox grows by a full note snapshot on every autosave and is
+   * never reclaimed in a local-only install, where operations never drain.
+   */
+  private async pruneNoteHistory(noteId: NoteId): Promise<void> {
+    const writes = (this.writesSincePrune.get(noteId) ?? 0) + 1
+
+    if (writes < this.historyPruneEveryWrites) {
+      this.writesSincePrune.set(noteId, writes)
+      return
+    }
+
+    this.writesSincePrune.set(noteId, 0)
+    const ops = await this.localStore.listNoteOpSummaries(noteId)
+    const expired = selectExpiredNoteOps(ops, this.clock(), this.historyRetention)
+
+    if (expired.length > 0) {
+      await this.localStore.deleteOps(expired)
+    }
   }
 }
 
@@ -995,23 +1257,22 @@ export function createRepositoryNotConfiguredError(): Error {
 export function createUnavailableNoteRepository(): NoteRepository {
   const fail = () => Promise.reject(createRepositoryNotConfiguredError())
 
+  const inert = <TValue>(value: TValue) => () => ({
+    dispose: () => undefined,
+    retain: () => undefined,
+    getSnapshot: () => value,
+    subscribe: () => () => undefined,
+  })
+
   return {
-    liveNote: () => ({
-      getSnapshot: () => null,
-      subscribe: () => () => undefined,
-    }),
-    liveNoteList: () => ({
-      getSnapshot: () => [],
-      subscribe: () => () => undefined,
-    }),
-    liveTrashList: () => ({
-      getSnapshot: () => [],
-      subscribe: () => () => undefined,
-    }),
-    liveFolderTree: () => ({
-      getSnapshot: () => [],
-      subscribe: () => () => undefined,
-    }),
+    liveNote: inert(null),
+    liveNoteList: inert([]),
+    liveTrashList: inert([]),
+    liveFolderTree: inert([]),
+    listNoteVersions: () => Promise.resolve([]),
+    restoreNoteVersion: fail,
+    readBackupData: fail,
+    restoreBackupData: fail,
     applyRemoteChange: fail,
     createFolder: fail,
     createNote: fail,

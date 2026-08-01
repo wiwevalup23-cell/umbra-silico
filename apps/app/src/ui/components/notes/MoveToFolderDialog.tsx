@@ -2,6 +2,7 @@ import { useMemo, useRef, type CSSProperties } from 'react'
 import type { FolderId, FolderTreeNode } from '@/shared/contracts'
 import { RetroDialogShell } from '@/ui/components/silicon'
 import { UiIcon } from '@/ui/icons/ui/UiIcon'
+import { useTranslation } from '@/ui/i18n/use-translation'
 
 type FolderLocation = {
   depth: number
@@ -31,10 +32,11 @@ export function MoveToFolderDialog({
   onCancel,
   onMove,
 }: MoveToFolderDialogProps) {
+  const { t } = useTranslation()
   const firstLocationRef = useRef<HTMLButtonElement>(null)
   const locations = useMemo<FolderLocation[]>(
-    () => [{ depth: 0, id: null, name: 'All notes' }, ...flattenFolders(folders)],
-    [folders],
+    () => [{ depth: 0, id: null, name: t('library.allNotes') }, ...flattenFolders(folders)],
+    [folders, t],
   )
   const firstAvailableIndex = locations.findIndex(
     (location) => location.id !== currentFolderId,
@@ -47,12 +49,14 @@ export function MoveToFolderDialog({
       initialFocusRef={firstLocationRef}
       labelledBy="sn-move-folder-title"
       onClose={onCancel}
-      title="Move note"
+      title={t('move.title')}
     >
       <div className="sn-move-folder-dialog">
         <div className="sn-move-folder-dialog__intro">
-          <h3 id="sn-move-folder-title">Choose a folder</h3>
-          <p id="sn-move-folder-description">Move “{noteTitle || 'Untitled'}” to another location.</p>
+          <h3 id="sn-move-folder-title">{t('move.heading')}</h3>
+          <p id="sn-move-folder-description">
+            {t('move.description', { title: noteTitle || t('note.untitled') })}
+          </p>
         </div>
         <div className="sn-move-folder-list" role="listbox" aria-label="Folder destination">
           {locations.map((location, index) => (

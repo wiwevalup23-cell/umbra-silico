@@ -95,6 +95,8 @@ export type {
   LocalImageMeta,
   NoteImageListItem,
 } from './image'
+export { noteVersionSchema } from './history'
+export type { NoteVersion } from './history'
 export {
   isJsonValue,
   jsonObjectSchema,

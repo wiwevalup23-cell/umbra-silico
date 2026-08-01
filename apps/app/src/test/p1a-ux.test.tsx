@@ -3,6 +3,7 @@ import { act, type ReactNode } from 'react'
 import { createRoot } from 'react-dom/client'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { backgroundImageOptions } from '@/shared/backgrounds'
+import { en } from '@/shared/i18n/en'
 import {
   deviceIdSchema,
   folderIdSchema,
@@ -211,8 +212,12 @@ describe('P1-A visual and interaction contract', () => {
 
     expect(editorPanelRule).toContain('var(--sn-user-background-image)')
     expect(editorPanelRule).toContain('var(--sn-background-wash)')
-    expect(settingsSource).toContain('Workspace background')
-    expect(settingsSource).toContain('Used behind the player and the editor paper.')
+    // The copy itself now lives in the dictionary, so the dialog is checked
+    // for the keys and the wording is checked where it is written.
+    expect(settingsSource).toContain("t('settings.background')")
+    expect(settingsSource).toContain("t('settings.backgroundHint')")
+    expect(en['settings.backgroundHint']).toContain('player')
+    expect(en['settings.backgroundHint']).toContain('editor paper')
   })
 
   it('keeps block actions touch-visible and collapses mobile formatting into More', () => {

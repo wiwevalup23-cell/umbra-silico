@@ -2,6 +2,7 @@ import { useState } from 'react'
 import type { NoteId, NoteListItem } from '@/shared/contracts/note'
 import { ConfirmationDialog } from '@/ui/components/silicon'
 import { UiIcon } from '@/ui/icons/ui/UiIcon'
+import { useTranslation } from '@/ui/i18n/use-translation'
 
 type TrashViewProps = {
   notes: NoteListItem[]
@@ -29,39 +30,40 @@ export function TrashView({
   onPurge,
   onRestore,
 }: TrashViewProps) {
+  const { t } = useTranslation()
   const [notePendingPurge, setNotePendingPurge] = useState<NoteListItem | null>(null)
   const noteCountLabel = notes.length === 1 ? '1 item' : `${notes.length} items`
 
   return (
     <>
-      <section className="sn-note-list-shell" aria-label="Trash">
+      <section className="sn-note-list-shell" aria-label={t('trash.title')}>
       <header className="sn-panel-heading">
         <div>
           <div className="sn-panel-heading__title-row">
-            <h2>Trash</h2>
+            <h2>{t('trash.title')}</h2>
             <span className="sn-panel-heading__right">{noteCountLabel}</span>
           </div>
           <p className="sn-panel-status">
             <span className="sn-status-dot" data-tone="dirty" />
-            <span>Local deleted notes</span>
+            <span>{t('trash.heading')}</span>
           </p>
         </div>
         <div className="sn-panel-heading__actions">
           <button
-            aria-label="Back to library"
+            aria-label={t('trash.backToLibrary')}
             className="sn-icon-button"
             onClick={onBack}
-            title="Back to library"
+            title={t('trash.backToLibrary')}
             type="button"
           >
             <UiIcon name="chevronLeft" />
           </button>
           {onCollapse ? (
             <button
-              aria-label="Collapse notes panel"
+              aria-label={t('library.collapse')}
               className="sn-icon-button"
               onClick={onCollapse}
-              title="Collapse notes panel"
+              title={t('library.collapse')}
               type="button"
             >
               <UiIcon name="panelLeft" />
@@ -73,8 +75,8 @@ export function TrashView({
       {notes.length === 0 ? (
         <div className="sn-empty-list">
           <UiIcon name="trash" />
-          <strong>Trash is empty</strong>
-          <p>Deleted notes will appear here before local purge.</p>
+          <strong>{t('trash.empty')}</strong>
+          <p>{t('trash.hint')}</p>
         </div>
       ) : null}
 
@@ -84,7 +86,9 @@ export function TrashView({
             <div className="sn-trash-row__content">
               <strong>{note.title.trim() || 'Untitled'}</strong>
               <p>{note.isLocked ? 'Encrypted local note' : note.preview || 'No preview'}</p>
-              <time dateTime={note.updatedAt}>Deleted {formatTrashDate(note.updatedAt)}</time>
+              <time dateTime={note.updatedAt}>
+                {t('trash.deletedAt', { date: formatTrashDate(note.updatedAt) })}
+              </time>
             </div>
             <div className="sn-trash-row__actions">
               <button
@@ -99,7 +103,7 @@ export function TrashView({
                 onClick={() => setNotePendingPurge(note)}
                 type="button"
               >
-                Delete forever
+                {t('trash.deleteForever')}
               </button>
             </div>
           </li>
@@ -108,14 +112,16 @@ export function TrashView({
       </section>
       {notePendingPurge ? (
         <ConfirmationDialog
-          confirmLabel="Delete forever"
-          description={`“${notePendingPurge.title.trim() || 'Untitled'}” will be removed permanently from this device. This action cannot be undone.`}
+          confirmLabel={t('trash.deleteForever')}
+          description={t('trash.purgeDescription', {
+            title: notePendingPurge.title.trim() || t('note.untitled'),
+          })}
           onCancel={() => setNotePendingPurge(null)}
           onConfirm={() => {
             onPurge(notePendingPurge.id)
             setNotePendingPurge(null)
           }}
-          title="Delete this note forever?"
+          title={t('trash.purgeConfirm')}
         />
       ) : null}
     </>

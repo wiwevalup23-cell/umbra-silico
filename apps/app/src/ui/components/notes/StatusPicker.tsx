@@ -8,6 +8,7 @@ import {
   propertyStatusOptions,
   type PropertyStatusPresentation,
 } from '@/ui/note-property-presentation'
+import { useTranslation } from '@/ui/i18n/use-translation'
 import { StatusGlyph } from '@/ui/icons/status/StatusGlyph'
 import { UiIcon } from '@/ui/icons/ui/UiIcon'
 
@@ -59,6 +60,7 @@ function mergeCustomStatuses(
 }
 
 export function StatusPicker({ disabled = false, onChange, value }: StatusPickerProps) {
+  const { t } = useTranslation()
   const listboxId = useId()
   const rootRef = useRef<HTMLDivElement>(null)
   const triggerRef = useRef<HTMLButtonElement>(null)
@@ -175,7 +177,7 @@ export function StatusPicker({ disabled = false, onChange, value }: StatusPicker
   return (
     <div className="sn-status-picker" ref={rootRef}>
       <button
-        aria-label="Page status"
+        aria-label={t('status.pageStatus')}
         aria-controls={listboxId}
         aria-expanded={isOpen}
         aria-haspopup="listbox"
@@ -196,35 +198,35 @@ export function StatusPicker({ disabled = false, onChange, value }: StatusPicker
         <span aria-hidden="true" className="sn-property-status-icon" data-tone={selectedOption.value}>
           <StatusGlyph symbol={selectedOption.icon} />
         </span>
-        <span>{selectedOption.label}</span>
+        <span>{selectedOption.labelKey ? t(selectedOption.labelKey) : selectedOption.label}</span>
         <UiIcon name="chevronDown" />
       </button>
       {isOpen ? (
         <div className="sn-status-picker__popover">
           {isCreating ? (
-            <form aria-label="Create a status" className="sn-status-creator" onSubmit={createStatus}>
-              <div className="sn-status-picker__label">New page status</div>
+            <form aria-label={t('status.createStatusForm')} className="sn-status-creator" onSubmit={createStatus}>
+              <div className="sn-status-picker__label">{t('status.newPageStatus')}</div>
               <label className="sn-status-creator__name">
-                <span>Name</span>
+                <span>{t('status.name')}</span>
                 <input
                   maxLength={32}
                   onChange={(event) => setNewStatusLabel(event.target.value)}
-                  placeholder="e.g. Waiting"
+                  placeholder={t('status.namePlaceholder')}
                   ref={nameInputRef}
                   required
                   value={newStatusLabel}
                 />
               </label>
               <fieldset className="sn-status-symbols">
-                <legend>Choose a symbol</legend>
+                <legend>{t('status.chooseSymbol')}</legend>
                 <div>
                   {customStatusIconOptions.map((option) => (
                     <button
-                      aria-label={option.label}
+                      aria-label={t(option.labelKey)}
                       aria-pressed={newStatusIcon === option.icon}
                       key={option.icon}
                       onClick={() => setNewStatusIcon(option.icon)}
-                      title={option.label}
+                      title={t(option.labelKey)}
                       type="button"
                     >
                       <StatusGlyph symbol={option.icon} />
@@ -233,8 +235,8 @@ export function StatusPicker({ disabled = false, onChange, value }: StatusPicker
                 </div>
               </fieldset>
               <div className="sn-status-creator__actions">
-                <button onClick={() => setIsCreating(false)} type="button">Back</button>
-                <button type="submit">Add status</button>
+                <button onClick={() => setIsCreating(false)} type="button">{t('status.back')}</button>
+                <button type="submit">{t('status.addStatus')}</button>
               </div>
             </form>
           ) : (
@@ -245,7 +247,7 @@ export function StatusPicker({ disabled = false, onChange, value }: StatusPicker
                 onKeyDown={handleListKeyDown}
                 role="listbox"
               >
-                <span className="sn-status-picker__label">Page status</span>
+                <span className="sn-status-picker__label">{t('status.pageStatus')}</span>
                 {options.map((option, index) => (
                   <button
                     aria-selected={option.value === value}
@@ -264,7 +266,7 @@ export function StatusPicker({ disabled = false, onChange, value }: StatusPicker
                     <span aria-hidden="true" className="sn-property-status-icon" data-tone={option.value}>
                       <StatusGlyph symbol={option.icon} />
                     </span>
-                    <span>{option.label}</span>
+                    <span>{option.labelKey ? t(option.labelKey) : option.label}</span>
                     {option.value === value ? <UiIcon name="check" /> : null}
                   </button>
                 ))}
@@ -275,7 +277,7 @@ export function StatusPicker({ disabled = false, onChange, value }: StatusPicker
                 type="button"
               >
                 <span aria-hidden="true">＋</span>
-                Create status
+                {t('status.createStatus')}
               </button>
             </>
           )}

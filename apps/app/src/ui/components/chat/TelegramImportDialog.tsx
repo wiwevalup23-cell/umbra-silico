@@ -7,6 +7,11 @@ import type {
 } from '@/shared/contracts'
 import { RetroDialogShell } from '@/ui/components/silicon'
 import { UiIcon } from '@/ui/icons/ui/UiIcon'
+import type { Translator } from '@/shared/i18n'
+import { useTranslation } from '@/ui/i18n/use-translation'
+
+/** Just the lookup half of the translator, for module-level helpers. */
+type Translate = Translator['t']
 
 type TelegramImportDialogProps = {
   destinationLabel: string
@@ -20,18 +25,18 @@ type TelegramImportDialogProps = {
   onReadFolder: (files: File[]) => Promise<TelegramExportFolder>
 }
 
-function progressLabel(progress: TelegramImportProgress | null): string {
+function progressLabel(progress: TelegramImportProgress | null, t: Translate): string {
   if (!progress) {
-    return 'Preparing import…'
+    return t('telegram.preparing')
   }
 
   switch (progress.phase) {
     case 'creating':
-      return 'Creating a safe local chat copy…'
+      return t('telegram.creating')
     case 'attachments':
       return `Importing attachments ${progress.completedAttachments}/${progress.totalAttachments}…`
     case 'saving':
-      return 'Saving the imported conversation…'
+      return t('telegram.saving')
   }
 }
 
@@ -42,6 +47,7 @@ export function TelegramImportDialog({
   onOpenNote,
   onReadFolder,
 }: TelegramImportDialogProps) {
+  const { t } = useTranslation()
   const fileInputRef = useRef<HTMLInputElement>(null)
   const chooseButtonRef = useRef<HTMLButtonElement>(null)
   const [exportFolder, setExportFolder] = useState<TelegramExportFolder | null>(null)
@@ -66,7 +72,7 @@ export function TelegramImportDialog({
       setError(
         readError instanceof Error
           ? readError.message
-          : 'The selected folder could not be read.',
+          : t('telegram.readFailed'),
       )
     } finally {
       setIsReading(false)
@@ -88,7 +94,7 @@ export function TelegramImportDialog({
       setError(
         importError instanceof Error
           ? importError.message
-          : 'Telegram chat import failed.',
+          : t('telegram.importFailed'),
       )
     } finally {
       setIsImporting(false)
@@ -103,16 +109,16 @@ export function TelegramImportDialog({
       labelledBy="telegram-import-title"
       onClose={onClose}
       showTitlebar={false}
-      title="Import Telegram chat"
+      title={t('telegram.title')}
     >
       <section className="sn-command-window sn-telegram-import">
         <header className="sn-command-window__header">
           <div>
             <span className="sn-command-window__eyebrow">Telegram Desktop</span>
-            <h2 id="telegram-import-title">Import a chat folder</h2>
+            <h2 id="telegram-import-title">{t('telegram.heading')}</h2>
           </div>
           <button
-            aria-label="Close Telegram import"
+            aria-label={t('telegram.close')}
             className="sn-icon-button"
             disabled={isImporting}
             onClick={onClose}
@@ -147,7 +153,7 @@ export function TelegramImportDialog({
               <UiIcon height={26} name="check" width={26} />
             </span>
             <div>
-              <strong>Telegram chat imported</strong>
+              <strong>{t('telegram.imported')}</strong>
               <p>
                 {result.importedMessageCount} messages and{' '}
                 {result.importedAttachmentCount} attachments were saved.
@@ -185,7 +191,7 @@ export function TelegramImportDialog({
             <div className="sn-telegram-import__instructions">
               <UiIcon height={22} name="folder" width={22} />
               <div>
-                <strong>Select the exported chat folder</strong>
+                <strong>{t('telegram.selectFolder')}</strong>
                 <p>
                   In Telegram Desktop choose export format <b>HTML</b> and include
                   photos/media. Umbra reads the copy you select; it never modifies
@@ -200,7 +206,7 @@ export function TelegramImportDialog({
                 type="button"
               >
                 <UiIcon height={16} name="folder" width={16} />
-                {exportFolder ? 'Choose another folder' : 'Choose folder'}
+                {t(exportFolder ? 'telegram.chooseAnotherFolder' : 'telegram.chooseFolder')}
               </button>
             </div>
 
@@ -213,21 +219,21 @@ export function TelegramImportDialog({
             {exportFolder ? (
               <div className="sn-telegram-import__preview">
                 <div className="sn-telegram-import__summary">
-                  <span>Chat</span>
+                  <span>{t('telegram.chat')}</span>
                   <strong>{exportFolder.title}</strong>
-                  <span>Messages</span>
+                  <span>{t('telegram.messages')}</span>
                   <strong>{exportFolder.messages.length}</strong>
-                  <span>Attachments</span>
+                  <span>{t('telegram.attachments')}</span>
                   <strong>
                     {exportFolder.availableAttachmentCount}/
                     {exportFolder.attachmentCount} available
                   </strong>
-                  <span>Destination</span>
+                  <span>{t('telegram.destination')}</span>
                   <strong>{destinationLabel}</strong>
                 </div>
 
                 <label className="sn-telegram-import__participant">
-                  <span>Which participant is you?</span>
+                  <span>{t('telegram.whichParticipant')}</span>
                   <select
                     onChange={(event) => setSelfParticipant(event.target.value)}
                     value={selfParticipant}
@@ -272,7 +278,7 @@ export function TelegramImportDialog({
 
             {isImporting ? (
               <div aria-live="polite" className="sn-telegram-import__status" role="status">
-                {progressLabel(progress)}
+                {progressLabel(progress, t)}
               </div>
             ) : null}
 

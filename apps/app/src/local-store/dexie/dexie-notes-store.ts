@@ -5,14 +5,15 @@ import {
   automationEventToRow,
   cryptoProfileToRow,
   folderToRow,
-  noteToListItem,
   noteToRow,
   operationToRow,
   rowToAutomationEvent,
   rowToCryptoProfile,
   rowToFolder,
+  rowToListItem,
   rowToNote,
   rowToOperation,
+  rowMatchesSearch,
 } from '@/local-store/serialization'
 import type {
   AutomationEventId,
@@ -37,12 +38,20 @@ export class DexieNotesStore implements LocalNotesStore {
     this.db = options.database ?? createDexieDatabase(options.databaseName)
   }
 
+  async listAllNotes() {
+    const rows = await this.db.notes.toArray()
+
+    return rows
+      .sort((left, right) => left.createdAt.localeCompare(right.createdAt))
+      .map(rowToNote)
+  }
+
   async listNotes() {
     const rows = (await this.db.notes.toArray())
       .filter((row) => row.deletedAt === null)
       .sort((left, right) => right.updatedAt.localeCompare(left.updatedAt))
 
-    return rows.map(rowToNote).map(noteToListItem)
+    return rows.map(rowToListItem)
   }
 
   async listDeletedNotes() {
@@ -52,7 +61,21 @@ export class DexieNotesStore implements LocalNotesStore {
         (right.deletedAt ?? right.updatedAt).localeCompare(left.deletedAt ?? left.updatedAt),
       )
 
-    return rows.map(rowToNote).map(noteToListItem)
+    return rows.map(rowToListItem)
+  }
+
+  async searchNoteIds(term: string) {
+    const normalizedTerm = term.trim().toLocaleLowerCase()
+
+    if (!normalizedTerm) {
+      return []
+    }
+
+    const rows = await this.db.notes.toArray()
+
+    return rows
+      .filter((row) => row.deletedAt === null && rowMatchesSearch(row, normalizedTerm))
+      .map((row) => row.id as NoteId)
   }
 
   async getNote(id: NoteId) {
@@ -140,6 +163,30 @@ export class DexieNotesStore implements LocalNotesStore {
       .sortBy('createdAt')
 
     return rows.slice(0, limit).map(rowToOperation)
+  }
+
+  async listNoteOps(noteId: NoteId) {
+    const rows = await this.db.noteOps.where('noteId').equals(noteId).toArray()
+
+    return rows
+      .sort((left, right) => right.createdAt.localeCompare(left.createdAt))
+      .map(rowToOperation)
+  }
+
+  async listNoteOpSummaries(noteId: NoteId) {
+    const rows = await this.db.noteOps.where('noteId').equals(noteId).toArray()
+
+    return rows
+      .map((row) => ({ opId: row.opId, createdAt: row.createdAt }))
+      .sort((left, right) => right.createdAt.localeCompare(left.createdAt))
+  }
+
+  async deleteOps(opIds: readonly string[]) {
+    if (opIds.length === 0) {
+      return
+    }
+
+    await this.db.noteOps.bulkDelete([...opIds])
   }
 
   async markOpSynced(opId: string) {

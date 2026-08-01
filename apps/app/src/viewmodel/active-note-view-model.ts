@@ -1,4 +1,3 @@
-import { useMemo } from 'react'
 import {
   collectImageIdsFromDocument,
   type NoteDetail,
@@ -10,6 +9,7 @@ import { useAppUiStore } from '@/viewmodel/app-ui-store'
 import {
   createStaticLiveQuery,
   useLiveQuery,
+  useOwnedLiveQuery,
 } from '@/viewmodel/live-query-view-model'
 import { useImageRepository, useNoteRepository } from '@/viewmodel/repository-hooks'
 import { useSyncEngine } from '@/viewmodel/sync-engine-hooks'
@@ -29,7 +29,7 @@ export function useActiveNoteViewModel(): ActiveNoteViewModel {
   const syncEngine = useSyncEngine()
   const activeNoteId = useAppUiStore((state) => state.activeNoteId)
   const setActiveNote = useAppUiStore((state) => state.setActiveNote)
-  const liveQuery = useMemo(
+  const liveQuery = useOwnedLiveQuery(
     () =>
       activeNoteId
         ? repository.liveNote(activeNoteId)

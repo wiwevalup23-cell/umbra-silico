@@ -1,16 +1,23 @@
-import { useMemo, useState } from 'react'
+import { useState } from 'react'
 import type { NoteDetail, NoteId } from '@/shared/contracts'
 import { useAppUiStore } from '@/viewmodel/app-ui-store'
 import {
   createStaticLiveQuery,
   useLiveQuery,
+  useOwnedLiveQuery,
 } from '@/viewmodel/live-query-view-model'
 import { useImageRepository, useNoteRepository } from '@/viewmodel/repository-hooks'
 import { useSyncEngine } from '@/viewmodel/sync-engine-hooks'
 
 export type LockModalMode = 'lock' | 'unlock'
 
+export type LockModalCredentials = {
+  masterPassword?: string
+  recoveryKey?: string
+}
+
 export type LockModalViewModel = {
+  acknowledgeRecoveryKey(): void
   close(): void
   error: string | null
   isOpen: boolean
@@ -18,7 +25,9 @@ export type LockModalViewModel = {
   mode: LockModalMode
   note: NoteDetail | null
   noteId: NoteId | null
-  submit(masterPassword: string): Promise<void>
+  /** Non-null only between the vault-creating lock and its acknowledgement. */
+  recoveryKey: string | null
+  submit(credentials: LockModalCredentials): Promise<void>
 }
 
 export function useLockModalViewModel(): LockModalViewModel {
@@ -30,7 +39,8 @@ export function useLockModalViewModel(): LockModalViewModel {
   const setActiveNote = useAppUiStore((state) => state.setActiveNote)
   const [error, setError] = useState<string | null>(null)
   const [isPending, setIsPending] = useState(false)
-  const liveQuery = useMemo(
+  const [recoveryKey, setRecoveryKey] = useState<string | null>(null)
+  const liveQuery = useOwnedLiveQuery(
     () =>
       noteId
         ? repository.liveNote(noteId)
@@ -41,6 +51,10 @@ export function useLockModalViewModel(): LockModalViewModel {
   const mode: LockModalMode = note?.isLocked ? 'unlock' : 'lock'
 
   return {
+    acknowledgeRecoveryKey() {
+      setRecoveryKey(null)
+      closeLockModal()
+    },
     close() {
       setError(null)
       closeLockModal()
@@ -51,7 +65,8 @@ export function useLockModalViewModel(): LockModalViewModel {
     mode,
     note,
     noteId,
-    async submit(masterPassword) {
+    recoveryKey,
+    async submit(credentials) {
       if (!noteId || isPending) {
         return
       }
@@ -61,7 +76,7 @@ export function useLockModalViewModel(): LockModalViewModel {
 
       try {
         if (mode === 'unlock') {
-          await repository.unlockNoteForSession(noteId, { masterPassword })
+          await repository.unlockNoteForSession(noteId, credentials)
 
           // Self-heal: a previous lock that crashed mid-way may have left
           // plaintext image tiers behind; finish encrypting them now that the
@@ -74,15 +89,20 @@ export function useLockModalViewModel(): LockModalViewModel {
 
           setActiveNote(noteId)
         } else {
-          const credentials = { masterPassword }
+          if (!credentials.masterPassword) {
+            throw new Error('Locking a note requires a master password.')
+          }
+
+          const lockCredentials = { masterPassword: credentials.masterPassword }
 
           // Ciphertext for every attachment is made durable before the note
           // lock is published. If the note write fails, plaintext remains the
           // active representation and the preparation is rolled back.
-          await imageRepository?.prepareNoteImagesLock(noteId, credentials)
+          await imageRepository?.prepareNoteImagesLock(noteId, lockCredentials)
+          let lockResult: { recoveryKey: string | null }
 
           try {
-            await repository.lockNote(noteId, credentials)
+            lockResult = await repository.lockNote(noteId, lockCredentials)
           } catch (error) {
             await imageRepository?.rollbackPreparedNoteImagesLock(noteId)
             throw error
@@ -92,6 +112,13 @@ export function useLockModalViewModel(): LockModalViewModel {
           // repository boot completes an interruption after the note write.
           await imageRepository?.commitPreparedNoteImagesLock(noteId)
           syncEngine?.requestSync('outbox-change')
+
+          // A vault was just created. Hold the modal open on the key panel
+          // instead of closing, because this is the only time it can be read.
+          if (lockResult.recoveryKey) {
+            setRecoveryKey(lockResult.recoveryKey)
+            return
+          }
         }
 
         closeLockModal()

@@ -1,4 +1,3 @@
-import { useMemo } from 'react'
 import type { ImportedImage } from '@/repository/contracts'
 import type {
   ImageSourceResolver,
@@ -8,6 +7,7 @@ import type {
 import {
   createStaticLiveQuery,
   useLiveQuery,
+  useOwnedLiveQuery,
 } from '@/viewmodel/live-query-view-model'
 import {
   useImageRepository,
@@ -23,7 +23,7 @@ export type NoteImagesViewModel = {
 export function useNoteImagesViewModel(noteId: NoteId | null): NoteImagesViewModel {
   const imageRepository = useImageRepository()
   const resolver = useImageSourceResolver()
-  const liveQuery = useMemo(
+  const liveQuery = useOwnedLiveQuery(
     () =>
       noteId && imageRepository
         ? imageRepository.liveNoteImages(noteId)

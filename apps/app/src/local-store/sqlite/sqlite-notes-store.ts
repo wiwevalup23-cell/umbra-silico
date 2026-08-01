@@ -11,14 +11,17 @@ import {
   automationEventToRow,
   cryptoProfileToRow,
   folderToRow,
-  noteToListItem,
   noteToRow,
   operationToRow,
   rowToAutomationEvent,
   rowToCryptoProfile,
   rowToFolder,
+  rowToListItem,
   rowToNote,
   rowToOperation,
+  rowMatchesSearch,
+  type StoredNoteListRow,
+  type StoredNoteSearchRow,
 } from '@/local-store/serialization'
 import type {
   SqlBindValue,
@@ -38,6 +41,28 @@ import type {
   NoteId,
   SyncOperation,
 } from '@/shared/contracts'
+
+// Deliberately excludes document/encrypted_payload/encryption: a list query
+// must never pay to read note bodies out of SQLite.
+const noteListColumns = `
+  id,
+  title,
+  preview,
+  is_locked as isLocked,
+  properties,
+  parent_folder_id as parentFolderId,
+  updated_at as updatedAt,
+  sync_status as syncStatus
+`
+
+const noteSearchColumns = `
+  id,
+  title,
+  preview,
+  search_text as searchText,
+  properties,
+  deleted_at as deletedAt
+`
 
 const noteColumns = `
   id,
@@ -97,6 +122,7 @@ const cryptoProfileColumns = `
   salt,
   wrapped_master_key as wrappedMasterKey,
   wrap_nonce as wrapNonce,
+  recovery,
   updated_at as updatedAt
 `
 
@@ -132,6 +158,7 @@ function noteBindValues(row: StoredNoteRow): SqlBindValue[] {
     row.lastOpId,
     row.deviceId,
     row.properties ?? null,
+    row.searchText ?? null,
   ]
 }
 
@@ -180,6 +207,7 @@ function cryptoProfileBindValues(profile: LocalCryptoProfile): SqlBindValue[] {
     row.wrappedMasterKey,
     row.wrapNonce,
     row.updatedAt,
+    row.recovery ?? null,
   ]
 }
 
@@ -204,26 +232,55 @@ export class SqliteNotesStore implements LocalNotesStore {
     this.db = db
   }
 
-  async listNotes() {
+  async listAllNotes() {
     const rows = await this.db.select<StoredNoteRow>(
       `select ${noteColumns}
+       from notes
+       order by created_at asc`,
+    )
+
+    return rows.map(rowToNote)
+  }
+
+  async listNotes() {
+    const rows = await this.db.select<StoredNoteListRow>(
+      `select ${noteListColumns}
        from notes
        where deleted_at is null
        order by updated_at desc`,
     )
 
-    return rows.map(rowToNote).map(noteToListItem)
+    return rows.map(rowToListItem)
   }
 
   async listDeletedNotes() {
-    const rows = await this.db.select<StoredNoteRow>(
-      `select ${noteColumns}
+    const rows = await this.db.select<StoredNoteListRow>(
+      `select ${noteListColumns}
        from notes
        where deleted_at is not null
        order by deleted_at desc`,
     )
 
-    return rows.map(rowToNote).map(noteToListItem)
+    return rows.map(rowToListItem)
+  }
+
+  async searchNoteIds(term: string) {
+    const normalizedTerm = term.trim().toLocaleLowerCase()
+
+    if (!normalizedTerm) {
+      return []
+    }
+
+    const rows = await this.db.select<StoredNoteSearchRow>(
+      `select ${noteSearchColumns}
+       from notes
+       where deleted_at is null
+       order by updated_at desc`,
+    )
+
+    return rows
+      .filter((row) => rowMatchesSearch(row, normalizedTerm))
+      .map((row) => row.id as NoteId)
   }
 
   async getNote(id: NoteId) {
@@ -343,6 +400,40 @@ export class SqliteNotesStore implements LocalNotesStore {
     return rows.map(rowToOperation)
   }
 
+  async listNoteOps(noteId: NoteId) {
+    const rows = await this.db.select<StoredSyncOperationRow>(
+      `select ${opColumns}
+       from note_ops
+       where note_id = $1
+       order by created_at desc`,
+      [noteId],
+    )
+
+    return rows.map(rowToOperation)
+  }
+
+  async listNoteOpSummaries(noteId: NoteId) {
+    return this.db.select<{ opId: string; createdAt: string }>(
+      `select op_id as opId, created_at as createdAt
+       from note_ops
+       where note_id = $1
+       order by created_at desc`,
+      [noteId],
+    )
+  }
+
+  async deleteOps(opIds: readonly string[]) {
+    if (opIds.length === 0) {
+      return
+    }
+
+    const placeholders = opIds.map((_, index) => `$${index + 1}`).join(', ')
+    await this.db.execute(
+      `delete from note_ops where op_id in (${placeholders})`,
+      [...opIds],
+    )
+  }
+
   async markOpSynced(opId: string) {
     await this.db.execute(
       `update note_ops
@@ -411,15 +502,17 @@ export class SqliteNotesStore implements LocalNotesStore {
   async setCryptoProfile(profile: LocalCryptoProfile) {
     await this.db.execute(
       `insert into crypto_profiles (
-         user_id, version, kdf, salt, wrapped_master_key, wrap_nonce, updated_at
+         user_id, version, kdf, salt, wrapped_master_key, wrap_nonce, updated_at,
+         recovery
        )
-       values ($1, $2, $3, $4, $5, $6, $7)
+       values ($1, $2, $3, $4, $5, $6, $7, $8)
        on conflict(user_id) do update set
          version = excluded.version,
          kdf = excluded.kdf,
          salt = excluded.salt,
          wrapped_master_key = excluded.wrapped_master_key,
          wrap_nonce = excluded.wrap_nonce,
+         recovery = excluded.recovery,
          updated_at = excluded.updated_at`,
       cryptoProfileBindValues(profile),
     )
@@ -455,11 +548,11 @@ export class SqliteNotesStore implements LocalNotesStore {
          id, user_id, schema_version, title, preview, is_locked, document,
          encrypted_payload, encryption, created_at, updated_at, deleted_at,
          parent_folder_id, local_revision, remote_revision, base_remote_revision,
-         sync_status, last_op_id, device_id, properties
+         sync_status, last_op_id, device_id, properties, search_text
        )
        values (
          $1, $2, $3, $4, $5, $6, $7, $8, $9,
-         $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20
+         $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21
        )
        on conflict(id) do update set
          user_id = excluded.user_id,
@@ -469,6 +562,7 @@ export class SqliteNotesStore implements LocalNotesStore {
          is_locked = excluded.is_locked,
          document = excluded.document,
          properties = excluded.properties,
+         search_text = excluded.search_text,
          encrypted_payload = excluded.encrypted_payload,
          encryption = excluded.encryption,
          created_at = excluded.created_at,
@@ -551,6 +645,7 @@ async function ensureSqliteNotesMigrations(db: SqlDatabase): Promise<void> {
   const columns = await db.select<{ name: string }>('pragma table_info(notes)')
   const hasParentFolderId = columns.some((column) => column.name === 'parent_folder_id')
   const hasProperties = columns.some((column) => column.name === 'properties')
+  const hasSearchText = columns.some((column) => column.name === 'search_text')
 
   if (!hasParentFolderId) {
     await db.execute('alter table notes add column parent_folder_id text')
@@ -558,6 +653,22 @@ async function ensureSqliteNotesMigrations(db: SqlDatabase): Promise<void> {
 
   if (!hasProperties) {
     await db.execute('alter table notes add column properties text')
+  }
+
+  const cryptoColumns = await db.select<{ name: string }>(
+    'pragma table_info(crypto_profiles)',
+  )
+
+  if (!cryptoColumns.some((column) => column.name === 'recovery')) {
+    // Profiles created before recovery keys keep a null recovery wrap and can
+    // only be unlocked with their master password.
+    await db.execute('alter table crypto_profiles add column recovery text')
+  }
+
+  if (!hasSearchText) {
+    // Existing rows keep a null search_text and fall back to preview matching
+    // until their next save rewrites the row with the full body.
+    await db.execute('alter table notes add column search_text text')
   }
 }
 

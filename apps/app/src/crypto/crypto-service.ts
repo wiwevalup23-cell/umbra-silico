@@ -16,6 +16,7 @@ import {
   defaultPasswordKdfParams,
   derivePasswordWrappingKey,
 } from '@/crypto/password-kdf'
+import { generateRecoveryKey, normalizeRecoveryKey } from '@/crypto/recovery-key'
 
 export type EncryptNoteResult = {
   encryptedPayload: string
@@ -30,6 +31,8 @@ export type EncryptBinaryResult = {
 export type CreateMasterKeyResult = {
   masterKey: CryptoKey
   profile: LocalCryptoProfile
+  /** Shown to the user once, at profile creation. Never persisted in clear. */
+  recoveryKey: string
 }
 
 export interface CryptoService {
@@ -157,13 +160,26 @@ export class WebCryptoService implements CryptoService {
       params: defaultPasswordKdfParams,
       salt: wrappingSalt,
     })
+    const rawMasterKey = await exportAesKey(masterKey)
     const wrappedMasterKey = await encryptBytes({
       key: wrappingKey,
-      plaintext: await exportAesKey(masterKey),
+      plaintext: rawMasterKey,
+    })
+    const recoveryKey = generateRecoveryKey()
+    const recoverySalt = randomBytes(16)
+    const recoveryWrappingKey = await derivePasswordWrappingKey({
+      password: normalizeRecoveryKey(recoveryKey),
+      params: defaultPasswordKdfParams,
+      salt: recoverySalt,
+    })
+    const recoveryWrappedMasterKey = await encryptBytes({
+      key: recoveryWrappingKey,
+      plaintext: rawMasterKey,
     })
 
     return {
       masterKey,
+      recoveryKey,
       profile: {
         userId,
         version: 1,
@@ -171,6 +187,12 @@ export class WebCryptoService implements CryptoService {
         salt: bytesToBase64(wrappingSalt),
         wrappedMasterKey: bytesToBase64(wrappedMasterKey.ciphertext),
         wrapNonce: bytesToBase64(wrappedMasterKey.nonce),
+        recovery: {
+          kdf: defaultPasswordKdfParams,
+          salt: bytesToBase64(recoverySalt),
+          wrappedMasterKey: bytesToBase64(recoveryWrappedMasterKey.ciphertext),
+          wrapNonce: bytesToBase64(recoveryWrappedMasterKey.nonce),
+        },
         updatedAt: now,
       },
     }
@@ -276,6 +298,10 @@ export class WebCryptoService implements CryptoService {
     profile: LocalCryptoProfile,
     credentials: UnlockCredentials,
   ): Promise<CryptoKey> {
+    if (credentials.recoveryKey) {
+      return this.unlockWithRecoveryKey(profile, credentials.recoveryKey)
+    }
+
     if (!credentials.masterPassword) {
       throw new Error('Master password is required to unlock the master key.')
     }
@@ -289,6 +315,28 @@ export class WebCryptoService implements CryptoService {
       ciphertext: base64ToBytes(profile.wrappedMasterKey),
       key: wrappingKey,
       nonce: base64ToBytes(profile.wrapNonce),
+    })
+
+    return importAesKey(rawMasterKey)
+  }
+
+  private async unlockWithRecoveryKey(
+    profile: LocalCryptoProfile,
+    recoveryKey: string,
+  ): Promise<CryptoKey> {
+    if (!profile.recovery) {
+      throw new Error('This vault was created before recovery keys and has none.')
+    }
+
+    const wrappingKey = await derivePasswordWrappingKey({
+      password: normalizeRecoveryKey(recoveryKey),
+      params: profile.recovery.kdf,
+      salt: base64ToBytes(profile.recovery.salt),
+    })
+    const rawMasterKey = await decryptBytes({
+      ciphertext: base64ToBytes(profile.recovery.wrappedMasterKey),
+      key: wrappingKey,
+      nonce: base64ToBytes(profile.recovery.wrapNonce),
     })
 
     return importAesKey(rawMasterKey)

@@ -114,6 +114,8 @@ function toListItem(note: LocalNote): NoteListItem {
 
 function createStaticLiveQuery<TValue>(value: TValue): LiveQuery<TValue> {
   return {
+    dispose: () => undefined,
+    retain: () => undefined,
     getSnapshot: () => value,
     subscribe: () => () => undefined,
   }
@@ -167,6 +169,17 @@ class ManualNetworkStateMonitor implements NetworkStateMonitor {
 }
 
 class MemoryNoteRepository implements NoteRepository {
+  // Version history is exercised elsewhere; the sync engine never reads it.
+  readonly readBackupData = async () => ({ cryptoProfile: null, folders: [], notes: [] })
+  readonly restoreBackupData = async () => ({
+    cryptoProfileRestored: false,
+    foldersAdded: 0,
+    foldersSkipped: 0,
+    notesAdded: 0,
+    notesSkipped: 0,
+  })
+  readonly listNoteVersions = async () => []
+  readonly restoreNoteVersion = async () => undefined
   readonly appliedChanges: RemoteNoteChange[] = []
   readonly conflicts: ConflictRecord[] = []
   readonly conflictCopies: LocalNote[] = []
@@ -243,7 +256,7 @@ class MemoryNoteRepository implements NoteRepository {
     throw new Error('Not implemented in sync engine tests.')
   }
 
-  async lockNote(): Promise<void> {
+  async lockNote(): Promise<{ recoveryKey: string | null }> {
     throw new Error('Not implemented in sync engine tests.')
   }
 

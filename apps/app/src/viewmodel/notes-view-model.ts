@@ -7,7 +7,7 @@ import {
   type NoteListQuery,
 } from '@/shared/contracts'
 import { useAppUiStore } from '@/viewmodel/app-ui-store'
-import { useLiveQuery } from '@/viewmodel/live-query-view-model'
+import { useLiveQuery, useOwnedLiveQuery } from '@/viewmodel/live-query-view-model'
 import { useNoteRepository } from '@/viewmodel/repository-hooks'
 import { useSyncEngine } from '@/viewmodel/sync-engine-hooks'
 
@@ -53,7 +53,7 @@ export function useNotesViewModel(query: NoteListQuery = {}): NotesViewModel {
     }),
     [folderId, includeDeleted, search],
   )
-  const liveQuery = useMemo(
+  const liveQuery = useOwnedLiveQuery(
     () => repository.liveNoteList(liveQueryInput),
     [repository, liveQueryInput],
   )

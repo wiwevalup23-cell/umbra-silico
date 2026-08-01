@@ -33,6 +33,22 @@ export const passwordKdfParamsSchema = z.discriminatedUnion('name', [
 
 export type PasswordKdfParams = z.infer<typeof passwordKdfParamsSchema>
 
+/**
+ * A second, independent wrapping of the master key.
+ *
+ * Without it a forgotten master password is terminal: the key that decrypts
+ * every locked note exists only as ciphertext wrapped by that password. The
+ * recovery key is high-entropy and shown to the user exactly once.
+ */
+export const cryptoRecoveryWrapSchema = z.object({
+  kdf: passwordKdfParamsSchema,
+  salt: z.string().min(1),
+  wrappedMasterKey: z.string().min(1),
+  wrapNonce: z.string().min(1),
+})
+
+export type CryptoRecoveryWrap = z.infer<typeof cryptoRecoveryWrapSchema>
+
 export const localCryptoProfileSchema = z.object({
   userId: z.string().min(1),
   version: z.literal(1),
@@ -40,6 +56,8 @@ export const localCryptoProfileSchema = z.object({
   salt: z.string().min(1),
   wrappedMasterKey: z.string().min(1),
   wrapNonce: z.string().min(1),
+  // Absent on profiles created before recovery keys existed.
+  recovery: cryptoRecoveryWrapSchema.nullable().default(null),
   updatedAt: z.string().min(1),
 })
 
@@ -55,9 +73,10 @@ export const unlockCredentialsSchema = z
   .object({
     masterPassword: z.string().min(8).optional(),
     localPin: z.string().min(4).max(12).optional(),
+    recoveryKey: z.string().min(1).optional(),
   })
-  .refine((value) => value.masterPassword || value.localPin, {
-    message: 'Unlock requires a master password or a local PIN.',
+  .refine((value) => value.masterPassword || value.localPin || value.recoveryKey, {
+    message: 'Unlock requires a master password, a recovery key or a local PIN.',
   })
 
 export type UnlockCredentials = z.infer<typeof unlockCredentialsSchema>

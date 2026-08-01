@@ -2,38 +2,44 @@ import {
   customNotePropertyStatusPrefix,
   type NotePropertyStatus,
 } from '@/shared/contracts'
+import type { MessageKey } from '@/shared/i18n'
 
+/**
+ * Built-in statuses carry a `labelKey` and are translated; a status the user
+ * created carries the `label` they typed and is left exactly as written.
+ */
 export type PropertyStatusPresentation = {
   icon: string
-  label: string
+  label?: string
+  labelKey?: MessageKey
   value: NotePropertyStatus
 }
 
 export const propertyStatusOptions: readonly PropertyStatusPresentation[] = [
-  { icon: 'none', label: 'No status', value: 'none' },
-  { icon: 'idea', label: 'Idea', value: 'idea' },
-  { icon: 'inProgress', label: 'In progress', value: 'active' },
-  { icon: 'done', label: 'Done', value: 'done' },
+  { icon: 'none', labelKey: 'status.none', value: 'none' },
+  { icon: 'idea', labelKey: 'status.idea', value: 'idea' },
+  { icon: 'inProgress', labelKey: 'status.active', value: 'active' },
+  { icon: 'done', labelKey: 'status.done', value: 'done' },
 ]
 
 export const customStatusIconOptions = [
-  { icon: 'waiting', label: 'Waiting' },
-  { icon: 'pause', label: 'Pause' },
-  { icon: 'review', label: 'Review' },
-  { icon: 'archive', label: 'Archive' },
-  { icon: 'block', label: 'Block' },
-  { icon: 'someday', label: 'Someday' },
-  { icon: 'focus', label: 'Focus' },
-  { icon: 'important', label: 'Important' },
-  { icon: 'repeat', label: 'Repeat' },
-  { icon: 'spiral', label: 'Spiral' },
-  { icon: 'connection', label: 'Connection' },
-  { icon: 'wave', label: 'Wave' },
-  { icon: 'arrow', label: 'Arrow' },
-  { icon: 'key', label: 'Key' },
-  { icon: 'infinity', label: 'Infinity' },
-  { icon: 'windRose', label: 'Wind rose' },
-] as const
+  { icon: 'waiting', labelKey: 'statusIcon.waiting' },
+  { icon: 'pause', labelKey: 'statusIcon.pause' },
+  { icon: 'review', labelKey: 'statusIcon.review' },
+  { icon: 'archive', labelKey: 'statusIcon.archive' },
+  { icon: 'block', labelKey: 'statusIcon.block' },
+  { icon: 'someday', labelKey: 'statusIcon.someday' },
+  { icon: 'focus', labelKey: 'statusIcon.focus' },
+  { icon: 'important', labelKey: 'statusIcon.important' },
+  { icon: 'repeat', labelKey: 'statusIcon.repeat' },
+  { icon: 'spiral', labelKey: 'statusIcon.spiral' },
+  { icon: 'connection', labelKey: 'statusIcon.connection' },
+  { icon: 'wave', labelKey: 'statusIcon.wave' },
+  { icon: 'arrow', labelKey: 'statusIcon.arrow' },
+  { icon: 'key', labelKey: 'statusIcon.key' },
+  { icon: 'infinity', labelKey: 'statusIcon.infinity' },
+  { icon: 'windRose', labelKey: 'statusIcon.windRose' },
+] as const satisfies ReadonlyArray<{ icon: string; labelKey: MessageKey }>
 
 export function createCustomPropertyStatus(label: string, icon: string): NotePropertyStatus {
   const normalizedLabel = label.trim().replace(/\s+/g, ' ').slice(0, 32)

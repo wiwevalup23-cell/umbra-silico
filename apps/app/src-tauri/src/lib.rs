@@ -54,20 +54,6 @@ async fn execute_sqlite_transaction(
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
-        .plugin(
-            tauri_plugin_stronghold::Builder::new(|password| {
-                let mut key = [0_u8; 32];
-                argon2::Argon2::default()
-                    .hash_password_into(
-                        password.as_ref(),
-                        b"silicon-nostalgia-stronghold-v1",
-                        &mut key,
-                    )
-                    .expect("failed to derive Umbra Silico stronghold key");
-                key.to_vec()
-            })
-            .build(),
-        )
         .plugin(tauri_plugin_sql::Builder::default().build())
         .plugin(tauri_plugin_fs::init())
         .invoke_handler(tauri::generate_handler![execute_sqlite_transaction])

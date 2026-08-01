@@ -1,4 +1,5 @@
 import { readFileSync } from 'node:fs'
+import { createTranslator, locales } from '@/shared/i18n'
 import { act, type ReactNode } from 'react'
 import { createRoot } from 'react-dom/client'
 import { afterEach, describe, expect, it, vi } from 'vitest'
@@ -228,7 +229,12 @@ describe('P1-B navigation and folder workflows', () => {
     )
     expect(appSource).not.toContain('window.prompt')
     expect(appSource).not.toContain('window.confirm')
-    expect(appSource).toContain('aria-label="Open home"')
+    // The label now comes from the dictionary, so assert the wiring and that
+    // the key actually resolves in every locale rather than a literal string.
+    expect(appSource).toContain("aria-label={t('shell.openHome')}")
+    for (const locale of locales) {
+      expect(createTranslator(locale).t('shell.openHome')).not.toBe('')
+    }
     expect(appSource).toContain("import brandEmblemUrl from '../../src-tauri/icons/128x128@2x.png'")
     expect(appSource).toContain('src={brandEmblemUrl}')
     expect(appSource).not.toContain("publicAsset('assets/umbra-silico-eclipse-compass-u.svg')")

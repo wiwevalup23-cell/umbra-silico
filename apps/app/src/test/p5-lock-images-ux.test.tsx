@@ -45,6 +45,8 @@ afterEach(() => {
 
 function staticQuery<TValue>(value: TValue): LiveQuery<TValue> {
   return {
+    dispose: () => undefined,
+    retain: () => undefined,
     getSnapshot: () => value,
     subscribe: (): Unsubscribe => () => undefined,
   }
@@ -96,6 +98,8 @@ function makeImageRepository() {
     unlockSweep: vi.fn(async () => undefined),
     purgeNoteImages: vi.fn(async () => undefined),
     purgeExpiredImages: vi.fn(async () => 0),
+    readBackupImages: vi.fn(async () => []),
+    restoreBackupImages: vi.fn(async () => 0),
     recoverPendingImageOperations: vi.fn(async () => undefined),
   } satisfies ImageRepository
 }
@@ -143,7 +147,7 @@ describe('image lock lifecycle wiring', () => {
     })
 
     await act(async () => {
-      await viewModel?.submit('correct horse battery')
+      await viewModel?.submit({ masterPassword: 'correct horse battery' })
     })
 
     expect(repository.lockNote).toHaveBeenCalledWith(noteId, {
@@ -188,7 +192,7 @@ describe('image lock lifecycle wiring', () => {
     })
 
     await act(async () => {
-      await viewModel?.submit('correct horse battery')
+      await viewModel?.submit({ masterPassword: 'correct horse battery' })
     })
 
     expect(repository.unlockNoteForSession).toHaveBeenCalledWith(noteId, {
@@ -219,7 +223,7 @@ describe('image lock lifecycle wiring', () => {
     })
 
     await act(async () => {
-      await viewModel?.submit('correct horse battery')
+      await viewModel?.submit({ masterPassword: 'correct horse battery' })
     })
 
     expect(imageRepository.prepareNoteImagesLock).toHaveBeenCalled()

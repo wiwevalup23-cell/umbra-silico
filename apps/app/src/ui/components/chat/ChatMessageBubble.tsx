@@ -7,6 +7,7 @@ import {
   isComposerEditableContent,
 } from '@/ui/components/chat/chat-content-utils'
 import { ChatMessageContentView } from '@/ui/components/chat/chat-message-content'
+import { useTranslation } from '@/ui/i18n/use-translation'
 
 const timeFormatter = new Intl.DateTimeFormat(undefined, {
   hour: '2-digit',
@@ -37,6 +38,7 @@ export function ChatMessageBubble({
   onStartEdit,
   onSubmitEdit,
 }: ChatMessageBubbleProps) {
+  const { t } = useTranslation()
   const [isActionsOpen, setIsActionsOpen] = useState(false)
   const [isDeleteConfirming, setIsDeleteConfirming] = useState(false)
   const actionsRef = useRef<HTMLDivElement>(null)
@@ -84,8 +86,8 @@ export function ChatMessageBubble({
           initialContent={message.content}
           onCancel={onCancelEdit}
           onSubmit={(content) => onSubmitEdit(message.id, content)}
-          placeholder="Edit message"
-          submitLabel="Save changes"
+          placeholder={t('chat.editMessage')}
+          submitLabel={t('chat.saveChanges')}
         />
       </div>
     )
@@ -101,30 +103,30 @@ export function ChatMessageBubble({
         <button
           aria-expanded={isActionsOpen}
           aria-haspopup="menu"
-          aria-label="Message actions"
+          aria-label={t('chat.messageActions')}
           className="sn-chat-bubble__action-trigger"
           onClick={() => setIsActionsOpen((isOpen) => !isOpen)}
-          title="Message actions"
+          title={t('chat.messageActions')}
           type="button"
         >
           <UiIcon height={15} name="moreHorizontal" width={15} />
         </button>
         {isActionsOpen ? (
-          <div aria-label="Message actions" className="sn-chat-bubble__action-menu" role="menu">
+          <div aria-label={t('chat.messageActions')} className="sn-chat-bubble__action-menu" role="menu">
             {isDeleteConfirming ? (
               <div
-                aria-label="Confirm message deletion"
+                aria-label={t('chat.confirmDeletion')}
                 className="sn-chat-bubble__delete-confirm"
                 role="alert"
               >
-                <strong>Delete this message?</strong>
+                <strong>{t('chat.deleteQuestion')}</strong>
                 <div>
                   <button
                     onClick={() => setIsDeleteConfirming(false)}
                     role="menuitem"
                     type="button"
                   >
-                    Cancel
+                    {t('action.cancel')}
                   </button>
                   <button
                     className="sn-chat-bubble__action-danger"
@@ -135,7 +137,7 @@ export function ChatMessageBubble({
                     role="menuitem"
                     type="button"
                   >
-                    Delete
+                    {t('chat.delete')}
                   </button>
                 </div>
               </div>
@@ -151,7 +153,7 @@ export function ChatMessageBubble({
                     type="button"
                   >
                     <UiIcon height={14} name="copy" width={14} />
-                    Copy text
+                    {t('chat.copyText')}
                   </button>
                 ) : null}
                 <button
@@ -163,7 +165,7 @@ export function ChatMessageBubble({
                   type="button"
                 >
                   <UiIcon height={14} name="pin" width={14} />
-                  {message.pinnedAt ? 'Unpin' : 'Pin'}
+                  {t(message.pinnedAt ? 'chat.unpin' : 'chat.pin')}
                 </button>
                 {canEdit ? (
                   <button
@@ -175,7 +177,7 @@ export function ChatMessageBubble({
                     type="button"
                   >
                     <UiIcon height={14} name="edit" width={14} />
-                    Edit
+                    {t('chat.edit')}
                   </button>
                 ) : null}
                 <button

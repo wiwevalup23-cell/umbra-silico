@@ -51,15 +51,15 @@ describe('P0 UX safeguards', () => {
   it('uses one honest persistence vocabulary for local and remote notes', () => {
     expect(getPersistencePresentation({ hasRemote: false, status: 'dirty' })).toMatchObject({
       icon: 'save',
-      label: 'Saved locally',
+      labelKey: 'state.savedLocally',
       tone: 'idle',
     })
     expect(getPersistencePresentation({ hasRemote: true, status: 'dirty' })).toMatchObject({
       icon: 'cloud',
-      label: 'Pending sync',
+      labelKey: 'state.pendingSync',
       tone: 'dirty',
     })
-    expect(getLocalSavePresentation('queued').label).toBe('Unsaved locally')
+    expect(getLocalSavePresentation('queued').labelKey).toBe('state.unsavedLocally')
   })
 
   it('makes note deletion an explicit action instead of an invisible hit target', () => {
@@ -139,6 +139,6 @@ describe('P0 UX safeguards', () => {
     })
     expect(submit?.disabled).toBe(false)
     act(() => submit?.click())
-    expect(onSubmit).toHaveBeenCalledWith('correct-horse')
+    expect(onSubmit).toHaveBeenCalledWith({ masterPassword: 'correct-horse' })
   })
 })

@@ -1,7 +1,6 @@
-import { useMemo } from 'react'
 import type { NoteRepository } from '@/repository/contracts'
 import type { NoteId } from '@/shared/contracts'
-import { useLiveQuery } from '@/viewmodel/live-query-view-model'
+import { useLiveQuery, useOwnedLiveQuery } from '@/viewmodel/live-query-view-model'
 import { useImageRepository, useNoteRepository } from '@/viewmodel/repository-hooks'
 import { useSyncEngine } from '@/viewmodel/sync-engine-hooks'
 
@@ -19,7 +18,7 @@ export function useTrashViewModel(): TrashViewModel {
   const repository = useNoteRepository()
   const imageRepository = useImageRepository()
   const syncEngine = useSyncEngine()
-  const liveQuery = useMemo(() => repository.liveTrashList(), [repository])
+  const liveQuery = useOwnedLiveQuery(() => repository.liveTrashList(), [repository])
   const trashedNotes = useLiveQuery(liveQuery)
 
   return {

@@ -2,6 +2,7 @@ import { useEffect, useId, useRef, useState, type CSSProperties, type DragEvent 
 import type { FolderId, FolderTreeNode, NoteId } from '@/shared/contracts'
 import { noteDragType } from '@/ui/components/notes/note-drag'
 import { UiIcon } from '@/ui/icons/ui/UiIcon'
+import { useTranslation } from '@/ui/i18n/use-translation'
 
 type FolderTreeProps = {
   activeFolderId: FolderId | null
@@ -33,6 +34,7 @@ function FolderNode({
   onRenameFolder,
   onSelectFolder,
 }: FolderNodeProps) {
+  const { t } = useTranslation()
   const [isExpanded, setExpanded] = useState(true)
   const [isActionsOpen, setActionsOpen] = useState(false)
   const [isDropTarget, setDropTarget] = useState(false)
@@ -88,7 +90,7 @@ function FolderNode({
       >
         {hasChildren ? (
           <button
-            aria-label={isExpanded ? 'Collapse folder' : 'Expand folder'}
+            aria-label={t(isExpanded ? 'library.collapseFolder' : 'library.expandFolder')}
             className="sn-folder-tree__twisty"
             onClick={() => setExpanded((expanded) => !expanded)}
             type="button"
@@ -109,7 +111,7 @@ function FolderNode({
           <button
             aria-expanded={isActionsOpen}
             aria-haspopup="menu"
-            aria-label={`Actions for ${node.folder.name}`}
+            aria-label={t('library.folderActions', { name: node.folder.name })}
             className="sn-folder-tree__icon"
             onClick={() => setActionsOpen((open) => !open)}
             type="button"
@@ -122,19 +124,19 @@ function FolderNode({
                 setActionsOpen(false)
                 onCreateFolder(node.folder.id)
               }} role="menuitem" type="button">
-                <UiIcon name="plus" /> New subfolder
+                <UiIcon name="plus" /> {t('library.newSubfolder')}
               </button>
               <button onClick={() => {
                 setActionsOpen(false)
                 onRenameFolder(node.folder.id, node.folder.name)
               }} role="menuitem" type="button">
-                <UiIcon name="edit" /> Rename
+                <UiIcon name="edit" /> {t('library.renameFolder')}
               </button>
               <button className="sn-folder-tree__menu-danger" onClick={() => {
                 setActionsOpen(false)
                 onDeleteFolder(node.folder.id)
               }} role="menuitem" type="button">
-                <UiIcon name="trash" /> Delete folder
+                <UiIcon name="trash" /> {t('library.deleteFolder')}
               </button>
             </div>
           ) : null}
@@ -163,12 +165,13 @@ function FolderNode({
 }
 
 export function FolderTree(props: FolderTreeProps) {
+  const { t } = useTranslation()
   const folderListId = useId()
   const [isFolderListExpanded, setFolderListExpanded] = useState(true)
   const hasFolders = props.nodes.length > 0
 
   return (
-    <nav className="sn-folder-tree" aria-label="Folders">
+    <nav className="sn-folder-tree" aria-label={t('library.folders')}>
       <div
         className="sn-folder-tree__root"
         data-active={props.activeFolderId === null}
@@ -187,7 +190,9 @@ export function FolderTree(props: FolderTreeProps) {
           <button
             aria-controls={folderListId}
             aria-expanded={isFolderListExpanded}
-            aria-label={isFolderListExpanded ? 'Collapse folders' : 'Expand folders'}
+            aria-label={t(
+              isFolderListExpanded ? 'library.collapseFolders' : 'library.expandFolders',
+            )}
             className="sn-folder-tree__twisty"
             onClick={() => setFolderListExpanded((expanded) => !expanded)}
             type="button"
@@ -201,10 +206,10 @@ export function FolderTree(props: FolderTreeProps) {
           type="button"
         >
           <UiIcon name="library" />
-          All notes
+          {t('library.allNotes')}
         </button>
         <button
-          aria-label="New root folder"
+          aria-label={t('library.newRootFolder')}
           className="sn-folder-tree__icon"
           onClick={() => props.onCreateFolder(null)}
           type="button"
