@@ -16,6 +16,7 @@ export type UiIconName =
   | 'close'
   | 'copy'
   | 'document'
+  | 'download'
   | 'folder'
   | 'folderPlus'
   | 'focus'
@@ -60,6 +61,7 @@ const paths: Record<UiIconName, string[]> = {
   close: ['M6 6l12 12', 'M18 6 6 18'],
   copy: ['M8 8h10v10H8z', 'M6 16H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1'],
   document: ['M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z', 'M14 2v6h6', 'M8 13h8', 'M8 17h6'],
+  download: ['M12 3v12', 'M7 10l5 5 5-5', 'M5 21h14'],
   folder: ['M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8.5A2.5 2.5 0 0 1 18.5 20h-13A2.5 2.5 0 0 1 3 17.5z'],
   folderPlus: ['M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8.5A2.5 2.5 0 0 1 18.5 20h-13A2.5 2.5 0 0 1 3 17.5z', 'M12 11v6', 'M9 14h6'],
   focus: ['M8 3H5a2 2 0 0 0-2 2v3', 'M16 3h3a2 2 0 0 1 2 2v3', 'M21 16v3a2 2 0 0 1-2 2h-3', 'M8 21H5a2 2 0 0 1-2-2v-3'],

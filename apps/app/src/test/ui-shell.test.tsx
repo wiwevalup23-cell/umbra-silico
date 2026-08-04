@@ -49,6 +49,7 @@ function renderUi(children: ReactNode) {
 
 afterEach(() => {
   vi.useRealTimers()
+  vi.restoreAllMocks()
 
   while (cleanupTasks.length > 0) {
     cleanupTasks.pop()?.()
@@ -366,6 +367,48 @@ describe('Umbra Silico UI shell', () => {
     expect(rendered.container.textContent).not.toContain('72px')
   })
 
+  it('exports the rendered note through the PDF print layout', () => {
+    const note = {
+      ...createDraftLocalNote({
+        deviceId,
+        id: plainNoteId,
+        now,
+        title: 'Quarterly / Plan',
+        userId,
+      }),
+      preview: '',
+    }
+    const print = vi.spyOn(window, 'print').mockImplementation(() => {
+      expect(document.title).toBe('Quarterly - Plan')
+    })
+    const previousTitle = document.title
+    const rendered = renderUi(
+      <EditorShell
+        note={note}
+        onChangeDocument={vi.fn(async () => undefined)}
+        onChangeTitle={vi.fn(async () => undefined)}
+        onCreateNote={vi.fn()}
+        onRequestLock={vi.fn()}
+        pendingOperations={0}
+        syncStatus="idle"
+      />,
+    )
+    cleanupTasks.push(rendered.cleanup)
+
+    expect(rendered.container.querySelector('.sn-print-note-title')?.textContent).toBe(
+      'Quarterly / Plan',
+    )
+
+    act(() => {
+      rendered.container
+        .querySelector<HTMLButtonElement>('button[aria-label="Export note as PDF"]')
+        ?.click()
+    })
+
+    expect(print).toHaveBeenCalledOnce()
+    expect(document.title).toBe(previousTitle)
+  })
+
   it('inserts a table into a note and persists it through manual save', async () => {
     const onChangeDocument = vi.fn<
       ComponentProps<typeof EditorShell>['onChangeDocument']
@@ -472,17 +515,17 @@ describe('Umbra Silico UI shell', () => {
 
     expect(onChangeTitle).not.toHaveBeenCalled()
 
-    // Manual-save model: a quick debounce no longer fires; the background
-    // autosave waits five minutes before committing on its own.
+    // Manual-save model: typing itself doesn't fire a save; the background
+    // autosave is the near-real-time safety net, debounced by 800ms (1.4).
     await act(async () => {
-      vi.advanceTimersByTime(450)
+      vi.advanceTimersByTime(700)
       await Promise.resolve()
     })
 
     expect(onChangeTitle).not.toHaveBeenCalled()
 
     await act(async () => {
-      vi.advanceTimersByTime(5 * 60 * 1000)
+      vi.advanceTimersByTime(200)
       await Promise.resolve()
     })
 

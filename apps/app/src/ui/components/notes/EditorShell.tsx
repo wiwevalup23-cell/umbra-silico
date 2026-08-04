@@ -42,6 +42,7 @@ import {
 import { BlockHandle } from '@/ui/components/notes/BlockHandle'
 import { EmptyStatePlayer } from '@/ui/components/notes/EmptyStatePlayer'
 import { CompassIcon } from '@/ui/icons/compass/CompassIcon'
+import { exportNoteToPdf } from '@/ui/export-note-pdf'
 import { UiIcon } from '@/ui/icons/ui/UiIcon'
 import { useTranslation } from '@/ui/i18n/use-translation'
 import {
@@ -430,6 +431,29 @@ const PageLayout = Extension.create({
 
           return true
         },
+    }
+  },
+})
+
+/**
+ * `codeBlock`'s own exits (Tab-indentation stays inside it, Mod-Enter and an
+ * ArrowDown at the last line both call `exitCode` already, via core's base
+ * keymap and the extension's own shortcuts) still leave no plain, position-
+ * independent way out. Without one, a code block is a keyboard trap — WCAG
+ * 2.1.2 — so Escape gets the same `exitCode` exit as Mod-Enter.
+ */
+const CodeBlockEscapeExit = Extension.create({
+  name: 'codeBlockEscapeExit',
+
+  addKeyboardShortcuts() {
+    return {
+      Escape: () => {
+        if (this.editor.state.selection.$from.parent.type.name !== 'codeBlock') {
+          return false
+        }
+
+        return this.editor.commands.exitCode()
+      },
     }
   },
 })
@@ -1244,11 +1268,12 @@ function pickImageFiles(files: FileList | null | undefined): File[] {
 
 /**
  * Manual-save model: the user commits changes with the Save button (or
- * Ctrl/Cmd+S), while a slow background autosave acts as a safety net. The long
- * interval keeps the local store (and its live queries) quiet during typing,
- * so the editor never gets "echo" content resets mid-keystroke.
+ * Ctrl/Cmd+S), while a near-real-time background autosave is the actual
+ * safety net against losing work to a crash or a closed tab. This can stay
+ * short because "echo" content resets are prevented separately, by the
+ * incoming-document effect never overwriting a draft or a focused editor.
  */
-const backgroundAutosaveIntervalMs = 5 * 60 * 1000
+const backgroundAutosaveIntervalMs = 800
 
 function EditableNoteEditor({
   note,
@@ -1361,7 +1386,12 @@ function EditableNoteEditor({
         heading: {
           levels: [1, 2, 3],
         },
+        codeBlock: {
+          enableTabIndentation: true,
+          tabSize: 2,
+        },
       }),
+      CodeBlockEscapeExit,
       TableKit.configure({
         table: {
           allowTableNodeSelection: true,
@@ -1601,19 +1631,15 @@ function EditableNoteEditor({
   }, [editor, t])
 
   useEffect(() => {
-    if (
-      !editor
-      || didFocusEmptyNoteRef.current
-      || !editor.isEmpty
-      || typeof window === 'undefined'
-      || typeof window.matchMedia !== 'function'
-      || !window.matchMedia('(max-width: 959px)').matches
-    ) {
+    if (!editor || didFocusEmptyNoteRef.current || !editor.isEmpty) {
       return
     }
 
-    didFocusEmptyNoteRef.current = true
+    // The ref is set once the rAF actually fires, not when it's scheduled:
+    // StrictMode's mount→cleanup→mount cancels the first rAF, and marking the
+    // ref up front would make the second (real) pass see it as already done.
     const focusFrame = window.requestAnimationFrame(() => {
+      didFocusEmptyNoteRef.current = true
       editor.commands.focus('start')
     })
 
@@ -1739,6 +1765,16 @@ function EditableNoteEditor({
           </div>
           <div className="sn-editor-actions">
             <button
+              aria-label={t('editor.exportPdf')}
+              className="sn-icon-button sn-pdf-export-button"
+              onClick={() => exportNoteToPdf(titleDraft)}
+              title={t('editor.exportPdfHint')}
+              type="button"
+            >
+              <UiIcon name="download" />
+              <span>PDF</span>
+            </button>
+            <button
               aria-label={t('editor.saveNote')}
               className="sn-icon-button"
               disabled={autosaveState === 'saved' || autosaveState === 'saving'}
@@ -1835,6 +1871,7 @@ function EditableNoteEditor({
             } as CSSProperties
           }
         >
+          <h1 className="sn-print-note-title">{normalizeTitle(titleDraft)}</h1>
           <div className="sn-page-layout-frame">
             <BlockHandle
               editor={editor}

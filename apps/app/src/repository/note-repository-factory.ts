@@ -72,6 +72,10 @@ export async function createRepositories(
   // discard unused staged ciphertext; images of already-purged notes retry GC.
   await imageRepository.recoverPendingImageOperations()
 
+  // Backfill preview/title text written before the per-block extraction fix;
+  // a one-time no-op after the first run on a device (see the method doc).
+  await noteRepository.migrateDocumentTextFields()
+
   return { noteRepository, imageRepository }
 }
 

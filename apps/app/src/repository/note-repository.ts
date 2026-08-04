@@ -25,7 +25,11 @@ import {
   selectExpiredNoteOps,
   type NoteHistoryRetentionPolicy,
 } from '@/repository/note-history'
-import { createNotePreview, createNoteSearchText } from '@/shared/document-text'
+import {
+  createNotePreview,
+  createNoteSearchText,
+  deriveTitleFromDocument,
+} from '@/shared/document-text'
 import {
   createDraftLocalNote,
   createNoteInputSchema,
@@ -54,6 +58,7 @@ import {
   type FolderTreeNode,
   type LocalFolder,
   type LocalNote,
+  type NoteDocument,
   type NoteId,
   type NoteListItem,
   type NoteListQuery,
@@ -304,13 +309,17 @@ export class DefaultNoteRepository implements NoteRepository {
     const now = this.clock()
     const noteId = noteIdSchema.parse(this.idFactory('note'))
     const opId = this.createOperationId()
+    const document = parsedInput.document ?? documentV1Contract.createEmpty()
     const note = createDraftLocalNote({
       id: noteId,
       userId: this.userId,
       deviceId: this.deviceId,
       now,
-      title: parsedInput.title,
-      document: parsedInput.document ?? documentV1Contract.createEmpty(),
+      // A caller that hands in ready-made content (import, templates without
+      // their own title) gets the same implicit title a blank note would earn
+      // on its first save, instead of sitting at "Untitled" until next edit.
+      title: parsedInput.title ?? (deriveTitleFromDocument(document) || undefined),
+      document,
       parentFolderId: parsedInput.parentFolderId ?? null,
       properties: parsedInput.properties,
     })
@@ -515,7 +524,7 @@ export class DefaultNoteRepository implements NoteRepository {
     const opId = this.createOperationId()
     const updatedNote: PlaintextLocalNote = {
       ...plaintextNote,
-      title: parsedPatch.title ?? plaintextNote.title,
+      title: this.resolveNoteTitle(parsedPatch, plaintextNote, document),
       parentFolderId:
         parsedPatch.parentFolderId !== undefined
           ? parsedPatch.parentFolderId
@@ -765,6 +774,48 @@ export class DefaultNoteRepository implements NoteRepository {
 
     await this.liveQueries.invalidate(['notes', 'trash', 'folders'])
     return report
+  }
+
+  /**
+   * One-time backfill for notes written before preview/title used a per-block
+   * text extraction: their `preview` can carry the old flat-join word damage,
+   * and a note with real content can still be sitting at the literal
+   * "Untitled" default. Runs once per device (tracked in sync state) so
+   * notes correct themselves without the user needing to reopen and resave
+   * each one. Locked notes are skipped — their fields live in the encrypted
+   * payload and self-heal the next time the note is unlocked and saved.
+   */
+  async migrateDocumentTextFields(): Promise<void> {
+    const migrationKey = 'migrations:document-text-v2'
+
+    if (await this.localStore.getSyncState(migrationKey)) {
+      return
+    }
+
+    const notes = await this.localStore.listAllNotes()
+    let changed = false
+
+    for (const note of notes) {
+      if (note.isLocked) {
+        continue
+      }
+
+      const preview = createNotePreview(note.document)
+      const title = note.title === 'Untitled' ? deriveTitleFromDocument(note.document) || note.title : note.title
+
+      if (preview === note.preview && title === note.title) {
+        continue
+      }
+
+      await this.localStore.putNote({ ...note, preview, title })
+      changed = true
+    }
+
+    await this.localStore.setSyncState(migrationKey, '1')
+
+    if (changed) {
+      await this.liveQueries.invalidate(['notes', 'trash'])
+    }
   }
 
   /**
@@ -1155,6 +1206,33 @@ export class DefaultNoteRepository implements NoteRepository {
     }
 
     return matched
+  }
+
+  /**
+   * A title typed into the title field always wins. Otherwise the title keeps
+   * tracking the document's first line only for as long as it still matches
+   * what that line would derive — the moment it diverges, a manual title was
+   * typed at some point and auto-derivation freezes for good.
+   */
+  private resolveNoteTitle(
+    patch: { title?: string },
+    existing: PlaintextLocalNote,
+    nextDocument: NoteDocument,
+  ): string {
+    if (patch.title !== undefined) {
+      return patch.title
+    }
+
+    const wasAutoTitled =
+      existing.title.trim().length === 0 ||
+      existing.title === 'Untitled' ||
+      existing.title === deriveTitleFromDocument(existing.document)
+
+    if (!wasAutoTitled) {
+      return existing.title
+    }
+
+    return deriveTitleFromDocument(nextDocument) || existing.title
   }
 
   private async requireFolder(folderId: FolderId): Promise<LocalFolder> {

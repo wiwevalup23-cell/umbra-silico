@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, type CSSProperties, type DragEvent } from 'react'
 import type { NoteId, NoteListItem } from '@/shared/contracts/note'
-import type { MessageKey } from '@/shared/i18n'
+import type { MessageKey, Translator } from '@/shared/i18n'
 import { useTranslation } from '@/ui/i18n/use-translation'
 import { UiIcon } from '@/ui/icons/ui/UiIcon'
 import { StatusGlyph } from '@/ui/icons/status/StatusGlyph'
@@ -17,11 +17,6 @@ type NoteCardProps = {
   onSelect?: () => void
 }
 
-const timeFormatter = new Intl.DateTimeFormat(undefined, {
-  day: '2-digit',
-  month: 'short',
-})
-
 // 'dirty' is intentionally absent: in the local-first flow it only means
 // "not replicated to a remote yet" while the note is already persisted on
 // disk, so surfacing it as "Unsaved" would misinform the user.
@@ -32,14 +27,48 @@ const exceptionalSyncStatusKeys: Record<string, MessageKey> = {
   syncing: 'state.badgeSaving',
 }
 
-function formatUpdatedAt(updatedAt: string): string {
+function isSameCalendarDay(a: Date, b: Date): boolean {
+  return (
+    a.getFullYear() === b.getFullYear() &&
+    a.getMonth() === b.getMonth() &&
+    a.getDate() === b.getDate()
+  )
+}
+
+/**
+ * A card's date reads at the resolution a human would reach for: the exact
+ * time while it's still today, "Yesterday" for the day before, a bare day and
+ * month within the current year, and only then the full numeric date — never
+ * a raw timestamp doing all four jobs at once.
+ */
+function formatUpdatedAt(
+  updatedAt: string,
+  formatDateTime: Translator['formatDateTime'],
+  yesterdayLabel: string,
+  now = new Date(),
+): string {
   const date = new Date(updatedAt)
 
   if (Number.isNaN(date.getTime())) {
     return '--'
   }
 
-  return timeFormatter.format(date)
+  if (isSameCalendarDay(date, now)) {
+    return formatDateTime(updatedAt, { hour: '2-digit', minute: '2-digit', hour12: false })
+  }
+
+  const yesterday = new Date(now)
+  yesterday.setDate(yesterday.getDate() - 1)
+
+  if (isSameCalendarDay(date, yesterday)) {
+    return yesterdayLabel
+  }
+
+  if (date.getFullYear() === now.getFullYear()) {
+    return formatDateTime(updatedAt, { day: '2-digit', month: 'short' })
+  }
+
+  return formatDateTime(updatedAt, { day: '2-digit', month: '2-digit', year: '2-digit' })
 }
 
 
@@ -54,7 +83,7 @@ export function NoteCard({
   onMove,
   onSelect,
 }: NoteCardProps) {
-  const { t } = useTranslation()
+  const { formatDateTime, t } = useTranslation()
   const actionsRef = useRef<HTMLDivElement>(null)
   const [isActionsOpen, setActionsOpen] = useState(false)
   const [isDragging, setDragging] = useState(false)
@@ -132,7 +161,7 @@ export function NoteCard({
           ) : null}
           <strong data-empty-title={isUntitled}>{displayTitle}</strong>
           <time className="sn-note-card__date" dateTime={note.updatedAt}>
-            {formatUpdatedAt(note.updatedAt)}
+            {formatUpdatedAt(note.updatedAt, formatDateTime, t('note.updatedYesterday'))}
           </time>
           <span className="sn-note-card__signals" aria-label={t('note.state')}>
             {shouldShowSyncStatus ? (

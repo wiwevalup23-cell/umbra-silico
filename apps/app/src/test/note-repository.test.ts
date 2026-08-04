@@ -8,6 +8,7 @@ import { DefaultNoteRepository } from '@/repository'
 import { mapLocalNoteToSyncPayload } from '@/repository/mappers/local-note-mapper'
 import { createAutomationEventBus } from '@/automation'
 import {
+  createDraftLocalNote,
   deviceIdSchema,
   documentV1Contract,
   folderIdSchema,
@@ -657,5 +658,98 @@ describe('DefaultNoteRepository', () => {
         title: 'Nope',
       }),
     ).rejects.toThrow('does not exist')
+  })
+
+  it('derives a title from the first line when a note is created with content but no title', async () => {
+    const { cleanup, repository } = createRepositoryHarness()
+    cleanupTasks.push(cleanup)
+
+    const noteId = await repository.createNote({ document: createDocument('Imported first line') })
+
+    expect(await repository.getNote(noteId)).toMatchObject({ title: 'Imported first line' })
+  })
+
+  it('keeps an implicit title tracking the first line until a custom title is typed (1.3)', async () => {
+    const { cleanup, repository } = createRepositoryHarness()
+    cleanupTasks.push(cleanup)
+
+    const noteId = await repository.createNote({})
+    expect(await repository.getNote(noteId)).toMatchObject({ title: 'Untitled' })
+
+    // Typing body text alone (no title patch) derives the title.
+    await repository.updateNote(noteId, { document: createDocument('First words here') })
+    expect(await repository.getNote(noteId)).toMatchObject({ title: 'First words here' })
+
+    // It keeps following the first line across further body-only edits.
+    await repository.updateNote(noteId, { document: createDocument('Different first line now') })
+    expect(await repository.getNote(noteId)).toMatchObject({ title: 'Different first line now' })
+
+    // A title typed by hand always wins and freezes auto-derivation for good.
+    await repository.updateNote(noteId, { title: 'My Custom Title' })
+    await repository.updateNote(noteId, { document: createDocument('Yet another line') })
+    expect(await repository.getNote(noteId)).toMatchObject({ title: 'My Custom Title' })
+  })
+
+  it('backfills stale preview/title text once, skips locked notes, and is idempotent (1.1/1.3 migration)', async () => {
+    const { cleanup, repository, store } = createRepositoryHarness()
+    cleanupTasks.push(cleanup)
+
+    // Simulates a note written before the per-block text extraction fix: the
+    // preview carries the old flat-join word damage, and the title never got
+    // an implicit value even though the document has real content.
+    const staleNote = {
+      ...createDraftLocalNote({
+        deviceId,
+        id: noteIdSchema.parse('note_repo_stale'),
+        now: '2026-07-03T00:00:00.000Z',
+        userId,
+      }),
+      document: createDocument('Reproducible results'),
+      preview: 'Re produc ible results',
+    }
+    await store.putNote(staleNote)
+
+    const lockedNote = {
+      ...createDraftLocalNote({
+        deviceId,
+        id: noteIdSchema.parse('note_repo_locked'),
+        now: '2026-07-03T00:00:00.000Z',
+        title: 'Locked note',
+        userId,
+      }),
+      document: null,
+      encryptedPayload: 'ciphertext',
+      encryption: {
+        algorithm: 'AES-GCM-256' as const,
+        payloadNonce: 'nonce',
+        version: 1 as const,
+        wrapNonce: 'wrap',
+        wrappedDek: 'dek',
+      },
+      isLocked: true as const,
+      preview: null,
+      title: null,
+    }
+    await store.putNote(lockedNote)
+
+    await repository.migrateDocumentTextFields()
+
+    expect(await repository.getNote(staleNote.id)).toMatchObject({
+      preview: 'Reproducible results',
+      title: 'Reproducible results',
+    })
+    // Untouched: locked fields live in the encrypted payload, fixed lazily on
+    // the next unlock+save instead.
+    expect(await repository.getNote(lockedNote.id)).toMatchObject({
+      isLocked: true,
+      preview: null,
+      title: null,
+    })
+
+    // A second run must be a no-op: rewriting every note on every launch
+    // would be wasted work forever on an install with nothing left to fix.
+    const beforeSecondRun = await store.getNote(staleNote.id)
+    await repository.migrateDocumentTextFields()
+    expect(await store.getNote(staleNote.id)).toEqual(beforeSecondRun)
   })
 })

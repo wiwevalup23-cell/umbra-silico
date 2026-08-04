@@ -2,7 +2,7 @@ import { Extension } from '@tiptap/core'
 import { Mathematics } from '@tiptap/extension-mathematics'
 import { EditorContent, useEditor } from '@tiptap/react'
 import StarterKit from '@tiptap/starter-kit'
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { documentNodeSchema, type ChatMessageContent } from '@/shared/contracts'
 import { NoteTextStyleExtensions } from '@/ui/editor/rich-text'
 import { UiIcon } from '@/ui/icons/ui/UiIcon'
@@ -11,6 +11,8 @@ import { useTranslation } from '@/ui/i18n/use-translation'
 export type ChatComposerProps = {
   autoFocus?: boolean
   initialContent?: ChatMessageContent | null
+  /** Control rendered at the head of the row, ahead of the attach button. */
+  leadingControl?: ReactNode
   onCancel?: (() => void) | null
   onPickImageFiles?: ((files: File[]) => void) | null
   onSubmit: (content: ChatMessageContent) => void
@@ -27,6 +29,7 @@ function pickImageFiles(fileList: FileList | null | undefined): File[] {
 export function ChatComposer({
   autoFocus = false,
   initialContent = null,
+  leadingControl = null,
   onCancel = null,
   onPickImageFiles = null,
   onSubmit,
@@ -137,6 +140,7 @@ export function ChatComposer({
 
   return (
     <div className="sn-chat-composer" data-empty={isEmpty}>
+      {leadingControl}
       {onPickImageFiles ? (
         <>
           <input
@@ -156,7 +160,7 @@ export function ChatComposer({
           />
           <button
             aria-label={t('chat.attachImage')}
-            className="sn-icon-button sn-chat-composer__attach"
+            className="sn-chat-control sn-chat-composer__attach"
             onClick={() => fileInputRef.current?.click()}
             title={t('chat.attachImage')}
             type="button"
@@ -178,7 +182,7 @@ export function ChatComposer({
       {onCancel ? (
         <button
           aria-label={t('chat.cancelEditing')}
-          className="sn-icon-button sn-chat-composer__cancel"
+          className="sn-chat-control sn-chat-composer__cancel"
           onClick={onCancel}
           title="Cancel (Esc)"
           type="button"
@@ -189,7 +193,7 @@ export function ChatComposer({
 
       <button
         aria-label={submitLabel}
-        className="sn-icon-button sn-icon-button--primary sn-chat-composer__send"
+        className="sn-chat-control sn-chat-control--primary sn-chat-composer__send"
         disabled={isEmpty}
         onClick={() => submitRef.current()}
         title={`${submitLabel} (Enter)`}

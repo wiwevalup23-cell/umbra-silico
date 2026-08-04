@@ -83,6 +83,8 @@ export function NoteList({
         ) : null}
       </header>
 
+      {navigationSlot}
+
       <label className="sn-search-field">
         <UiIcon name="search" />
         <span className="sr-only">{t('library.searchNotes')}</span>
@@ -93,8 +95,6 @@ export function NoteList({
           value={searchQuery}
         />
       </label>
-
-      {navigationSlot}
 
       {notes.length === 0 ? (
         <div className="sn-empty-list">

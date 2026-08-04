@@ -9,7 +9,9 @@
   display: inline-grid;
   place-items: center;
   flex: 0 0 auto;
-  color: var(--sn-selection);
+  /* Graphite, not the accent: the marker says "this note is a chat", it is
+     not a state worth spending the product's one accent colour on. */
+  color: var(--sn-muted);
 }
 
 .sn-chat-shell {
@@ -89,28 +91,6 @@
 .sn-chat-titlebar__lock {
   width: 38px;
   height: 38px;
-}
-
-/* Calibration micro-line: the strange, quietly technical strip. */
-
-.sn-chat-microline {
-  display: flex;
-  justify-content: center;
-  padding: 5px 16px;
-  border-bottom: 1px solid rgba(28, 27, 24, 0.18);
-  background: var(--sn-surface-solid);
-  flex: 0 0 auto;
-}
-
-.sn-chat-microline code {
-  overflow: hidden;
-  color: #8a877c;
-  font-family: var(--sn-compact-font);
-  font-size: 10px;
-  letter-spacing: 0.08em;
-  line-height: 1.4;
-  text-overflow: ellipsis;
-  white-space: nowrap;
 }
 
 .sn-visually-hidden {
@@ -385,7 +365,9 @@
   color: var(--sn-ink-soft);
   font-family: var(--sn-compact-font);
   font-size: 10px;
-  font-weight: 600;
+  /* Regular weight, like the toolbar's Monaco labels: synthesised bold on a
+     10px monospace fills the counters in and reads as a smudge, not emphasis. */
+  font-weight: 400;
   letter-spacing: 0.09em;
   text-transform: uppercase;
 }
@@ -765,12 +747,30 @@
   opacity: 0.5;
 }
 
-.sn-chat-speaker-switch {
-  width: min(100%, 860px);
-  display: flex;
-  align-items: center;
-  gap: 5px;
-  margin: 0 auto 8px;
+/* Author picker: one control on the composer row, opening upward. */
+
+.sn-chat-author {
+  position: relative;
+  flex: 0 0 auto;
+}
+
+.sn-chat-author__menu {
+  position: absolute;
+  bottom: calc(100% + 6px);
+  left: 0;
+  z-index: 12;
+  min-width: 168px;
+  display: grid;
+  gap: 3px;
+  padding: 6px;
+  border: 1px solid var(--sn-border-control);
+  border-radius: 8px;
+  background: var(--sn-surface-solid);
+  box-shadow: 2px 2px 0 rgba(28, 27, 24, 0.14);
+}
+
+.sn-chat-author__label {
+  padding: 2px 6px 4px;
   color: var(--sn-muted);
   font-family: var(--sn-compact-font);
   font-size: 9px;
@@ -778,50 +778,101 @@
   text-transform: uppercase;
 }
 
-.sn-chat-speaker-switch > span {
-  margin-right: 2px;
-}
-
-.sn-chat-speaker-switch button {
-  min-width: 46px;
-  max-width: min(220px, 42vw);
-  height: 27px;
+.sn-chat-author__menu button {
+  height: 28px;
   padding: 0 9px;
   overflow: hidden;
-  border: 1px solid var(--sn-bevel-border);
-  border-radius: 7px;
+  border: 1px solid transparent;
+  border-radius: 4px;
   color: var(--sn-ink-soft);
-  background: var(--sn-bevel-bg);
-  box-shadow: var(--sn-bevel-shadow);
+  background: transparent;
   cursor: pointer;
-  font-family: inherit;
-  font-size: inherit;
-  letter-spacing: inherit;
+  font-family: var(--sn-compact-font);
+  font-size: 10px;
+  letter-spacing: 0.04em;
+  text-align: left;
   text-overflow: ellipsis;
-  text-transform: inherit;
   white-space: nowrap;
 }
 
-.sn-chat-speaker-switch button[data-active="true"] {
-  color: #fff;
-  border-color: var(--sn-selection-strong);
-  background: linear-gradient(180deg, #466f90, #2e526f);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.22);
+.sn-chat-author__menu button:hover,
+.sn-chat-author__menu button:focus-visible {
+  border-color: var(--sn-border-hairline);
+  background: var(--sn-bevel-bg);
+}
+
+/* Graphite, not the accent: which of two authors is selected is a local
+   setting, not something worth the product's one accent colour. */
+.sn-chat-author__menu button[data-active="true"] {
+  color: var(--sn-paper-bg);
+  border-color: var(--sn-ink);
+  background: linear-gradient(180deg, #4a4740, #2c2a25);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.14);
 }
 
 .sn-chat-composer {
   width: min(100%, 860px);
   display: flex;
   align-items: flex-end;
-  gap: 10px;
+  gap: 8px;
   margin-inline: auto;
 }
 
-.sn-chat-composer__attach,
-.sn-chat-composer__cancel,
-.sn-chat-composer__send {
-  width: 42px;
-  height: 42px;
+/* The composer's own control, not `.sn-icon-button`: that class is pinned to
+   50px by a release override, and sized to the topbar it reads as oversized
+   next to a single-line field. Same bevel, own size. */
+.sn-chat-control {
+  width: 32px;
+  height: 32px;
+  display: inline-grid;
+  place-items: center;
+  flex: 0 0 auto;
+  padding: 0;
+  border: 1px solid var(--sn-bevel-border);
+  border-radius: 8px;
+  color: #3a382f;
+  background: var(--sn-bevel-bg);
+  box-shadow: var(--sn-bevel-shadow);
+  cursor: pointer;
+  transition:
+    background-color 140ms ease,
+    border-color 140ms ease,
+    color 140ms ease,
+    transform 120ms ease,
+    box-shadow 140ms ease;
+}
+
+.sn-chat-control svg {
+  width: 16px;
+  height: 16px;
+}
+
+.sn-chat-control:hover:not(:disabled) {
+  border-color: #6f6a5c;
+  color: var(--sn-ink);
+  background: var(--sn-bevel-bg-hover);
+}
+
+.sn-chat-control:active:not(:disabled) {
+  transform: translateY(1px);
+  background: var(--sn-bevel-bg-active);
+  box-shadow: var(--sn-bevel-shadow-pressed);
+}
+
+.sn-chat-control:disabled {
+  border-color: rgba(28, 27, 24, 0.18);
+  color: rgba(28, 27, 24, 0.3);
+  cursor: not-allowed;
+  background: rgba(248, 245, 237, 0.7);
+  box-shadow: none;
+}
+
+.sn-chat-control--primary,
+.sn-chat-control[aria-expanded="true"] {
+  border-color: var(--sn-ink);
+  color: var(--sn-paper-bg);
+  background: linear-gradient(180deg, #3a382f, var(--sn-ink));
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.18), 0 1px 2px rgba(40, 37, 30, 0.28);
 }
 
 .sn-chat-composer__input {
@@ -957,6 +1008,22 @@
     padding: 9px 10px;
     padding-bottom: calc(10px + env(safe-area-inset-bottom, 0px));
   }
+
+  /* Back to a real touch target: the desktop sizing above is for a pointer. */
+  .sn-chat-control {
+    width: 44px;
+    height: 44px;
+  }
+
+  .sn-chat-control svg {
+    width: 20px;
+    height: 20px;
+  }
+
+  .sn-chat-author__menu button {
+    min-height: 44px;
+    font-size: 11px;
+  }
 }
 
 @media (max-width: 600px) {
@@ -983,11 +1050,6 @@
     padding-left: 4px;
     font-size: 21px;
     text-align: left;
-  }
-
-  .sn-chat-microline {
-    justify-content: flex-start;
-    padding-inline: 12px;
   }
 
   .sn-chat-tools {

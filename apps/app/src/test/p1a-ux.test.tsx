@@ -256,7 +256,10 @@ describe('P1-A visual and interaction contract', () => {
     expect(css).toContain('max-width: none !important;')
     expect(css).toContain('margin: 0 30px !important;')
     expect(css).toContain('padding: 0 40px !important;')
-    expect(css).toContain('right: 12px !important;')
+    // Phase 1.7: the block handle lives in the left margin (И1's 76ch column),
+    // not pinned to the right via !important — that override was the bug.
+    expect(css).toContain('left: max(6px, calc(50% - 38ch - 44px));')
+    expect(css).not.toContain('right: 12px !important;')
     expect(css).toContain('input[type="checkbox"]:checked')
     expect(css).toContain('details > :not(summary)')
     expect(css).toContain('border-left: none !important;')

@@ -652,7 +652,9 @@ button {
 .sn-folder-tree {
   display: grid;
   gap: 4px;
-  padding: 0 10px 10px;
+  /* Sits directly under the panel heading now, so it carries its own top
+     padding rather than borrowing the search field's old margin. */
+  padding: 10px 10px;
   border-bottom: 1px solid rgba(28, 27, 24, 0.08);
 }
 
@@ -984,7 +986,7 @@ button {
 }
 
 .sn-note-card__preview {
-  display: none;
+  display: -webkit-box;
   overflow: hidden;
   color: var(--sn-muted);
   font-size: 12px;
@@ -995,10 +997,6 @@ button {
 
 .sn-note-card[data-active="true"] strong {
   font-weight: 650;
-}
-
-.sn-note-card[data-active="true"] .sn-note-card__preview {
-  display: -webkit-box;
 }
 
 .sn-note-card__meta {
@@ -2116,7 +2114,8 @@ button {
   /* JS sets the variable to the vertical midpoint of the active line;
      the translate keeps the cluster optically centered on it. */
   top: var(--sn-block-handle-top, 48px);
-  left: max(6px, calc(50% - 42ch - 44px));
+  /* Anchored from the 76ch reading column (И1): half of it is 38ch. */
+  left: max(6px, calc(50% - 38ch - 44px));
   z-index: 8;
   display: flex;
   align-items: center;
@@ -2149,14 +2148,6 @@ button {
 .sn-block-handle__button svg {
   width: 14px;
   height: 14px;
-}
-
-/* Narrow editor columns have no gutter for the insert button; the grip alone
-   fits inside the text padding without covering the first characters. */
-@media (max-width: 1279px) {
-  .sn-block-handle__button--insert {
-    display: none;
-  }
 }
 
 .sn-block-handle__button:hover,
@@ -5907,12 +5898,7 @@ button {
   margin-left: 0 !important;
 }
 
-/* The selection position is measured at the active line midpoint in React.
-   The reading column starts at 30px and is 750px wide; -30px keeps the
-   controls immediately beyond its right edge rather than at the sheet edge. */
 .sn-block-handle {
-  left: auto !important;
-  right: 12px !important;
   transform: translateY(-50%) !important;
   opacity: 0.68 !important;
 }
@@ -5921,11 +5907,6 @@ button {
 .sn-block-handle:hover,
 .sn-block-handle:focus-within {
   opacity: 1 !important;
-}
-
-.sn-block-handle-menu {
-  right: 0 !important;
-  left: auto !important;
 }
 
 /* Tasks align their control to the first text line, including when the item
@@ -6395,4 +6376,138 @@ button {
   box-shadow: var(--sn-bevel-shadow-pressed);
   background: var(--sn-bevel-bg-active);
   font-weight: 500;
+}
+
+/* PDF export ------------------------------------------------------------- */
+
+.sn-pdf-export-button {
+  width: auto;
+  min-width: var(--sn-control);
+  gap: 5px;
+  padding: 0 9px;
+  font-family: var(--sn-compact-font);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+}
+
+.sn-print-note-title {
+  display: none;
+}
+
+@media print {
+  @page {
+    size: A4;
+    margin: 16mm 17mm 18mm;
+  }
+
+  html,
+  body,
+  #root {
+    width: auto !important;
+    height: auto !important;
+    min-height: 0 !important;
+    overflow: visible !important;
+    background: #fff !important;
+  }
+
+  body {
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+  }
+
+  body * {
+    visibility: hidden !important;
+  }
+
+  .sn-editor-shell,
+  .sn-editor-shell * {
+    visibility: visible !important;
+  }
+
+  .sn-editor-shell {
+    position: absolute !important;
+    inset: 0 auto auto 0 !important;
+    width: 100% !important;
+    height: auto !important;
+    min-height: 0 !important;
+    display: block !important;
+    overflow: visible !important;
+    color: #1c1b18 !important;
+    background: #fff !important;
+  }
+
+  .sn-editor-paper-sheet,
+  .sn-editor-paper,
+  .sn-page-layout-frame,
+  .sn-page-layout-frame > .sn-editor-content {
+    width: 100% !important;
+    height: auto !important;
+    min-height: 0 !important;
+    display: block !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: visible !important;
+    border: 0 !important;
+    border-radius: 0 !important;
+    background: #fff !important;
+    box-shadow: none !important;
+  }
+
+  .sn-editor-topbar,
+  .sn-editor-toolbar,
+  .sn-math-editor,
+  .sn-editor-notice,
+  .sn-block-handle,
+  .sn-image-block__toolbar,
+  .column-resize-handle,
+  .ProseMirror-gapcursor {
+    display: none !important;
+  }
+
+  .sn-print-note-title {
+    display: block !important;
+    margin: 0 0 9mm !important;
+    color: #1c1b18 !important;
+    font-family: var(--sn-editor-display-font);
+    font-size: 28pt;
+    font-weight: var(--sn-garamond-weight) !important;
+    line-height: 1.05;
+  }
+
+  .sn-tiptap-prosemirror {
+    width: 100% !important;
+    max-width: none !important;
+    min-height: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: visible !important;
+    color: #1c1b18 !important;
+    background: #fff !important;
+    font-size: 11.5pt;
+    line-height: 1.5;
+  }
+
+  .sn-tiptap-prosemirror .tableWrapper {
+    overflow: visible !important;
+  }
+
+  .sn-tiptap-prosemirror table {
+    width: 100% !important;
+  }
+
+  .sn-tiptap-prosemirror tr,
+  .sn-tiptap-prosemirror pre,
+  .sn-tiptap-prosemirror blockquote,
+  .sn-tiptap-prosemirror [data-callout],
+  .sn-tiptap-prosemirror .tiptap-mathematics-render,
+  .sn-image-block {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  .sn-tiptap-prosemirror a {
+    color: inherit !important;
+    text-decoration: underline;
+  }
 }

@@ -6,6 +6,9 @@ export const noteSearchTextLimit = 100_000
 /** How much of a note body is shown in list rows. */
 export const notePreviewLimit = 180
 
+/** How much of a note's first line is used to derive an implicit title. */
+export const noteTitleLimit = 200
+
 function isTextNode(node: unknown): node is TextNode {
   return (
     node !== null &&
@@ -38,33 +41,105 @@ export function extractDocumentText(
   const parts: string[] = []
   let collected = 0
 
+  // Adjacent text nodes are mark boundaries splitting one run mid-word (e.g.
+  // "Reproducible" becomes "Re" + "produc"(bold) + "ible"), so they must join
+  // with no separator. A part boundary — and the one space `parts.join(' ')`
+  // inserts between parts — belongs only between sibling blocks.
   function walk(node: unknown): boolean {
-    if (!node || typeof node !== 'object') {
+    if (
+      !node ||
+      typeof node !== 'object' ||
+      !('content' in node) ||
+      !Array.isArray(node.content)
+    ) {
       return true
     }
 
-    if (isTextNode(node)) {
-      parts.push(node.text)
-      collected += node.text.length + 1
-      return collected < collectLimit
-    }
+    let run = ''
 
-    if (!('content' in node) || !Array.isArray(node.content)) {
-      return true
+    const flushRun = () => {
+      if (run.length === 0) {
+        return
+      }
+
+      parts.push(run)
+      collected += run.length + 1
+      run = ''
     }
 
     for (const child of node.content) {
-      if (!walk(child)) {
+      if (isTextNode(child)) {
+        run += child.text
+
+        if (collected + run.length >= collectLimit) {
+          flushRun()
+          return false
+        }
+
+        continue
+      }
+
+      flushRun()
+
+      if (collected >= collectLimit || !walk(child)) {
         return false
       }
     }
 
-    return true
+    flushRun()
+
+    return collected < collectLimit
   }
 
   walk(rootNode(document))
 
   return parts.join(' ').replace(/\s+/g, ' ').trim().slice(0, limit)
+}
+
+/**
+ * The note's implicit title: the first block anywhere in the document that
+ * carries any text, using the same no-separator joining `extractDocumentText`
+ * uses within a block. Only a manually-typed title should ever override this.
+ */
+export function deriveTitleFromDocument(document: NoteDocument | DocumentNode): string {
+  function firstLine(node: unknown): string | null {
+    if (
+      !node ||
+      typeof node !== 'object' ||
+      !('content' in node) ||
+      !Array.isArray(node.content)
+    ) {
+      return null
+    }
+
+    let run = ''
+
+    for (const child of node.content) {
+      if (isTextNode(child)) {
+        run += child.text
+        continue
+      }
+
+      const trimmedRun = run.trim()
+
+      if (trimmedRun.length > 0) {
+        return trimmedRun
+      }
+
+      const nested = firstLine(child)
+
+      if (nested !== null) {
+        return nested
+      }
+    }
+
+    const trimmedRun = run.trim()
+    return trimmedRun.length > 0 ? trimmedRun : null
+  }
+
+  const line = firstLine(rootNode(document)) ?? ''
+
+  return line.replace(/\s+/g, ' ').trim().slice(0, noteTitleLimit)
 }
 
 export function createNotePreview(document: NoteDocument): string {

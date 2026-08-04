@@ -90,31 +90,96 @@ function groupMessagesByDay(messages: ChatMessage[], now: Date, t: Translate): C
   return groups
 }
 
-function formatStorageStatus(
-  note: PlaintextLocalNote,
-  hasRemote: boolean,
-  t: Translate,
-): string {
-  if (!hasRemote) {
-    return t('chat.localOnly')
-  }
-
-  switch (note.syncStatus) {
-    case 'synced':
-      return t('chat.synced')
-    case 'dirty':
-      return t('chat.syncPending')
-    case 'syncing':
-      return t('chat.syncing')
-    case 'conflict':
-      return t('chat.syncConflict')
-    case 'error':
-      return t('chat.syncError')
-  }
-}
-
 function normalizeTitle(title: string, t: Translate): string {
   return title.trim() || t('note.untitled')
+}
+
+type ChatAuthorPickerProps = {
+  onChange: (side: ChatMessageSide) => void
+  otherName: string
+  value: ChatMessageSide
+}
+
+/**
+ * Who the next message is attributed to. Collapsed into one control on the
+ * composer row: the answer changes rarely, so a permanently expanded pair of
+ * pills spent a whole row of the footer restating what the button says.
+ */
+function ChatAuthorPicker({ onChange, otherName, value }: ChatAuthorPickerProps) {
+  const { t } = useTranslation()
+  const rootRef = useRef<HTMLDivElement>(null)
+  const [isOpen, setOpen] = useState(false)
+  const selfName = t('chat.authorSelf')
+  const currentName = value === 'self' ? selfName : otherName
+
+  useEffect(() => {
+    if (!isOpen) {
+      return
+    }
+
+    const handlePointerDown = (event: PointerEvent) => {
+      if (!rootRef.current?.contains(event.target as Node)) {
+        setOpen(false)
+      }
+    }
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        setOpen(false)
+      }
+    }
+
+    document.addEventListener('pointerdown', handlePointerDown)
+    document.addEventListener('keydown', handleKeyDown)
+
+    return () => {
+      document.removeEventListener('pointerdown', handlePointerDown)
+      document.removeEventListener('keydown', handleKeyDown)
+    }
+  }, [isOpen])
+
+  function choose(side: ChatMessageSide) {
+    onChange(side)
+    setOpen(false)
+  }
+
+  return (
+    <div className="sn-chat-author" ref={rootRef}>
+      <button
+        aria-expanded={isOpen}
+        aria-haspopup="menu"
+        aria-label={t('chat.authorPicker', { name: currentName })}
+        className="sn-chat-control sn-chat-author__trigger"
+        onClick={() => setOpen((open) => !open)}
+        title={t('chat.authorPicker', { name: currentName })}
+        type="button"
+      >
+        <UiIcon name="users" />
+      </button>
+      {isOpen ? (
+        <div className="sn-chat-author__menu" role="menu">
+          <span className="sn-chat-author__label">{t('chat.writeAs')}</span>
+          <button
+            data-active={value === 'self'}
+            onClick={() => choose('self')}
+            role="menuitemradio"
+            aria-checked={value === 'self'}
+            type="button"
+          >
+            {selfName}
+          </button>
+          <button
+            data-active={value === 'other'}
+            onClick={() => choose('other')}
+            role="menuitemradio"
+            aria-checked={value === 'other'}
+            type="button"
+          >
+            {otherName}
+          </button>
+        </div>
+      ) : null}
+    </div>
+  )
 }
 
 type ChatShellProps = {
@@ -302,15 +367,6 @@ export function ChatShell({
     setVisibleLimit((limit) => limit + visibleMessagesStep)
   }
 
-  const noteFingerprint =
-    note.id.length > 18 ? `${note.id.slice(0, 3)}...${note.id.slice(-6)}` : note.id
-  const microline = [
-    noteFingerprint.toUpperCase(),
-    `${messages.length} ${messages.length === 1 ? 'MESSAGE' : 'MESSAGES'}`,
-    formatStorageStatus(note, hasRemote, t),
-    t('chat.sealedOnLock'),
-  ].join(' · ')
-
   return (
     <ImageSourceContext.Provider value={imageResolver}>
       <section aria-label="Chat" className="sn-chat-shell">
@@ -344,9 +400,6 @@ export function ChatShell({
             <UiIcon name="lock" />
           </button>
         </header>
-        <div className="sn-chat-microline">
-          <code>{microline}</code>
-        </div>
         <div className="sn-chat-tools">
           <label className="sn-chat-tools__search">
             <UiIcon height={15} name="search" width={15} />
@@ -546,26 +599,14 @@ export function ChatShell({
         ) : null}
 
         <footer className="sn-chat-footer">
-          <div className="sn-chat-speaker-switch" role="group" aria-label={t('chat.messageAuthor')}>
-            <span>{t('chat.writeAs')}</span>
-            <button
-              aria-pressed={composeSide === 'self'}
-              data-active={composeSide === 'self'}
-              onClick={() => setComposeSide('self')}
-              type="button"
-            >
-              You
-            </button>
-            <button
-              aria-pressed={composeSide === 'other'}
-              data-active={composeSide === 'other'}
-              onClick={() => setComposeSide('other')}
-              type="button"
-            >
-              {otherParticipantName}
-            </button>
-          </div>
           <ChatComposer
+            leadingControl={
+              <ChatAuthorPicker
+                onChange={setComposeSide}
+                otherName={otherParticipantName}
+                value={composeSide}
+              />
+            }
             onPickImageFiles={
               onSendImages ? (files) => onSendImages(files, composeAuthor) : null
             }

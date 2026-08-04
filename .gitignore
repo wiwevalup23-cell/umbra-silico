@@ -40,5 +40,8 @@
 *.aab
 /Иконка затмения с циркулем и буквой U/
 
+# Personal Telegram export data used to test chat import — never public
+/чат экспорты/
+
 # Unused source asset retained only in the local design workspace
 /apps/app/src/assets/hero.png
