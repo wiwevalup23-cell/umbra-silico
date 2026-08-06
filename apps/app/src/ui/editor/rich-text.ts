@@ -4,7 +4,6 @@ import { TextStyleKit } from '@tiptap/extension-text-style'
 export type EditorFontOption = {
   label: string
   value: string
-  sampleClass?: string
 }
 
 export type EditorTextSizeOption = {
@@ -17,19 +16,26 @@ export type EditorHighlightOption = {
   label: string
 }
 
+/**
+ * Faces offered for the document body.
+ *
+ * Every entry has to earn the document slot. Inter is a superb UI face and so
+ * belonged to the chrome, not here; Caveat and Roboto Slab were 2010s Google
+ * defaults with neither a Mac nor a typographic lineage. What is left is one
+ * school — Garamond text and display cuts, Lora as the softer transitional —
+ * plus Monaco for people who write notes the way they write code.
+ *
+ * `value` is emitted verbatim as `font-family`, so keep the stacks unquoted:
+ * quoted names come back HTML-encoded through serialization.
+ */
 export const editorFontOptions: EditorFontOption[] = [
   { label: 'Default', value: '' },
-  { label: 'Inter', sampleClass: 'sn-font-sample--inter', value: 'Inter Variable' },
-  { label: 'Lora', sampleClass: 'sn-font-sample--lora', value: 'Lora Variable' },
-  {
-    label: 'Roboto Slab',
-    sampleClass: 'sn-font-sample--roboto-slab',
-    value: 'Roboto Slab Variable',
-  },
-  { label: 'Caveat', sampleClass: 'sn-font-sample--caveat', value: 'Caveat Variable' },
   { label: 'EB Garamond', value: 'SN EB Garamond' },
   { label: 'Cormorant', value: 'SN Cormorant Garamond' },
+  { label: 'Lora', value: 'Lora Variable' },
+  { label: 'Monaco', value: 'Monaco, Menlo, monospace' },
 ]
+
 
 export const editorTextSizeOptions: EditorTextSizeOption[] = [
   { label: 'Auto', value: '' },

@@ -23,12 +23,23 @@
 }
 
 :root {
-  --sn-body-font: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+  /* Four typographic roles, kept strictly apart the way the classic Mac kept
+     Chicago (chrome), the user's face (document) and Monaco (monospace):
+
+       chrome actions   --sn-body-font           humanist grotesque
+       chrome captions  --sn-compact-font        Monaco, 10-11px, uppercase
+       display          --sn-editor-display-font Cormorant — wordmark, H1
+       document         --sn-editor-body-font    EB Garamond 17/1.6
+
+     The document face is EB Garamond, not Cormorant: Cormorant is a display
+     cut with high stroke contrast, and at 17px its hairlines fall below a
+     pixel and wash out over a long read. */
+  --sn-body-font: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   --sn-wordmark-font: "SN Cormorant Garamond", "SN EB Garamond", Georgia, serif;
   --sn-serif-font: "SN Cormorant Garamond", "SN EB Garamond", Georgia, serif;
   --sn-editor-display-font: "SN Cormorant Garamond", "SN EB Garamond", Georgia, serif;
   --sn-garamond-weight: 300;
-  --sn-editor-body-font: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+  --sn-editor-body-font: "SN EB Garamond", Georgia, serif;
   --sn-compact-font: "Monaco", "Menlo", "JetBrains Mono", "Consolas", monospace;
   --sn-bg: #edeae2;
   --sn-bg-soft: #f8f5ed;
@@ -2237,7 +2248,11 @@ button {
 }
 
 .sn-tiptap-prosemirror {
-  width: min(100%, 76ch);
+  /* И1 is a *measure*, 60-75 characters, not a pixel width — and `ch` is the
+     width of "0" in the current face, so the cap had to be re-cut when the
+     body font became EB Garamond. Its digits are wide relative to its
+     lowercase, so the old 76ch let Latin prose run past 80 characters. */
+  width: min(100%, 66ch);
   min-height: 680px;
   margin: 0 auto;
   padding:
@@ -2374,12 +2389,22 @@ button {
   line-height: 1.12;
 }
 
+/* H1 is the document's one display line, so it speaks in the display voice.
+   H2 and H3 stay in the body face: they are structure inside the read, not
+   a showpiece, and Cormorant's hairlines thin out below ~28px anyway. */
 .sn-tiptap-prosemirror h1 {
-  font-size: 1.85em;
+  font-family: var(--sn-editor-display-font);
+  font-size: 1.9em;
 }
 
 .sn-tiptap-prosemirror h2 {
-  font-size: 1.42em;
+  font-size: 1.45em;
+}
+
+/* Explicit: left to the browser default (~1.17em) the scale collapsed
+   against H2 and the third level stopped reading as a level at all. */
+.sn-tiptap-prosemirror h3 {
+  font-size: 1.2em;
 }
 
 .sn-tiptap-prosemirror blockquote {
@@ -2862,6 +2887,8 @@ button {
   border-bottom: 1px solid var(--sn-border-hairline);
 }
 
+/* A tab is chrome caption, not chrome action: same Monaco voice the settings
+   tabs already speak in. These two sets of tabs used to disagree. */
 .sn-inspector-tab {
   min-width: 0;
   min-height: 30px;
@@ -2875,7 +2902,11 @@ button {
   border-radius: 0;
   color: var(--sn-muted);
   background: transparent;
-  font-size: 11.5px;
+  font-family: var(--sn-compact-font);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
   cursor: pointer;
 }
 
@@ -4726,7 +4757,6 @@ button {
 
 .sn-inspector-tab {
   min-height: 40px !important;
-  font-size: 15px !important;
 }
 
 .sn-inspector-list > div {
@@ -5883,7 +5913,10 @@ button {
 
 .sn-tiptap-prosemirror {
   min-height: 520px !important;
-  width: calc(100% - 60px) !important;
+  /* The `ch` cap is the И1 measure; `100% - 60px` keeps the left axis shared
+     with the title. Before this the override dropped the cap entirely, so the
+     column grew with the panel and Latin prose ran to 85 characters a line. */
+  width: min(calc(100% - 60px), 66ch) !important;
   max-width: none !important;
   box-sizing: border-box !important;
   /* 30px outer offset + 40px text padding retains the title's 70px axis,

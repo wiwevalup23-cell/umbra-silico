@@ -25,6 +25,7 @@ import {
   selectExpiredNoteOps,
   type NoteHistoryRetentionPolicy,
 } from '@/repository/note-history'
+import { migrateRetiredDocumentFonts } from '@/shared/document-fonts'
 import {
   createNotePreview,
   createNoteSearchText,
@@ -808,6 +809,44 @@ export class DefaultNoteRepository implements NoteRepository {
       }
 
       await this.localStore.putNote({ ...note, preview, title })
+      changed = true
+    }
+
+    await this.localStore.setSyncState(migrationKey, '1')
+
+    if (changed) {
+      await this.liveQueries.invalidate(['notes', 'trash'])
+    }
+  }
+
+  /**
+   * Rewrites references to fonts the editor no longer offers, so a note
+   * written in a retired face keeps a face the product actually ships rather
+   * than falling through to a browser default. Like the text backfill above
+   * this runs once per device; locked notes self-heal on their next save.
+   */
+  async migrateRetiredFonts(): Promise<void> {
+    const migrationKey = 'migrations:document-fonts-v1'
+
+    if (await this.localStore.getSyncState(migrationKey)) {
+      return
+    }
+
+    const notes = await this.localStore.listAllNotes()
+    let changed = false
+
+    for (const note of notes) {
+      if (note.isLocked) {
+        continue
+      }
+
+      const migrated = migrateRetiredDocumentFonts(note.document)
+
+      if (!migrated.changed) {
+        continue
+      }
+
+      await this.localStore.putNote({ ...note, document: migrated.document })
       changed = true
     }
 

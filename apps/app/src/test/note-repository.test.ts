@@ -752,4 +752,49 @@ describe('DefaultNoteRepository', () => {
     await repository.migrateDocumentTextFields()
     expect(await store.getNote(staleNote.id)).toEqual(beforeSecondRun)
   })
+
+  it('repoints documents off retired fonts once and leaves the rest alone (2.5 migration)', async () => {
+    const { cleanup, repository, store } = createRepositoryHarness()
+    cleanupTasks.push(cleanup)
+
+    const withRetiredFont = {
+      ...createDraftLocalNote({
+        deviceId,
+        id: noteIdSchema.parse('note_repo_font'),
+        now: '2026-08-06T00:00:00.000Z',
+        userId,
+      }),
+      document: {
+        ...documentV1Contract.createEmpty(),
+        content: {
+          type: 'doc',
+          content: [
+            {
+              type: 'paragraph',
+              content: [
+                {
+                  type: 'text',
+                  text: 'Written in a face the palette no longer offers',
+                  marks: [{ type: 'textStyle', attrs: { fontFamily: 'Caveat Variable' } }],
+                },
+              ],
+            },
+          ],
+        },
+      },
+    }
+    await store.putNote(withRetiredFont)
+
+    await repository.migrateRetiredFonts()
+
+    const migrated = await store.getNote(withRetiredFont.id)
+    const serialized = JSON.stringify(migrated)
+    expect(serialized).not.toContain('Caveat Variable')
+    expect(serialized).toContain('SN EB Garamond')
+
+    // Idempotent: a second launch must not rewrite every note again.
+    const afterFirstRun = await store.getNote(withRetiredFont.id)
+    await repository.migrateRetiredFonts()
+    expect(await store.getNote(withRetiredFont.id)).toEqual(afterFirstRun)
+  })
 })

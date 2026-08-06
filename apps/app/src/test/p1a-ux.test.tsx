@@ -252,7 +252,10 @@ describe('P1-A visual and interaction contract', () => {
     expect(css).toContain('min-height: calc(100% - 40px) !important;')
     expect(css).toContain('min-height: 520px !important;')
     expect(css).toContain('margin-top: 24px !important;')
-    expect(css).toContain('width: calc(100% - 60px) !important;')
+    // Phase 2: the release override used to drop И1's measure cap outright
+    // (plain `calc(100% - 60px)`), so the reading column grew with the panel.
+    // It now keeps the shared left axis *and* caps the line length.
+    expect(css).toContain('width: min(calc(100% - 60px), 66ch) !important;')
     expect(css).toContain('max-width: none !important;')
     expect(css).toContain('margin: 0 30px !important;')
     expect(css).toContain('padding: 0 40px !important;')
