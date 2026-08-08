@@ -344,6 +344,14 @@ export function SettingsModal({
                     })}
                   </p>
                 ) : null}
+
+                {/* Any image can flatten the sheet against the case, so the
+                    caution shows once one is picked rather than never. */}
+                {settings.backgroundImage ? (
+                  <p className="sn-settings-section__hint sn-settings-section__hint--caution">
+                    {t('settings.backgroundReadability')}
+                  </p>
+                ) : null}
               </section>
             </>
           ) : null}

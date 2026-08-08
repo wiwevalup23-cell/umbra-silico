@@ -164,7 +164,7 @@ describe('PWA readiness', () => {
       name: 'Umbra Silico',
       start_url: './',
       display: 'standalone',
-      theme_color: '#f8f5ed',
+      theme_color: '#f1ede2',
     })
     expect(manifest.icons).toEqual(
       expect.arrayContaining([

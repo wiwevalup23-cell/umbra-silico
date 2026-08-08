@@ -41,29 +41,38 @@
   --sn-garamond-weight: 300;
   --sn-editor-body-font: "SN EB Garamond", Georgia, serif;
   --sn-compact-font: "Monaco", "Menlo", "JetBrains Mono", "Consolas", monospace;
-  --sn-bg: #edeae2;
-  --sn-bg-soft: #f8f5ed;
-  --sn-panel-bg: rgba(248, 245, 237, 0.94);
-  --sn-editor-base: #dedad0;
+  /* Surface ladder, in L*: paper 99.6 → panel 93.8 → app background 87.9.
+     The steps used to be ~3 L* apart, which read as one flat field with the
+     sheet barely detached from it. They are ~6 apart now, and the widening
+     was done by pushing the case down rather than the sheet up: the sheet is
+     already all but white, and the document must stay a separate material
+     from the case — lighter or distinctly warmer, never the same value. */
+  --sn-bg: #e1dcd2;
+  --sn-bg-soft: #f1ede2;
+  --sn-panel-bg: rgba(241, 237, 226, 0.94);
+  --sn-editor-base: #d0ccc2;
   --sn-editor-window: #fffdf8;
-  --sn-canvas-bg: #f8f5ed;
+  --sn-canvas-bg: #f1ede2;
   --sn-user-background-image: none;
   --sn-background-grid-y: linear-gradient(rgba(255, 255, 255, 0.32) 1px, transparent 1px);
   --sn-background-grid-x: linear-gradient(90deg, rgba(255, 255, 255, 0.2) 1px, transparent 1px);
-  --sn-background-wash: linear-gradient(rgba(237, 234, 226, 0.42), rgba(237, 234, 226, 0.42));
+  --sn-background-wash: linear-gradient(rgba(225, 220, 210, 0.42), rgba(225, 220, 210, 0.42));
   --sn-background-pattern-y: linear-gradient(rgba(255, 255, 255, 0.32) 1px, transparent 1px);
   --sn-background-pattern-x: linear-gradient(90deg, rgba(255, 255, 255, 0.2) 1px, transparent 1px);
   --sn-background-pattern-size: 24px 24px;
-  --sn-background-scrim: linear-gradient(rgba(237, 234, 226, 0), rgba(237, 234, 226, 0));
+  --sn-background-scrim: linear-gradient(rgba(225, 220, 210, 0), rgba(225, 220, 210, 0));
   --sn-paper-bg: #fffefa;
-  --sn-surface: rgba(248, 245, 237, 0.92);
-  --sn-surface-solid: #f8f5ed;
-  --sn-surface-muted: #eee9df;
-  --sn-surface-hover: #f2eee5;
+  --sn-surface: rgba(241, 237, 226, 0.92);
+  --sn-surface-solid: #f1ede2;
+  --sn-surface-muted: #e5e2d7;
+  --sn-surface-hover: #eae6dc;
   --sn-ink: #1c1b18;
   --sn-ink-soft: #37342e;
-  --sn-muted: #68645b;
-  --sn-muted-2: #746f65;
+  /* Re-cut against the darker case: both cleared AA on the old, lighter
+     background and would not have on this one. muted-2 stays the lighter of
+     the two — it is placeholder ink and only ever sits on paper or a panel. */
+  --sn-muted: #656158;
+  --sn-muted-2: #706b62;
   --sn-border: rgba(28, 27, 24, 0.14);
   --sn-border-strong: rgba(28, 27, 24, 0.32);
   --sn-border-hairline: rgba(28, 27, 24, 0.07);
@@ -2081,10 +2090,15 @@ button {
   min-height: 0;
   overflow: auto;
   padding: 0 0 0;
-  border: 0;
+  /* An edge and a hard-offset shadow are what make this a sheet lying on the
+     case rather than a white region of it. The offset carries no blur on
+     purpose — that is the native dialect. The edge is --sn-border rather than
+     the hairline because it has to hold the sheet together on its own when a
+     pale background image flattens the value step underneath it. */
+  border: 1px solid var(--sn-border);
   border-radius: 0;
   background: var(--sn-paper-bg);
-  box-shadow: none;
+  box-shadow: 1px 1px 0 rgba(28, 27, 24, 0.1);
   scrollbar-color: rgba(28, 27, 24, 0.44) rgba(238, 233, 223, 0.72);
   scrollbar-width: thin;
 }
@@ -3842,6 +3856,15 @@ button {
   color: var(--sn-muted);
   font-size: 12px;
   line-height: 1.35;
+}
+
+/* A caution, not an error: the choice is legitimate, it just has a cost. */
+.sn-settings-section__hint--caution {
+  margin-top: 8px;
+  padding: 7px 9px;
+  border-left: 2px solid var(--sn-pending);
+  color: var(--sn-ink-soft);
+  background: var(--sn-surface-muted);
 }
 
 .sn-opacity-range {

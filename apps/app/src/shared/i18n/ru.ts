@@ -218,6 +218,8 @@ export const ru: Dictionary = {
   'settings.backgroundRemove': 'Убрать',
   'settings.backgroundCustomHint':
     'Картинка с этого устройства. Хранится локально и никуда не отправляется.',
+  'settings.backgroundReadability':
+    'Пёстрая или светлая картинка может слить бумагу с окружением. Если лист перестал выделяться — уменьшите непрозрачность.',
   'settings.backgroundErrorUnsupported':
     'Этот файл не похож на картинку, которую приложение умеет показывать. Подойдут JPEG, PNG, WebP или AVIF.',
   'settings.backgroundErrorTooLarge':

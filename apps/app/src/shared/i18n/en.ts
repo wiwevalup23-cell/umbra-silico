@@ -225,6 +225,8 @@ export const en = {
   'settings.backgroundRemove': 'Remove',
   'settings.backgroundCustomHint':
     'A picture from this device, kept locally and never uploaded anywhere.',
+  'settings.backgroundReadability':
+    'A busy or pale image can flatten the paper against its surroundings. Lower the opacity if the sheet stops standing out.',
   'settings.backgroundErrorUnsupported':
     'That file is not an image this app can display. Try JPEG, PNG, WebP or AVIF.',
   'settings.backgroundErrorTooLarge':

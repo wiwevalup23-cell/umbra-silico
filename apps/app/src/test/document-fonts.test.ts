@@ -15,6 +15,13 @@ function styledText(text: string, fontFamily: string) {
   }
 }
 
+/** Attrs of the first mark on the first inline child of the first block. */
+function firstMarkAttrs(document: NoteDocument): Record<string, unknown> | undefined {
+  type Inline = { marks?: Array<{ attrs?: Record<string, unknown> }> }
+  const block = document.content.content?.[0] as { content?: Inline[] } | undefined
+  return block?.content?.[0]?.marks?.[0]?.attrs
+}
+
 describe('retired document fonts', () => {
   it('repoints every retired face at one the palette still offers', () => {
     const offered = new Set(editorFontOptions.map((option) => option.value))
@@ -34,9 +41,7 @@ describe('retired document fonts', () => {
     const result = migrateRetiredDocumentFonts(document)
 
     expect(result.changed).toBe(true)
-    const mark = (result.document.content.content?.[0] as { content?: Array<{ marks?: Array<{ attrs?: Record<string, unknown> }> }> })
-      .content?.[0].marks?.[0]
-    expect(mark?.attrs?.fontFamily).toBe('SN EB Garamond')
+    expect(firstMarkAttrs(result.document)?.fontFamily).toBe('SN EB Garamond')
   })
 
   it('drops the attribute entirely when the replacement is the document default', () => {
@@ -47,10 +52,10 @@ describe('retired document fonts', () => {
     const result = migrateRetiredDocumentFonts(document)
 
     expect(result.changed).toBe(true)
-    const mark = (result.document.content.content?.[0] as { content?: Array<{ marks?: Array<{ attrs?: Record<string, unknown> }> }> })
-      .content?.[0].marks?.[0]
     // An empty family would serialize to a broken `font-family: ` declaration.
-    expect(mark?.attrs && 'fontFamily' in mark.attrs).toBe(false)
+    const attrs = firstMarkAttrs(result.document)
+    expect(attrs).toBeDefined()
+    expect(attrs && 'fontFamily' in attrs).toBe(false)
   })
 
   it('reaches faces nested inside lists and other containers', () => {

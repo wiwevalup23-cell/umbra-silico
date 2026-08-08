@@ -33,7 +33,9 @@ function rewriteMark(mark: TextMark): TextMark | null {
 
   // Drop the attribute rather than storing an empty family, which would
   // serialize to a broken `font-family: ` declaration.
-  const { fontFamily: _dropped, ...rest } = mark.attrs
+  const rest = Object.fromEntries(
+    Object.entries(mark.attrs).filter(([key]) => key !== 'fontFamily'),
+  )
   return { ...mark, attrs: rest }
 }
 

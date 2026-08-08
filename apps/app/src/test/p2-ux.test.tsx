@@ -165,14 +165,14 @@ describe('P2 visual system, accessibility and brand', () => {
     const fontPath = 'public/fonts/CormorantGaramond-Variable.woff2'
 
     expect(html).toContain('<title>Umbra Silico</title>')
-    expect(html).toContain('content="#f8f5ed"')
+    expect(html).toContain('content="#f1ede2"')
     expect(html).not.toMatch(/fonts\.(googleapis|gstatic)\.com/)
     expect(manifest).toMatchObject({
-      background_color: '#edeae2',
+      background_color: '#e1dcd2',
       name: 'Umbra Silico',
       orientation: 'any',
       short_name: 'Umbra Silico',
-      theme_color: '#f8f5ed',
+      theme_color: '#f1ede2',
     })
     expect(tauri.productName).toBe('Umbra Silico')
     expect(tauri.app.windows[0]).toMatchObject({ theme: 'Light', title: 'Umbra Silico' })

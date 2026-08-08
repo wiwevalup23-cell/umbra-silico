@@ -34,9 +34,9 @@ const DEFAULT_SETTINGS: AppSettings = {
 const MIN_BACKGROUND_OPACITY = 0
 const MAX_BACKGROUND_OPACITY = 100
 
-// Matches --sn-bg (#edeae2), so the scrim fades the panel toward its own
+// Matches --sn-bg (#e1dcd2), so the scrim fades the panel toward its own
 // base color instead of toward black/white.
-const BACKGROUND_BASE_RGB = '237, 234, 226'
+const BACKGROUND_BASE_RGB = '225, 220, 210'
 
 const SETTINGS_KEY = 'umbra-silico-settings'
 const MIN_SIDEBAR_WIDTH = 250
