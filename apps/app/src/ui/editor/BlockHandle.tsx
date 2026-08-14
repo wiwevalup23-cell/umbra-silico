@@ -207,12 +207,26 @@ export function BlockHandle({ editor, onInsertImage = null }: BlockHandleProps) 
       }
     }
 
+    /**
+     * Runs in the capture phase, above ProseMirror's own drop handler.
+     *
+     * The grip is a plain draggable button, so this drag is one ProseMirror
+     * never started: `view.dragging` is null and its handler falls back to
+     * parsing the dataTransfer, which pastes the block position — a bare
+     * number — into the document, and leaves the move below working from
+     * positions that the insert has already shifted. Stopping the event here
+     * is what keeps a block drag a block drag.
+     */
     function handleDrop(event: DragEvent) {
       const sourceFrom = draggedSourceRef.current
 
       if (sourceFrom === null) {
         return
       }
+
+      event.preventDefault()
+      event.stopPropagation()
+      draggedSourceRef.current = null
 
       const droppedAt = currentEditor.view.posAtCoords({
         left: event.clientX,
@@ -234,17 +248,15 @@ export function BlockHandle({ editor, onInsertImage = null }: BlockHandleProps) 
           ? 'after'
           : 'before'
 
-      event.preventDefault()
       moveBlockToPosition(currentEditor, sourceFrom, droppedAt.pos, placement)
-      draggedSourceRef.current = null
     }
 
-    frame.addEventListener('dragover', handleDragOver)
-    frame.addEventListener('drop', handleDrop)
+    frame.addEventListener('dragover', handleDragOver, true)
+    frame.addEventListener('drop', handleDrop, true)
 
     return () => {
-      frame.removeEventListener('dragover', handleDragOver)
-      frame.removeEventListener('drop', handleDrop)
+      frame.removeEventListener('dragover', handleDragOver, true)
+      frame.removeEventListener('drop', handleDrop, true)
     }
   }, [editor])
 
