@@ -1,6 +1,13 @@
 import type { Node as ProseMirrorNode } from '@tiptap/pm/model'
 import { EditorContent, useEditor, useEditorState } from '@tiptap/react'
-import { useEffect, useMemo, useRef, useState, type CSSProperties } from 'react'
+import {
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type CSSProperties,
+  type RefObject,
+} from 'react'
 import type { NoteDocument } from '@/shared/contracts/document'
 import type { ImageSourceResolver } from '@/shared/contracts/image'
 import type { NoteId, PlaintextLocalNote } from '@/shared/contracts/note'
@@ -58,6 +65,8 @@ export type NoteEditorProps = {
   editorApiRef?: { current: EditorShellApi | null }
   imageResolver?: ImageSourceResolver | null
   onImportImage?: ImportImageHandler | null
+  /** The workspace element that scrolls; see `EditorShellProps`. */
+  scrollContainerRef?: RefObject<HTMLElement | null>
 }
 
 type AutosaveState = 'saved' | 'queued' | 'saving' | 'error'
@@ -95,6 +104,7 @@ export function NoteEditor({
   editorApiRef,
   imageResolver = null,
   onImportImage = null,
+  scrollContainerRef,
 }: NoteEditorProps) {
   const { t } = useTranslation()
   const [titleDraft, setTitleDraft] = useState(note.title)
@@ -109,6 +119,10 @@ export function NoteEditor({
   const onChangeDocumentRef = useRef(onChangeDocument)
   const onChangeTitleRef = useRef(onChangeTitle)
   const fileInputRef = useRef<HTMLInputElement>(null)
+  // The page frame is the block handle's origin for positioning and the target
+  // for block drops. Handing over the element beats having the handle look for
+  // it by the class name this component happens to render.
+  const pageFrameRef = useRef<HTMLDivElement>(null)
   const insertImageFilesRef = useRef<
     ((files: File[], dropPos: number | null) => Promise<void>) | null
   >(null)
@@ -649,11 +663,13 @@ export function NoteEditor({
       <ImageSourceContext.Provider value={imageResolver}>
         <div className="sn-editor-paper sn-editor-paper--editable">
           <h1 className="sn-print-note-title">{normalizeTitle(titleDraft)}</h1>
-          <div className="sn-page-layout-frame">
+          <div className="sn-page-layout-frame" ref={pageFrameRef}>
             <div className="sn-editor-reading-column">
               <BlockHandle
                 editor={editor}
+                frameRef={pageFrameRef}
                 onInsertImage={canInsertImages ? openImagePicker : null}
+                scrollContainerRef={scrollContainerRef}
               />
               <EditorContent className="sn-editor-content" editor={editor} />
             </div>

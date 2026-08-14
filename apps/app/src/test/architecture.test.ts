@@ -105,6 +105,26 @@ describe('editor module isolation', () => {
     ).toEqual([])
   })
 
+  it('takes the elements it needs rather than hunting for them by class', () => {
+    const files = import.meta.glob<string>('/src/ui/editor/**/*.{ts,tsx}', {
+      eager: true,
+      import: 'default',
+      query: '?raw',
+    })
+
+    // The handle reached for `.sn-editor-panel` to follow the scroll — a class
+    // `App.tsx` renders. Renaming that wrapper would have stopped the handle
+    // following the caret, silently, with nothing to catch it: a selector is a
+    // contract no type, lint or test can see. Elements now arrive as refs.
+    const lookups = Object.entries(files).flatMap(([file, source]) =>
+      [...source.matchAll(/(?:closest|querySelector(?:All)?)\(\s*['"`]\./g)].map(
+        (match) => `${file}: ${match[0].trim()}…`,
+      ),
+    )
+
+    expect(lookups).toEqual([])
+  })
+
   it('leaves no editor machinery behind in the notes components', () => {
     const files = import.meta.glob<string>('/src/ui/components/notes/**/*.{ts,tsx}', {
       eager: true,

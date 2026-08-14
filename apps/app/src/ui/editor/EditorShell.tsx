@@ -1,3 +1,4 @@
+import type { RefObject } from 'react'
 import type { NoteDocument } from '@/shared/contracts/document'
 import type { ImageSourceResolver } from '@/shared/contracts/image'
 import type { NoteId, PlaintextLocalNote } from '@/shared/contracts/note'
@@ -16,6 +17,12 @@ export type EditorShellProps = {
   editorApiRef?: { current: EditorShellApi | null }
   imageResolver?: ImageSourceResolver | null
   onImportImage?: ImportImageHandler | null
+  /**
+   * The element that scrolls the editor, which the workspace owns and the
+   * editor fills. The block handle tracks the caret and so has to know when
+   * that element moves under it; without one it simply stops following scroll.
+   */
+  scrollContainerRef?: RefObject<HTMLElement | null>
 }
 
 /**
@@ -35,6 +42,7 @@ export function EditorShell({
   editorApiRef,
   imageResolver = null,
   onImportImage = null,
+  scrollContainerRef,
 }: EditorShellProps) {
   const { t } = useTranslation()
 
@@ -48,6 +56,7 @@ export function EditorShell({
         onChangeDocument={onChangeDocument}
         onChangeTitle={onChangeTitle}
         onImportImage={onImportImage}
+        scrollContainerRef={scrollContainerRef}
       />
     </article>
   )

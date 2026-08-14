@@ -78,6 +78,11 @@ function AppWorkspace() {
   const [pendingCreatedNoteId, setPendingCreatedNoteId] = useState<NoteId | null>(null)
   const creatingNoteRef = useRef(false)
   const editorApiRef = useRef<EditorShellApi | null>(null)
+  // The panel is what actually scrolls, and the editor's block handle has to
+  // follow that scroll. Handing it over is the app's job: the editor used to
+  // find it with `closest('.sn-editor-panel')`, which made a class name here
+  // into a contract nothing checked.
+  const editorPanelRef = useRef<HTMLElement>(null)
   const { isNarrow, mobileTab, setMobileTab } = layout
 
   const foldersViewModel = useFoldersViewModel()
@@ -450,7 +455,11 @@ function AppWorkspace() {
             </aside>
           )}
 
-          <section className="sn-editor-panel" aria-label={t('shell.editor')}>
+          <section
+            aria-label={t('shell.editor')}
+            className="sn-editor-panel"
+            ref={editorPanelRef}
+          >
             <Suspense fallback={<div className="sn-editor-loading" aria-hidden="true" />}>
             {!activeNote ? (
               <EmptyWorkspaceState
@@ -496,6 +505,7 @@ function AppWorkspace() {
               <EditorShell
                 editorApiRef={editorApiRef}
                 imageResolver={noteImagesViewModel.resolver}
+                scrollContainerRef={editorPanelRef}
                 note={activeNote}
                 onChangeDocument={activeNoteViewModel.updateDocument}
                 onChangeTitle={activeNoteViewModel.updateTitle}

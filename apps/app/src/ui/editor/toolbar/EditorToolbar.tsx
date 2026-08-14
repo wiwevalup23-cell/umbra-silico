@@ -54,6 +54,7 @@ export function EditorToolbar({
   // command meant reading past the block ones. Each aspect gets its own panel.
   const [openPanel, setOpenPanel] = useState<'blocks' | 'table' | null>(null)
   const highlightMenuRef = useRef<HTMLDivElement>(null)
+  const toolbarRef = useRef<HTMLDivElement>(null)
   const moreMenuRef = useRef<HTMLDivElement>(null)
   const toolsMenuRef = useRef<HTMLDivElement>(null)
   const [toolsMenuStyle, setToolsMenuStyle] = useState<CSSProperties | null>(null)
@@ -191,7 +192,7 @@ export function EditorToolbar({
         return
       }
 
-      const toolbar = anchor.closest('.sn-editor-toolbar')
+      const toolbar = toolbarRef.current
       const anchorRect = anchor.getBoundingClientRect()
       const toolbarRect = toolbar?.getBoundingClientRect() ?? anchorRect
       const viewportMargin = 12
@@ -241,7 +242,12 @@ export function EditorToolbar({
     : ''
 
   return (
-    <div className="sn-editor-toolbar" aria-label={t('editor.toolbar')} role="toolbar">
+    <div
+      aria-label={t('editor.toolbar')}
+      className="sn-editor-toolbar"
+      ref={toolbarRef}
+      role="toolbar"
+    >
       <div
         aria-label={t('editor.groupTypography')}
         className="sn-editor-toolbar__group sn-editor-toolbar__group--typography"

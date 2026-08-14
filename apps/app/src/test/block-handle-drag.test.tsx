@@ -1,6 +1,6 @@
 import { Editor, type JSONContent } from '@tiptap/core'
 import StarterKit from '@tiptap/starter-kit'
-import { act } from 'react'
+import { act, createRef } from 'react'
 import { createRoot } from 'react-dom/client'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { BlockHandle } from '@/ui/editor/BlockHandle'
@@ -76,6 +76,9 @@ function mountEditorWithHandle() {
 
   frame.className = 'sn-page-layout-frame'
   frame.append(handleHost, editorHost)
+
+  const frameRef = createRef<HTMLElement>() as { current: HTMLElement | null }
+  frameRef.current = frame
   container.append(frame)
   document.body.append(container)
 
@@ -90,7 +93,7 @@ function mountEditorWithHandle() {
   const root = createRoot(handleHost)
 
   act(() => {
-    root.render(<BlockHandle editor={editor} />)
+    root.render(<BlockHandle editor={editor} frameRef={frameRef} />)
   })
 
   cleanupTasks.push(() => {

@@ -5,6 +5,7 @@ import {
   useRef,
   useState,
   type CSSProperties,
+  type RefObject,
 } from 'react'
 import { createPortal } from 'react-dom'
 import {
@@ -23,7 +24,15 @@ import { UiIcon } from '@/ui/icons/ui/UiIcon'
 
 type BlockHandleProps = {
   editor: Editor | null
+  /**
+   * The page frame the handle is positioned against and that block drops land
+   * on. `NoteEditor` renders it and hands it over, rather than the handle
+   * finding it by the class name that component happens to use.
+   */
+  frameRef: RefObject<HTMLElement | null>
   onInsertImage?: (() => void) | null
+  /** The workspace element that scrolls; absent, the handle stops tracking it. */
+  scrollContainerRef?: RefObject<HTMLElement | null>
 }
 
 type HandleMenu = 'actions' | 'insert'
@@ -52,7 +61,12 @@ const turnTargets: Array<{ label: string; target: TurnIntoTarget }> = [
   { label: 'Toggle', target: 'toggle' },
 ]
 
-export function BlockHandle({ editor, onInsertImage = null }: BlockHandleProps) {
+export function BlockHandle({
+  editor,
+  frameRef,
+  onInsertImage = null,
+  scrollContainerRef,
+}: BlockHandleProps) {
   const { t } = useTranslation()
   const menuRef = useRef<HTMLDivElement>(null)
   const rootRef = useRef<HTMLDivElement>(null)
@@ -71,9 +85,9 @@ export function BlockHandle({ editor, onInsertImage = null }: BlockHandleProps) 
 
     function measurePosition() {
       const range = getCurrentTopLevelBlockRange(currentEditor)
-      const frame = currentEditor.view.dom.closest('.sn-page-layout-frame')
+      const frame = frameRef.current
 
-      if (!range || !(frame instanceof HTMLElement)) {
+      if (!range || !frame) {
         setTop((currentTop) => currentTop ?? 48)
         return
       }
@@ -119,7 +133,7 @@ export function BlockHandle({ editor, onInsertImage = null }: BlockHandleProps) 
     currentEditor.on('update', scheduleMeasurement)
     currentEditor.on('focus', scheduleMeasurement)
     window.addEventListener('resize', scheduleMeasurement)
-    const scrollContainer = currentEditor.view.dom.closest('.sn-editor-panel')
+    const scrollContainer = scrollContainerRef?.current
     scrollContainer?.addEventListener('scroll', scheduleMeasurement, { passive: true })
 
     return () => {
@@ -133,7 +147,7 @@ export function BlockHandle({ editor, onInsertImage = null }: BlockHandleProps) 
       window.removeEventListener('resize', scheduleMeasurement)
       scrollContainer?.removeEventListener('scroll', scheduleMeasurement)
     }
-  }, [editor])
+  }, [editor, frameRef, scrollContainerRef])
 
   useEffect(() => {
     if (!activeMenu) {
@@ -215,9 +229,9 @@ export function BlockHandle({ editor, onInsertImage = null }: BlockHandleProps) 
     }
 
     const currentEditor = editor
-    const frame = currentEditor.view.dom.closest('.sn-page-layout-frame')
+    const frame = frameRef.current
 
-    if (!(frame instanceof HTMLElement)) {
+    if (!frame) {
       return
     }
 
@@ -284,7 +298,7 @@ export function BlockHandle({ editor, onInsertImage = null }: BlockHandleProps) 
       frame.removeEventListener('dragover', handleDragOver, true)
       frame.removeEventListener('drop', handleDrop, true)
     }
-  }, [editor])
+  }, [editor, frameRef])
 
   if (!editor) {
     return null
