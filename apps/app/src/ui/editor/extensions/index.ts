@@ -1,6 +1,5 @@
 export {
   BlockLayout,
-  blockIndentMin,
   blockLineHeightMax,
   blockLineHeightMin,
   blockMarginValues,

@@ -91,7 +91,7 @@ export function TrashView({
                 onClick={() => onRestore(note.id)}
                 type="button"
               >
-                Restore
+                {t('trash.restore')}
               </button>
               <button
                 className="sn-mini-button sn-mini-button--danger"

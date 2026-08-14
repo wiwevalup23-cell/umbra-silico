@@ -16,7 +16,6 @@ function normalizeTone(value: unknown): CalloutTone {
 declare module '@tiptap/core' {
   interface Commands<ReturnType> {
     callout: {
-      setCallout: (attrs?: CalloutAttrs) => ReturnType
       toggleCallout: (attrs?: CalloutAttrs) => ReturnType
     }
   }
@@ -69,13 +68,6 @@ export const Callout = Node.create({
 
   addCommands() {
     return {
-      setCallout:
-        (attrs = {}) =>
-        ({ commands }) =>
-          commands.wrapIn(this.name, {
-            emoji: attrs.emoji || '💡',
-            tone: normalizeTone(attrs.tone),
-          }),
       toggleCallout:
         (attrs = {}) =>
         ({ commands }) =>

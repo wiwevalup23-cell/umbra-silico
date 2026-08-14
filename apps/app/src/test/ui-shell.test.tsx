@@ -286,7 +286,6 @@ describe('Umbra Silico UI shell', () => {
           {
             type: 'paragraph',
             attrs: {
-              blockIndent: 2,
               blockLineHeight: 1.15,
               blockMargin: 'wide',
               textAlign: 'justify',
@@ -370,7 +369,6 @@ describe('Umbra Silico UI shell', () => {
 
     expect(documentV1Contract.schema.parse(document)).toEqual(document)
     expect(rendered.container.querySelector('table')).not.toBeNull()
-    expect(rendered.container.querySelector('[data-block-indent="2"]')).not.toBeNull()
     expect(
       rendered.container.querySelector<HTMLElement>('[data-block-line-height="1.15"]')
         ?.style.lineHeight,

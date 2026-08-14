@@ -39,9 +39,6 @@ function parseDimension(value: string | null): number | null {
 declare module '@tiptap/core' {
   interface Commands<ReturnType> {
     imageBlock: {
-      insertImageBlock: (
-        attrs: Partial<ImageBlockAttrs> & { imageId: string },
-      ) => ReturnType
       insertImageBlockAt: (
         position: number,
         attrs: Partial<ImageBlockAttrs> & { imageId: string },
@@ -129,10 +126,6 @@ export const ImageBlock = Node.create({
 
   addCommands() {
     return {
-      insertImageBlock:
-        (attrs) =>
-        ({ commands }) =>
-          commands.insertContent({ type: this.name, attrs }),
       insertImageBlockAt:
         (position, attrs) =>
         ({ commands }) =>

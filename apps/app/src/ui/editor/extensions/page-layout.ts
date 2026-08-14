@@ -35,8 +35,6 @@ export type PageLayoutAttrs = {
 declare module '@tiptap/core' {
   interface Commands<ReturnType> {
     pageLayout: {
-      adjustPageFooterOffset: (delta: number) => ReturnType
-      adjustPageHeaderOffset: (delta: number) => ReturnType
       setPageFooterOffset: (offset: number) => ReturnType
       setPageHeaderOffset: (offset: number) => ReturnType
       setPageMeasure: (margin: number) => ReturnType
@@ -106,38 +104,6 @@ export const PageLayout = Extension.create({
 
   addCommands() {
     return {
-      adjustPageFooterOffset:
-        (delta) =>
-        ({ dispatch, state }) => {
-          const currentLayout = getPageLayout(state)
-
-          if (dispatch) {
-            dispatch(
-              state.tr.setDocAttribute(
-                'pageFooterOffset',
-                clampPageOffset(currentLayout.pageFooterOffset + delta),
-              ),
-            )
-          }
-
-          return true
-        },
-      adjustPageHeaderOffset:
-        (delta) =>
-        ({ dispatch, state }) => {
-          const currentLayout = getPageLayout(state)
-
-          if (dispatch) {
-            dispatch(
-              state.tr.setDocAttribute(
-                'pageHeaderOffset',
-                clampPageOffset(currentLayout.pageHeaderOffset + delta),
-              ),
-            )
-          }
-
-          return true
-        },
       setPageFooterOffset:
         (offset) =>
         ({ dispatch, state }) => {

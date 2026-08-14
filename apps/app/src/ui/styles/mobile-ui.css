@@ -787,13 +787,6 @@
     max-width: 100%;
   }
 
-  .sn-tiptap-prosemirror [data-block-indent='3'],
-  .sn-tiptap-prosemirror [data-block-indent='4'],
-  .sn-tiptap-prosemirror [data-block-indent='5'],
-  .sn-tiptap-prosemirror [data-block-indent='6'] {
-    margin-left: 3rem;
-  }
-
   .sn-block-handle {
     top: calc(var(--sn-block-handle-top, 48px) - 20px) !important;
     right: 7px !important;

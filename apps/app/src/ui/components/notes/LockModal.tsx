@@ -62,11 +62,7 @@ function RecoveryKeyPanel({
         </span>
         <div>
           <h3>{t('lock.recoveryHeading')}</h3>
-          <p className="sn-lock-form__help">
-            This is the only other way into your encrypted notes. It is shown once and
-            never stored in readable form — if you lose both this key and your master
-            password, the notes cannot be recovered by anyone.
-          </p>
+          <p className="sn-lock-form__help">{t('lock.recoveryHelp')}</p>
         </div>
       </div>
 

@@ -54,12 +54,12 @@ export function EmptyWorkspaceState({
           type="button"
         >
           <UiIcon name="plus" />
-          New blank note
+          {t('library.newBlankNote')}
         </button>
         {onBrowseTemplates ? (
           <button onClick={onBrowseTemplates} type="button">
             <UiIcon name="template" />
-            Browse templates
+            {t('library.browseTemplates')}
           </button>
         ) : null}
       </div>

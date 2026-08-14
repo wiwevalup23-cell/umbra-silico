@@ -2,8 +2,6 @@ import { Extension } from '@tiptap/core'
 import type { Node as ProseMirrorNode } from '@tiptap/pm/model'
 import type { EditorState, Transaction } from '@tiptap/pm/state'
 
-const blockIndentMin = 0
-const blockIndentMax = 6
 const blockLayoutNodeTypes = ['paragraph', 'heading'] as const
 const blockMarginValues = ['tight', 'normal', 'wide'] as const
 const blockLineHeightMin = 1
@@ -13,7 +11,6 @@ const textAlignValues = ['left', 'center', 'right', 'justify'] as const
 const defaultTextAlign = 'left'
 
 export {
-  blockIndentMin,
   blockLineHeightMax,
   blockLineHeightMin,
   blockMarginValues,
@@ -26,7 +23,6 @@ export type BlockMarginValue = (typeof blockMarginValues)[number]
 export type TextAlignValue = (typeof textAlignValues)[number]
 
 export type BlockLayoutAttrs = {
-  blockIndent: number
   blockLineHeight: number
   blockMargin: BlockMarginValue
   textAlign: TextAlignValue
@@ -35,9 +31,6 @@ export type BlockLayoutAttrs = {
 declare module '@tiptap/core' {
   interface Commands<ReturnType> {
     blockLayout: {
-      decreaseBlockIndent: () => ReturnType
-      increaseBlockIndent: () => ReturnType
-      setBlockIndent: (level: number) => ReturnType
       setBlockLineHeight: (lineHeight: number) => ReturnType
       setBlockMargin: (margin: BlockMarginValue) => ReturnType
       setBlockTextAlign: (alignment: TextAlignValue) => ReturnType
@@ -46,20 +39,9 @@ declare module '@tiptap/core' {
 }
 
 export const defaultBlockLayout: BlockLayoutAttrs = {
-  blockIndent: blockIndentMin,
   blockLineHeight: defaultBlockLineHeight,
   blockMargin: 'normal',
   textAlign: defaultTextAlign,
-}
-
-function clampBlockIndent(value: unknown): number {
-  const parsed = typeof value === 'number' ? value : Number(value)
-
-  if (!Number.isFinite(parsed)) {
-    return blockIndentMin
-  }
-
-  return Math.min(blockIndentMax, Math.max(blockIndentMin, Math.round(parsed)))
 }
 
 function normalizeBlockMargin(value: unknown): BlockMarginValue {
@@ -88,7 +70,6 @@ function normalizeTextAlign(value: unknown): TextAlignValue {
 
 function getNodeBlockLayout(node: ProseMirrorNode): BlockLayoutAttrs {
   return {
-    blockIndent: clampBlockIndent(node.attrs.blockIndent),
     blockLineHeight: normalizeBlockLineHeight(node.attrs.blockLineHeight),
     blockMargin: normalizeBlockMargin(node.attrs.blockMargin),
     textAlign: normalizeTextAlign(node.attrs.textAlign),
@@ -171,18 +152,6 @@ export const BlockLayout = Extension.create({
       {
         types: [...blockLayoutNodeTypes],
         attributes: {
-          blockIndent: {
-            default: blockIndentMin,
-            parseHTML: (element) =>
-              clampBlockIndent(element.getAttribute('data-block-indent')),
-            renderHTML: (attributes: Partial<BlockLayoutAttrs>) => {
-              const blockIndent = clampBlockIndent(attributes.blockIndent)
-
-              return blockIndent > blockIndentMin
-                ? { 'data-block-indent': String(blockIndent) }
-                : {}
-            },
-          },
           blockMargin: {
             default: 'normal',
             parseHTML: (element) =>
@@ -233,30 +202,6 @@ export const BlockLayout = Extension.create({
 
   addCommands() {
     return {
-      decreaseBlockIndent:
-        () =>
-        ({ dispatch, state }) => {
-          const currentLayout = getSelectedBlockLayout(state)
-
-          return updateSelectedBlockLayout(state, dispatch, {
-            blockIndent: clampBlockIndent(currentLayout.blockIndent - 1),
-          })
-        },
-      increaseBlockIndent:
-        () =>
-        ({ dispatch, state }) => {
-          const currentLayout = getSelectedBlockLayout(state)
-
-          return updateSelectedBlockLayout(state, dispatch, {
-            blockIndent: clampBlockIndent(currentLayout.blockIndent + 1),
-          })
-        },
-      setBlockIndent:
-        (level) =>
-        ({ dispatch, state }) =>
-          updateSelectedBlockLayout(state, dispatch, {
-            blockIndent: clampBlockIndent(level),
-          }),
       setBlockLineHeight:
         (lineHeight) =>
         ({ dispatch, state }) =>

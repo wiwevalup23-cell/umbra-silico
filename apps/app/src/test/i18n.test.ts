@@ -55,6 +55,42 @@ describe('dictionaries', () => {
       expect(localeLabels[locale].trim()).not.toBe('')
     }
   })
+
+  it('carries no key the app never asks for', () => {
+    // Eleven had accumulated: `editor.moreTools` from before the one drawer
+    // became two panels, `editor.blockActions` and `editor.insertBlock` from
+    // before the block handle got its own `block.*` namespace, and so on.
+    // Each one cost a translator a decision about a string nobody would read.
+    // `shared` counts: presentation helpers there hold the key rather than the
+    // sentence, so `note-templates.ts` is where `template.*` is spelled out.
+    // The dictionaries are excluded, or every key would find itself.
+    const sources = import.meta.glob<string>(
+      [
+        '/src/app/**/*.{ts,tsx}',
+        '/src/ui/**/*.{ts,tsx}',
+        '/src/viewmodel/**/*.{ts,tsx}',
+        '/src/shared/**/*.{ts,tsx}',
+        '!/src/shared/i18n/**',
+      ],
+      { eager: true, import: 'default', query: '?raw' },
+    )
+    const code = Object.values(sources).join('\n')
+
+    const unused = (Object.keys(en) as Array<keyof typeof en>).filter((key) => {
+      if (code.includes(`'${key}'`)) {
+        return false
+      }
+
+      // A handful are only ever reached through a template — `editor.align`
+      // followed by the alignment name — so the literal the code spells out is
+      // the prefix up to where the interpolation starts.
+      const prefix = /^(.*?[a-z])[A-Z0-9]/.exec(key)
+
+      return !(prefix && code.includes(`t(\`${prefix[1]}`))
+    })
+
+    expect(unused).toEqual([])
+  })
 })
 
 describe('interpolation', () => {
