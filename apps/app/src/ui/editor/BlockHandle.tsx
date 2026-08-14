@@ -69,7 +69,7 @@ export function BlockHandle({ editor, onInsertImage = null }: BlockHandleProps) 
 
     const currentEditor = editor
 
-    function refreshPosition() {
+    function measurePosition() {
       const range = getCurrentTopLevelBlockRange(currentEditor)
       const frame = currentEditor.view.dom.closest('.sn-page-layout-frame')
 
@@ -92,20 +92,46 @@ export function BlockHandle({ editor, onInsertImage = null }: BlockHandleProps) 
       }
     }
 
-    refreshPosition()
-    currentEditor.on('selectionUpdate', refreshPosition)
-    currentEditor.on('update', refreshPosition)
-    currentEditor.on('focus', refreshPosition)
-    window.addEventListener('resize', refreshPosition)
+    // Typing a character fires both `update` (the doc changed) and
+    // `selectionUpdate` (the caret moved) from the same transaction, and both
+    // `getBoundingClientRect` and `coordsAtPos` force a synchronous layout —
+    // so unguarded, every keystroke read layout twice, straight in the path
+    // between the key going down and the letter appearing. Collapsing every
+    // trigger inside a frame into one read, taken just before the browser's
+    // own paint, keeps the position exactly as fresh — still recalculated
+    // after every change — without the editor also being the reason that
+    // frame had extra layout work in it.
+    let pendingFrame: number | null = null
+
+    function scheduleMeasurement() {
+      if (pendingFrame !== null) {
+        return
+      }
+
+      pendingFrame = window.requestAnimationFrame(() => {
+        pendingFrame = null
+        measurePosition()
+      })
+    }
+
+    measurePosition()
+    currentEditor.on('selectionUpdate', scheduleMeasurement)
+    currentEditor.on('update', scheduleMeasurement)
+    currentEditor.on('focus', scheduleMeasurement)
+    window.addEventListener('resize', scheduleMeasurement)
     const scrollContainer = currentEditor.view.dom.closest('.sn-editor-panel')
-    scrollContainer?.addEventListener('scroll', refreshPosition, { passive: true })
+    scrollContainer?.addEventListener('scroll', scheduleMeasurement, { passive: true })
 
     return () => {
-      currentEditor.off('selectionUpdate', refreshPosition)
-      currentEditor.off('update', refreshPosition)
-      currentEditor.off('focus', refreshPosition)
-      window.removeEventListener('resize', refreshPosition)
-      scrollContainer?.removeEventListener('scroll', refreshPosition)
+      if (pendingFrame !== null) {
+        window.cancelAnimationFrame(pendingFrame)
+      }
+
+      currentEditor.off('selectionUpdate', scheduleMeasurement)
+      currentEditor.off('update', scheduleMeasurement)
+      currentEditor.off('focus', scheduleMeasurement)
+      window.removeEventListener('resize', scheduleMeasurement)
+      scrollContainer?.removeEventListener('scroll', scheduleMeasurement)
     }
   }, [editor])
 
