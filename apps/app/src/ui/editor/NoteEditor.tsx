@@ -288,7 +288,7 @@ export function NoteEditor({
         }
       } catch (error) {
         setImportNotice(
-          error instanceof Error ? error.message : 'The image could not be added.',
+          error instanceof Error ? error.message : t('editor.imageImportFailed'),
         )
       } finally {
         setImportingCount((count) => Math.max(0, count - 1))
@@ -587,7 +587,7 @@ export function NoteEditor({
               aria-label={t('editor.exportPdf')}
               className="sn-pdf-export-button"
               icon="download"
-              onClick={() => exportNoteToPdf(titleDraft)}
+              onClick={() => exportNoteToPdf(titleDraft, t('note.untitled'))}
               size="small"
               title={t('editor.exportPdfHint')}
             />
@@ -643,7 +643,7 @@ export function NoteEditor({
       {importingCount > 0 || importNotice ? (
         <div aria-live="polite" className="sn-editor-notice" role="status">
           {importingCount > 0 ? (
-            <span className="sn-editor-notice__busy">Importing image…</span>
+            <span className="sn-editor-notice__busy">{t('editor.importingImage')}</span>
           ) : null}
           {importNotice ? (
             <>
@@ -662,7 +662,9 @@ export function NoteEditor({
 
       <ImageSourceContext.Provider value={imageResolver}>
         <div className="sn-editor-paper sn-editor-paper--editable">
-          <h1 className="sn-print-note-title">{normalizeTitle(titleDraft)}</h1>
+          <h1 className="sn-print-note-title">
+            {normalizeTitle(titleDraft) || t('note.untitled')}
+          </h1>
           <div className="sn-page-layout-frame" ref={pageFrameRef}>
             <div className="sn-editor-reading-column">
               <BlockHandle

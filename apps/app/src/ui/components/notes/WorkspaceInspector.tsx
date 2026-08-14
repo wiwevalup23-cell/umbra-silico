@@ -140,7 +140,7 @@ export function WorkspaceInspector({
               ? t('inspector.noNoteSelected')
               : activeNote.isLocked
                 ? t('note.locked')
-                : activeNote.title}
+                : activeNote.title.trim() || t('note.untitled')}
           </p>
         </div>
         {onCollapse || onOpenSettings ? (

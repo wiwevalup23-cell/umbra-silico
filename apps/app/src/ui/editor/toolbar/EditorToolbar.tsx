@@ -368,11 +368,11 @@ export function EditorToolbar({
               className="sn-editor-highlight-menu"
               role="menu"
             >
-              <span className="sn-editor-highlight-menu__label">Marker</span>
+              <span className="sn-editor-highlight-menu__label">{t('editor.marker')}</span>
               <div className="sn-editor-highlight-menu__swatches">
                 {editorHighlightOptions.map((option) => (
                   <button
-                    aria-label={option.label}
+                    aria-label={t(option.labelKey)}
                     className="sn-editor-highlight-swatch"
                     data-active={toolbarState.highlightColor === option.color}
                     key={option.color}
@@ -381,7 +381,7 @@ export function EditorToolbar({
                       setIsHighlightMenuOpen(false)
                     }}
                     style={{ backgroundColor: option.color }}
-                    title={option.label}
+                    title={t(option.labelKey)}
                     type="button"
                   />
                 ))}
@@ -395,7 +395,7 @@ export function EditorToolbar({
                 }}
                 type="button"
               >
-                Clear marker
+                {t('editor.markerClear')}
               </button>
             </div>
           ) : null}

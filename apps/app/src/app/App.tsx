@@ -157,7 +157,6 @@ function AppWorkspace() {
     void notesViewModel.createNote({
         ...input,
         parentFolderId: foldersViewModel.activeFolderId,
-        title: input.title ?? 'Untitled',
       })
       .then((noteId) => {
         setPendingCreatedNoteId(noteId)

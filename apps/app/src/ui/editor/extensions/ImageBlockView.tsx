@@ -9,6 +9,8 @@ import {
 } from 'react'
 import { createPortal } from 'react-dom'
 import { imageIdSchema, type ImageId } from '@/shared/contracts'
+import type { MessageKey } from '@/shared/i18n'
+import { useTranslation } from '@/ui/i18n/use-translation'
 import { ImageSourceContext } from '@/ui/document'
 import { UiIcon } from '@/ui/icons/ui/UiIcon'
 import {
@@ -23,11 +25,11 @@ type ResolveState =
   | { status: 'ready'; url: string }
   | { status: 'error' }
 
-const alignOptions: Array<{ align: ImageAlign; label: string }> = [
-  { align: 'left', label: 'Align left' },
-  { align: 'center', label: 'Align center' },
-  { align: 'right', label: 'Align right' },
-  { align: 'full', label: 'Full width' },
+const alignOptions: Array<{ align: ImageAlign; labelKey: MessageKey }> = [
+  { align: 'left', labelKey: 'image.alignLeft' },
+  { align: 'center', labelKey: 'image.alignCenter' },
+  { align: 'right', labelKey: 'image.alignRight' },
+  { align: 'full', labelKey: 'image.alignFull' },
 ]
 
 function useImageObjectUrl(imageId: ImageId | null): ResolveState {
@@ -75,6 +77,8 @@ type ImageLightboxProps = {
 }
 
 function ImageLightbox({ alt, caption, onClose, url }: ImageLightboxProps) {
+  const { t } = useTranslation()
+
   useEffect(() => {
     function handleKeyDown(event: KeyboardEvent) {
       if (event.key === 'Escape') {
@@ -89,13 +93,13 @@ function ImageLightbox({ alt, caption, onClose, url }: ImageLightboxProps) {
 
   return createPortal(
     <div
-      aria-label="Image preview"
+      aria-label={t('image.preview')}
       className="sn-image-lightbox"
       onClick={onClose}
       role="dialog"
     >
       <button
-        aria-label="Close image preview"
+        aria-label={t('image.closePreview')}
         className="sn-image-lightbox__close"
         onClick={onClose}
         type="button"
@@ -121,6 +125,7 @@ export function ImageBlockView({
   deleteNode,
   updateAttributes,
 }: NodeViewProps) {
+  const { t } = useTranslation()
   const attrs = node.attrs as ImageBlockAttrs
   const parsedImageId = imageIdSchema.safeParse(attrs.imageId)
   const imageId = parsedImageId.success ? parsedImageId.data : null
@@ -219,7 +224,7 @@ export function ImageBlockView({
     attrs.naturalWidth && attrs.naturalHeight
       ? { aspectRatio: `${attrs.naturalWidth} / ${attrs.naturalHeight}` }
       : { minHeight: '96px' }
-  const altText = attrs.caption || 'Note image'
+  const altText = attrs.caption || t('image.alt')
 
   return (
     <NodeViewWrapper
@@ -247,7 +252,7 @@ export function ImageBlockView({
           />
         ) : resolveState.status === 'loading' ? (
           <div
-            aria-label="Loading image"
+            aria-label={t('image.loading')}
             className="sn-image-block__placeholder"
             role="status"
             style={ratioStyle}
@@ -255,19 +260,19 @@ export function ImageBlockView({
         ) : (
           <div className="sn-image-block__error" style={ratioStyle}>
             <UiIcon name="info" />
-            <span>Image unavailable</span>
+            <span>{t('image.unavailable')}</span>
           </div>
         )}
 
         {selected && isEditable ? (
-          <div className="sn-image-block__toolbar" aria-label="Image options">
+          <div className="sn-image-block__toolbar" aria-label={t('image.options')}>
             {alignOptions.map((option) => (
               <button
-                aria-label={option.label}
+                aria-label={t(option.labelKey)}
                 data-active={align === option.align}
                 key={option.align}
                 onClick={() => updateAttributes({ align: option.align })}
-                title={option.label}
+                title={t(option.labelKey)}
                 type="button"
               >
                 {option.align === 'full' ? (
@@ -281,9 +286,9 @@ export function ImageBlockView({
               </button>
             ))}
             <button
-              aria-label="Delete image"
+              aria-label={t('image.delete')}
               onClick={() => deleteNode()}
-              title="Delete image"
+              title={t('image.delete')}
               type="button"
             >
               <UiIcon name="trash" />
@@ -309,7 +314,7 @@ export function ImageBlockView({
 
       {isEditable ? (
         <input
-          aria-label="Image caption"
+          aria-label={t('image.caption')}
           className="sn-image-block__caption"
           onBlur={commitCaption}
           onChange={(event) => setCaptionDraft(event.target.value)}
@@ -320,7 +325,7 @@ export function ImageBlockView({
               event.currentTarget.blur()
             }
           }}
-          placeholder="Add a caption…"
+          placeholder={t('image.captionPlaceholder')}
           value={captionDraft}
         />
       ) : attrs.caption ? (

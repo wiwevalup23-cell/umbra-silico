@@ -122,7 +122,7 @@ export function createNoteFromTemplate(
   }
 
   if (templateId === 'blank') {
-    return createNoteInputSchema.parse({ title: 'Untitled', properties })
+    return createNoteInputSchema.parse({ properties })
   }
 
   if (templateId === 'chat') {

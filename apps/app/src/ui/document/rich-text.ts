@@ -1,6 +1,7 @@
 import { getStyleProperty } from '@tiptap/core'
 import Highlight from '@tiptap/extension-highlight'
 import { FontFamily, FontSize, TextStyleKit } from '@tiptap/extension-text-style'
+import type { MessageKey } from '@/shared/i18n'
 import {
   readDocumentFontFamily,
   readDocumentFontSize,
@@ -28,7 +29,7 @@ export type EditorTextSizeOption = {
 
 export type EditorHighlightOption = {
   color: string
-  label: string
+  labelKey: MessageKey
 }
 
 /**
@@ -64,12 +65,12 @@ export const editorTextSizeOptions: EditorTextSizeOption[] = [
 ]
 
 export const editorHighlightOptions: EditorHighlightOption[] = [
-  { color: '#f3df84', label: 'Yellow marker' },
-  { color: '#edc09d', label: 'Orange marker' },
-  { color: '#e7b9b8', label: 'Rose marker' },
-  { color: '#bdd9bf', label: 'Green marker' },
-  { color: '#b9d8e8', label: 'Blue marker' },
-  { color: '#d2c1df', label: 'Violet marker' },
+  { color: '#f3df84', labelKey: 'editor.markerYellow' },
+  { color: '#edc09d', labelKey: 'editor.markerOrange' },
+  { color: '#e7b9b8', labelKey: 'editor.markerRose' },
+  { color: '#bdd9bf', labelKey: 'editor.markerGreen' },
+  { color: '#b9d8e8', labelKey: 'editor.markerBlue' },
+  { color: '#d2c1df', labelKey: 'editor.markerViolet' },
 ]
 
 /**

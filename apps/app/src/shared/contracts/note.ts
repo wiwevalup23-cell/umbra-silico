@@ -164,7 +164,14 @@ const localNoteBaseSchema = z.object({
 
 export const plaintextLocalNoteSchema = localNoteBaseSchema.extend({
   isLocked: z.literal(false),
-  title: z.string().min(1),
+  /**
+   * Empty means the note has no title, which is a state a note is allowed to
+   * be in. It used to be spelled `'Untitled'` — an English word written into
+   * the database, so a Russian reader got it in English and changing the
+   * language did not change it. What to call an untitled note is a question
+   * for whoever draws it.
+   */
+  title: z.string(),
   preview: z.string(),
   document: noteDocumentSchema,
   properties: notePropertiesSchema.optional(),
@@ -192,7 +199,7 @@ export type LocalNote = PlaintextLocalNote | EncryptedLocalNote
 export type NoteDetail = LocalNote
 
 export const createNoteInputSchema = z.object({
-  title: z.string().min(1).optional(),
+  title: z.string().optional(),
   document: noteDocumentSchema.optional(),
   parentFolderId: folderIdSchema.nullable().optional(),
   properties: notePropertiesSchema.optional(),
@@ -202,7 +209,7 @@ export type CreateNoteInput = z.infer<typeof createNoteInputSchema>
 
 export const updateNotePatchSchema = z
   .object({
-    title: z.string().min(1).optional(),
+    title: z.string().optional(),
     document: noteDocumentSchema.optional(),
     parentFolderId: folderIdSchema.nullable().optional(),
     properties: notePropertiesSchema.optional(),
@@ -250,7 +257,7 @@ export function createDraftLocalNote(input: {
     id: input.id,
     userId: input.userId,
     schemaVersion: 1,
-    title: input.title ?? 'Untitled',
+    title: input.title ?? '',
     preview: '',
     isLocked: false,
     document: input.document ?? emptyDocumentV1,

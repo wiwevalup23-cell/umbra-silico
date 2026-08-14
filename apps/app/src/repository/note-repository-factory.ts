@@ -73,13 +73,15 @@ export async function createRepositories(
   await imageRepository.recoverPendingImageOperations()
 
   // Backfill preview/title text written before the per-block extraction fix,
-  // repoint documents at fonts the editor still offers, and strip style values
-  // no document is entitled to carry from notes that arrived before the door
-  // was guarded. All three are one-time no-ops after their first run on a
-  // device (see the method docs).
+  // repoint documents at fonts the editor still offers, strip style values no
+  // document is entitled to carry from notes that arrived before the door was
+  // guarded, and replace the stored English "Untitled" with a real empty
+  // title. All four are one-time no-ops after their first run on a device
+  // (see the method docs).
   await noteRepository.migrateDocumentTextFields()
   await noteRepository.migrateRetiredFonts()
   await noteRepository.migrateDocumentStyles()
+  await noteRepository.migrateUntitledPlaceholders()
 
   return { noteRepository, imageRepository }
 }

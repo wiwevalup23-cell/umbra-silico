@@ -91,7 +91,9 @@ export function NoteCard({
   const [isActionsOpen, setActionsOpen] = useState(false)
   const [isDragging, setDragging] = useState(false)
   const title = note.title.trim()
-  const isUntitled = title.length === 0 || title.toLocaleLowerCase() === 'untitled'
+  // No longer has to guess whether the stored string *is* the placeholder: an
+  // untitled note is stored untitled, so an empty title is the whole test.
+  const isUntitled = title.length === 0
   const displayTitle = isUntitled ? t('note.untitled') : title
   const actionLabel = t(note.isLocked ? 'note.unlock' : 'note.open', { title: displayTitle })
   const syncStatusKey = exceptionalSyncStatusKeys[note.syncStatus]

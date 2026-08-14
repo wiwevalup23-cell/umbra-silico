@@ -726,7 +726,9 @@ describe('DefaultNoteRepository', () => {
     cleanupTasks.push(cleanup)
 
     const noteId = await repository.createNote({})
-    expect(await repository.getNote(noteId)).toMatchObject({ title: 'Untitled' })
+    // A new note has no title, rather than a stored English word standing in
+    // for one. What an untitled note is called is decided where it is drawn.
+    expect(await repository.getNote(noteId)).toMatchObject({ title: '' })
 
     // Typing body text alone (no title patch) derives the title.
     await repository.updateNote(noteId, { document: createDocument('First words here') })
@@ -740,6 +742,61 @@ describe('DefaultNoteRepository', () => {
     await repository.updateNote(noteId, { title: 'My Custom Title' })
     await repository.updateNote(noteId, { document: createDocument('Yet another line') })
     expect(await repository.getNote(noteId)).toMatchObject({ title: 'My Custom Title' })
+  })
+
+  it('lets a typed title be cleared back to none', async () => {
+    const { cleanup, repository } = createRepositoryHarness()
+    cleanupTasks.push(cleanup)
+
+    const noteId = await repository.createNote({ title: 'Named by hand' })
+    expect(await repository.getNote(noteId)).toMatchObject({ title: 'Named by hand' })
+
+    // Emptying the field used to be impossible — the schema demanded at least
+    // one character, so the editor wrote "Untitled" instead and the note came
+    // back named after a word nobody typed.
+    await repository.updateNote(noteId, { title: '' })
+    expect(await repository.getNote(noteId)).toMatchObject({ title: '' })
+
+    // And with no title of its own, the note resumes following its first line.
+    await repository.updateNote(noteId, { document: createDocument('Back to the body') })
+    expect(await repository.getNote(noteId)).toMatchObject({ title: 'Back to the body' })
+  })
+
+  it('replaces the stored Untitled placeholder once (2.7 migration)', async () => {
+    const { cleanup, repository, store } = createRepositoryHarness()
+    cleanupTasks.push(cleanup)
+
+    const placeholder = {
+      ...createDraftLocalNote({
+        deviceId,
+        id: noteIdSchema.parse('note_repo_untitled'),
+        now: '2026-08-14T00:00:00.000Z',
+        userId,
+      }),
+      title: 'Untitled',
+    }
+    const named = {
+      ...createDraftLocalNote({
+        deviceId,
+        id: noteIdSchema.parse('note_repo_named'),
+        now: '2026-08-14T00:00:01.000Z',
+        userId,
+      }),
+      title: 'A real name',
+    }
+
+    await store.putNote(placeholder)
+    await store.putNote(named)
+
+    await repository.migrateUntitledPlaceholders()
+
+    expect(await store.getNote(placeholder.id)).toMatchObject({ title: '' })
+    // A note that carries a name of its own is left exactly as it was.
+    expect(await store.getNote(named.id)).toEqual(named)
+
+    const afterFirstRun = await store.getNote(placeholder.id)
+    await repository.migrateUntitledPlaceholders()
+    expect(await store.getNote(placeholder.id)).toEqual(afterFirstRun)
   })
 
   it('answers each write with the revision it produced', async () => {

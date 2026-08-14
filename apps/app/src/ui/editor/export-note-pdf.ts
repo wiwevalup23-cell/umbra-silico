@@ -1,10 +1,10 @@
-function createPdfDocumentTitle(title: string): string {
+function createPdfDocumentTitle(title: string, fallback: string): string {
   const safeTitle = title
     .trim()
     .replace(/[\\/:*?"<>|]+/g, '-')
     .replace(/\s+/g, ' ')
 
-  return safeTitle || 'Untitled'
+  return safeTitle || fallback
 }
 
 /**
@@ -14,11 +14,13 @@ function createPdfDocumentTitle(title: string): string {
  */
 export function exportNoteToPdf(
   title: string,
+  /** What an untitled note is called, in the reader's language. */
+  untitledLabel: string,
   printDocument: () => void = () => window.print(),
 ): void {
   const previousTitle = document.title
 
-  document.title = createPdfDocumentTitle(title)
+  document.title = createPdfDocumentTitle(title, untitledLabel)
 
   try {
     printDocument()

@@ -49,7 +49,7 @@ export function LockedNoteNotice({
               <span className="sn-editor-icon">
                 <UiIcon name="lock" />
               </span>
-              <h1 className="sn-editor-document-title">Locked note</h1>
+              <h1 className="sn-editor-document-title">{t('note.locked')}</h1>
             </div>
             <div className="sn-editor-status-badges" aria-label={t('editor.noteStatus')}>
               {statusBadges.map((badge) => (
@@ -65,8 +65,8 @@ export function LockedNoteNotice({
         <div className="sn-editor-paper">
           <div className="sn-locked-paper">
             <UiIcon name="lock" />
-            <h3>Encrypted</h3>
-            <p>Master password required.</p>
+            <h3>{t('lock.encrypted')}</h3>
+            <p>{t('lock.masterPasswordRequired')}</p>
           </div>
         </div>
       </div>

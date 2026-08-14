@@ -131,7 +131,7 @@ export function libraryToMarkdown(
       ? folderNames.get(note.parentFolderId) ?? 'Unknown folder'
       : 'All notes'
     const header = [
-      `## ${note.isLocked ? 'Locked note' : note.title}`,
+      `## ${note.isLocked ? 'Locked note' : note.title.trim() || 'Untitled'}`,
       '',
       `*${folder} · updated ${note.updatedAt}*`,
       '',

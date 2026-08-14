@@ -98,6 +98,16 @@ export type DefaultNoteRepositoryDependencies = {
 const defaultIdFactory: RepositoryIdFactory = (prefix) =>
   `${prefix}_${globalThis.crypto.randomUUID()}`
 
+/**
+ * The English word that used to stand in for a missing title. Kept only so the
+ * migration below can recognise what earlier versions wrote.
+ */
+const untitledPlaceholder = 'Untitled'
+
+function isUntitled(title: string): boolean {
+  return title.trim().length === 0 || title === untitledPlaceholder
+}
+
 const defaultClock: RepositoryClock = () => new Date().toISOString()
 const unlockedSessionDurationMs = 15 * 60 * 1000
 const defaultPruneEveryWrites = 20
@@ -812,7 +822,9 @@ export class DefaultNoteRepository implements NoteRepository {
       }
 
       const preview = createNotePreview(note.document)
-      const title = note.title === 'Untitled' ? deriveTitleFromDocument(note.document) || note.title : note.title
+      const title = isUntitled(note.title)
+        ? deriveTitleFromDocument(note.document) || note.title
+        : note.title
 
       if (preview === note.preview && title === note.title) {
         continue
@@ -901,6 +913,47 @@ export class DefaultNoteRepository implements NoteRepository {
       }
 
       await this.localStore.putNote({ ...note, document: sanitized })
+      changed = true
+    }
+
+    await this.localStore.setSyncState(migrationKey, '1')
+
+    if (changed) {
+      await this.liveQueries.invalidate(['notes', 'trash'])
+    }
+  }
+
+  /**
+   * One-time replacement of the stored `'Untitled'` placeholder with a real
+   * empty title.
+   *
+   * The word used to be written into the database, so a Russian reader was
+   * shown an English one and switching language did not change it. Notes
+   * created from now on are stored untitled; this brings the ones already
+   * saved into line, and it is what lets the note list stop asking whether a
+   * title *is* the placeholder. A note the user deliberately called "Untitled"
+   * loses that name — the list has always refused to show it anyway, drawing
+   * the translated placeholder in its place, so nothing on screen changes.
+   *
+   * Runs once per device; locked notes carry their title inside the encrypted
+   * payload and are corrected when next unlocked and saved.
+   */
+  async migrateUntitledPlaceholders(): Promise<void> {
+    const migrationKey = 'migrations:untitled-placeholder-v1'
+
+    if (await this.localStore.getSyncState(migrationKey)) {
+      return
+    }
+
+    const notes = await this.localStore.listAllNotes()
+    let changed = false
+
+    for (const note of notes) {
+      if (note.isLocked || note.title !== untitledPlaceholder) {
+        continue
+      }
+
+      await this.localStore.putNote({ ...note, title: '' })
       changed = true
     }
 
@@ -1317,8 +1370,7 @@ export class DefaultNoteRepository implements NoteRepository {
     }
 
     const wasAutoTitled =
-      existing.title.trim().length === 0 ||
-      existing.title === 'Untitled' ||
+      isUntitled(existing.title) ||
       existing.title === deriveTitleFromDocument(existing.document)
 
     if (!wasAutoTitled) {

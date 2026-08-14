@@ -79,7 +79,7 @@ export function TrashView({
         {notes.map((note) => (
           <li className="sn-trash-row" key={note.id}>
             <div className="sn-trash-row__content">
-              <strong>{note.title.trim() || 'Untitled'}</strong>
+              <strong>{note.title.trim() || t('note.untitled')}</strong>
               <p>{note.isLocked ? 'Encrypted local note' : note.preview || 'No preview'}</p>
               <time dateTime={note.updatedAt}>
                 {t('trash.deletedAt', { date: formatTrashDate(note.updatedAt) })}

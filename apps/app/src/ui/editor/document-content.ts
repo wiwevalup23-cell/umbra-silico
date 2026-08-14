@@ -6,9 +6,16 @@ import {
 } from '@/shared/contracts/document'
 import { sanitizeDocumentTextStyles } from '@/ui/document'
 
-/** The fallback shown in place of a blank title. */
+/**
+ * What gets stored for a typed title: the text, trimmed.
+ *
+ * An empty result is stored as empty. Naming an untitled note is the job of
+ * whatever draws it, in the reader's own language — writing `'Untitled'` into
+ * the database gave a Russian reader an English word that switching language
+ * would not change.
+ */
 export function normalizeTitle(title: string): string {
-  return title.trim() || 'Untitled'
+  return title.trim()
 }
 
 /**

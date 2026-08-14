@@ -43,8 +43,8 @@ export function EmptyWorkspaceState({
         <span className="sn-mobile-empty-state__icon">
           <UiIcon name="document" />
         </span>
-        <strong>Start with a note</strong>
-        <p>Create a blank page or choose a template to begin writing.</p>
+        <strong>{t('library.startWithNote')}</strong>
+        <p>{t('library.startWithNoteHint')}</p>
       </div>
       <div className="sn-empty-actions" aria-label={t('editor.createNote')}>
         <button

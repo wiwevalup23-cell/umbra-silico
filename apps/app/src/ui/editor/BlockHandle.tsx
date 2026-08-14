@@ -19,6 +19,7 @@ import {
   type InsertBlockTarget,
 } from './block-actions'
 import { turnInto, type TurnIntoTarget } from './turn-into'
+import type { MessageKey } from '@/shared/i18n'
 import { useTranslation } from '@/ui/i18n/use-translation'
 import { UiIcon } from '@/ui/icons/ui/UiIcon'
 
@@ -37,28 +38,32 @@ type BlockHandleProps = {
 
 type HandleMenu = 'actions' | 'insert'
 
-const insertTargets: Array<{ label: string; target: InsertBlockTarget }> = [
-  { label: 'Paragraph', target: 'paragraph' },
-  { label: 'Heading', target: 'heading2' },
-  { label: 'To-do', target: 'taskList' },
-  { label: 'Toggle', target: 'toggle' },
-  { label: 'Callout', target: 'callout' },
-  { label: 'Divider', target: 'divider' },
-  { label: 'Code', target: 'codeBlock' },
+// These read shorter than the same commands in the toolbar — "Text" against
+// "Paragraph", "Bullets" against "Bullet list" — because they sit in a narrow
+// grid beside the caret, so they keep keys of their own rather than borrowing
+// the toolbar's longer wording.
+const insertTargets: Array<{ labelKey: MessageKey; target: InsertBlockTarget }> = [
+  { labelKey: 'editor.paragraph', target: 'paragraph' },
+  { labelKey: 'block.heading', target: 'heading2' },
+  { labelKey: 'editor.todo', target: 'taskList' },
+  { labelKey: 'editor.toggle', target: 'toggle' },
+  { labelKey: 'editor.callout', target: 'callout' },
+  { labelKey: 'block.divider', target: 'divider' },
+  { labelKey: 'block.code', target: 'codeBlock' },
 ]
 
-const turnTargets: Array<{ label: string; target: TurnIntoTarget }> = [
-  { label: 'Text', target: 'paragraph' },
-  { label: 'Heading 1', target: 'heading1' },
-  { label: 'Heading 2', target: 'heading2' },
-  { label: 'Heading 3', target: 'heading3' },
-  { label: 'Bullets', target: 'bulletList' },
-  { label: 'Numbers', target: 'orderedList' },
-  { label: 'To-do', target: 'taskList' },
-  { label: 'Quote', target: 'blockquote' },
-  { label: 'Code', target: 'codeBlock' },
-  { label: 'Callout', target: 'callout' },
-  { label: 'Toggle', target: 'toggle' },
+const turnTargets: Array<{ labelKey: MessageKey; target: TurnIntoTarget }> = [
+  { labelKey: 'block.text', target: 'paragraph' },
+  { labelKey: 'editor.heading1', target: 'heading1' },
+  { labelKey: 'editor.heading2', target: 'heading2' },
+  { labelKey: 'editor.heading3', target: 'heading3' },
+  { labelKey: 'block.bullets', target: 'bulletList' },
+  { labelKey: 'block.numbers', target: 'orderedList' },
+  { labelKey: 'editor.todo', target: 'taskList' },
+  { labelKey: 'block.quote', target: 'blockquote' },
+  { labelKey: 'block.code', target: 'codeBlock' },
+  { labelKey: 'editor.callout', target: 'callout' },
+  { labelKey: 'editor.toggle', target: 'toggle' },
 ]
 
 export function BlockHandle({
@@ -329,7 +334,7 @@ export function BlockHandle({
                   }
                   type="button"
                 >
-                  {item.label}
+                  {t(item.labelKey)}
                 </button>
               ))}
               {onInsertImage ? (
@@ -338,7 +343,7 @@ export function BlockHandle({
                   onClick={() => runAction(() => onInsertImage())}
                   type="button"
                 >
-                  Image
+                  {t('block.image')}
                 </button>
               ) : null}
             </>
@@ -350,14 +355,14 @@ export function BlockHandle({
                   type="button"
                 >
                   <UiIcon name="copy" />
-                  Duplicate
+                  {t('block.duplicate')}
                 </button>
                 <button
                   onClick={() => runAction(() => deleteCurrentBlock(editor))}
                   type="button"
                 >
                   <UiIcon name="trash" />
-                  Delete
+                  {t('block.delete')}
                 </button>
                 <button
                   onClick={() => runAction(() => moveCurrentBlock(editor, 'up'))}
@@ -382,7 +387,7 @@ export function BlockHandle({
                     onClick={() => runAction(() => turnInto(editor, item.target))}
                     type="button"
                   >
-                    {item.label}
+                    {t(item.labelKey)}
                   </button>
                 ))}
               </div>
