@@ -19,9 +19,10 @@ import {
   type TextNode,
 } from '@/shared/contracts'
 import {
-  editorFontOptions,
-  editorTextSizeOptions,
   ImageSourceContext,
+  readDocumentFontFamily,
+  readDocumentFontSize,
+  readHighlightColor,
 } from '@/ui/document'
 import { UiIcon } from '@/ui/icons/ui/UiIcon'
 
@@ -29,32 +30,14 @@ import { UiIcon } from '@/ui/icons/ui/UiIcon'
 // React (not a TipTap instance) so a long chat stays a cheap list; only the
 // composer is a live editor.
 
-const supportedFontFamilies = new Set(
-  editorFontOptions.map((option) => option.value).filter(Boolean),
-)
-const supportedFontSizes = new Set(
-  editorTextSizeOptions.map((option) => option.value).filter(Boolean),
-)
-
-function readHighlightColor(value: unknown): string | undefined {
-  return typeof value === 'string' && /^#[0-9a-f]{6}$/i.test(value)
-    ? value
-    : undefined
-}
-
+// The same guards the document marks apply, so the feed and the editor cannot
+// drift into disagreeing about which values are safe to put in a style
+// attribute. React would escape a quote here but not a semicolon, so a raw
+// value would still smuggle in a second declaration.
 function readTextStyle(attrs: TextMark['attrs']): CSSProperties {
-  const fontFamily = attrs?.fontFamily
-  const fontSize = attrs?.fontSize
-
   return {
-    fontFamily:
-      typeof fontFamily === 'string' && supportedFontFamilies.has(fontFamily)
-        ? fontFamily
-        : undefined,
-    fontSize:
-      typeof fontSize === 'string' && supportedFontSizes.has(fontSize)
-        ? fontSize
-        : undefined,
+    fontFamily: readDocumentFontFamily(attrs?.fontFamily) ?? undefined,
+    fontSize: readDocumentFontSize(attrs?.fontSize) ?? undefined,
   }
 }
 
@@ -80,7 +63,7 @@ function renderTextNode(node: TextNode, key: number): ReactNode {
         break
       case 'highlight':
         rendered = (
-          <mark style={{ backgroundColor: readHighlightColor(mark.attrs?.color) }}>
+          <mark style={{ backgroundColor: readHighlightColor(mark.attrs?.color) ?? undefined }}>
             {rendered}
           </mark>
         )

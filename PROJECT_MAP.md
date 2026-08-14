@@ -259,10 +259,15 @@ papers/
 ├── Silicon_Nostalgia_App_Spec.md
 ├── Silicon_Nostalgia_Phased_Implementation_Plan.md
 ├── UX_review.md
+├── cross_module_debt.md          # Живой реестр межмодульного долга
 ├── design_audit.md
 ├── design_audit_adaptivity.md
 └── silicon_nostalgia_code_review.md
 ```
+
+`cross_module_debt.md` — не аудит и не план, а рабочий список. Запись заводится,
+когда работа внутри модуля упирается в чужой контракт, общий стилевой файл или
+словарь, и удаляется, когда правка сделана.
 
 Root docs:
 
