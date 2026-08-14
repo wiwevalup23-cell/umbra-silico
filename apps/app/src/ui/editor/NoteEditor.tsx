@@ -1,3 +1,4 @@
+import type { Node as ProseMirrorNode } from '@tiptap/pm/model'
 import { EditorContent, useEditor, useEditorState } from '@tiptap/react'
 import { useEffect, useMemo, useRef, useState, type CSSProperties } from 'react'
 import type { NoteDocument } from '@/shared/contracts/document'
@@ -7,7 +8,7 @@ import { BlockHandle } from './BlockHandle'
 import { getCurrentTopLevelBlockRange } from './block-actions'
 import { createDebouncedAutosave } from './debounced-autosave'
 import {
-  createDocumentFromEditorJson,
+  createDocumentFromEditorDoc,
   isSameContent,
   normalizeEditorContent,
   normalizeTitle,
@@ -57,7 +58,7 @@ export type NoteEditorProps = {
 type AutosaveState = 'saved' | 'queued' | 'saving' | 'error'
 
 type DocumentAutosavePayload = {
-  document: NoteDocument
+  doc: ProseMirrorNode
   noteId: NoteId
 }
 
@@ -111,7 +112,10 @@ export function NoteEditor({
         },
         async save(payload) {
           setAutosaveState('saving')
-          await onChangeDocumentRef.current(payload.noteId, payload.document)
+          await onChangeDocumentRef.current(
+            payload.noteId,
+            createDocumentFromEditorDoc(payload.doc),
+          )
           setAutosaveState('saved')
         },
       }),
@@ -197,10 +201,7 @@ export function NoteEditor({
     },
     onUpdate({ editor }) {
       setAutosaveState('queued')
-      documentAutosave.schedule({
-        document: createDocumentFromEditorJson(editor.getJSON()),
-        noteId: note.id,
-      })
+      documentAutosave.schedule({ doc: editor.state.doc, noteId: note.id })
     },
   })
   const pageLayout = useEditorState({

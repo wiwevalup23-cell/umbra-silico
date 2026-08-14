@@ -20,3 +20,4 @@ export {
   type EditorHighlightOption,
   type EditorTextSizeOption,
 } from './rich-text'
+export { sanitizeDocumentTextStyles } from './sanitize-text-styles'
