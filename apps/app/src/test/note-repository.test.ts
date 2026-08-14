@@ -426,6 +426,57 @@ describe('DefaultNoteRepository', () => {
     expect(await repository.getPendingOps(10)).toEqual([])
   })
 
+  it('strips style values off a note authored on another device', async () => {
+    const { cleanup, repository, store } = createRepositoryHarness()
+    cleanupTasks.push(cleanup)
+
+    const noteId = await repository.createNote({ document: createDocument('Local copy') })
+    const local = await store.getNote(noteId)
+
+    if (!local || local.isLocked) {
+      throw new Error('Expected a plaintext local note.')
+    }
+
+    // A remote peer is the one writer this device cannot vouch for, and its
+    // notes never pass an editor on the way in.
+    await repository.applyRemoteChange({
+      noteId,
+      serverRevision: 3,
+      changedByDeviceId: deviceIdSchema.parse('someone_elses_device'),
+      payload: mapLocalNoteToSyncPayload({
+        ...local,
+        syncStatus: 'synced',
+        document: {
+          ...documentV1Contract.createEmpty(),
+          content: {
+            type: 'doc',
+            content: [
+              {
+                type: 'paragraph',
+                content: [
+                  {
+                    type: 'text',
+                    text: 'Sent from elsewhere',
+                    marks: [
+                      {
+                        type: 'textStyle',
+                        attrs: { fontFamily: 'x; background: url(https://peer.example/b)' },
+                      },
+                    ],
+                  },
+                ],
+              },
+            ],
+          },
+        },
+      }),
+    })
+
+    const applied = JSON.stringify(await store.getNote(noteId))
+    expect(applied).not.toContain('peer.example')
+    expect(applied).toContain('Sent from elsewhere')
+  })
+
   it('locks notes into encrypted local rows and outbox payloads without plaintext', async () => {
     const { cleanup, database, repository } = createRepositoryHarness()
     cleanupTasks.push(cleanup)
@@ -777,6 +828,131 @@ describe('DefaultNoteRepository', () => {
     const beforeSecondRun = await store.getNote(staleNote.id)
     await repository.migrateDocumentTextFields()
     expect(await store.getNote(staleNote.id)).toEqual(beforeSecondRun)
+  })
+
+  it('strips style values a document is not entitled to carry, whichever door it came through', async () => {
+    const { cleanup, repository, store } = createRepositoryHarness()
+    cleanupTasks.push(cleanup)
+
+    // `attrs` is free-form JSON and TipTap interpolates these into a `style`
+    // attribute, so a document from elsewhere can turn a note whose badge
+    // reads "Local only" into a beacon the moment something renders it.
+    const beacon = 'serif; background: url(https://tracker.example/beacon.png)'
+    const hostileDocument = {
+      ...documentV1Contract.createEmpty(),
+      content: {
+        type: 'doc',
+        content: [
+          {
+            type: 'paragraph',
+            content: [
+              {
+                type: 'text',
+                text: 'Looks ordinary',
+                marks: [
+                  { type: 'textStyle', attrs: { fontFamily: beacon } },
+                  { type: 'highlight', attrs: { color: 'red; background-image: url(x)' } },
+                ],
+              },
+            ],
+          },
+        ],
+      },
+    }
+
+    // Created — templates today, any caller with ready-made content tomorrow.
+    const createdId = await repository.createNote({ document: hostileDocument })
+    expect(JSON.stringify(await store.getNote(createdId))).not.toContain('tracker.example')
+
+    // Patched — the Telegram import and the automation gateway both land here.
+    const patchedId = await repository.createNote({})
+    await repository.updateNote(patchedId, { document: hostileDocument })
+    expect(JSON.stringify(await store.getNote(patchedId))).not.toContain('tracker.example')
+
+    // Restored from a bundle, which is a file from anywhere at all.
+    const restoredId = noteIdSchema.parse('note_repo_restored')
+    await repository.restoreBackupData({
+      cryptoProfile: null,
+      folders: [],
+      notes: [
+        {
+          ...createDraftLocalNote({
+            deviceId,
+            id: restoredId,
+            now: '2026-08-14T00:00:00.000Z',
+            userId,
+          }),
+          document: hostileDocument,
+        },
+      ],
+    })
+    expect(JSON.stringify(await store.getNote(restoredId))).not.toContain('tracker.example')
+
+    // The text and the marks themselves survive; only the value goes.
+    expect(await store.getNote(createdId)).toMatchObject({ preview: 'Looks ordinary' })
+  })
+
+  it('scrubs styles already in storage once, and leaves clean notes alone (2.6 migration)', async () => {
+    const { cleanup, repository, store } = createRepositoryHarness()
+    cleanupTasks.push(cleanup)
+
+    // Written straight to the store: a note that arrived before the door was
+    // guarded, which is exactly what the migration exists for.
+    const hostile = {
+      ...createDraftLocalNote({
+        deviceId,
+        id: noteIdSchema.parse('note_repo_style'),
+        now: '2026-08-14T00:00:00.000Z',
+        userId,
+      }),
+      document: {
+        ...documentV1Contract.createEmpty(),
+        content: {
+          type: 'doc',
+          content: [
+            {
+              type: 'paragraph',
+              content: [
+                {
+                  type: 'text',
+                  text: 'Restored long ago',
+                  marks: [
+                    {
+                      type: 'textStyle',
+                      attrs: { fontFamily: 'x; background: url(https://beacon.example/p)' },
+                    },
+                  ],
+                },
+              ],
+            },
+          ],
+        },
+      },
+    }
+    const clean = {
+      ...createDraftLocalNote({
+        deviceId,
+        id: noteIdSchema.parse('note_repo_style_clean'),
+        now: '2026-08-14T00:00:01.000Z',
+        userId,
+      }),
+      document: createDocument('Nothing to strip'),
+    }
+
+    await store.putNote(hostile)
+    await store.putNote(clean)
+
+    await repository.migrateDocumentStyles()
+
+    const migrated = await store.getNote(hostile.id)
+    expect(JSON.stringify(migrated)).not.toContain('beacon.example')
+    expect(JSON.stringify(migrated)).toContain('Restored long ago')
+
+    // Idempotent, and a note with nothing to strip is never rewritten.
+    const afterFirstRun = await store.getNote(hostile.id)
+    await repository.migrateDocumentStyles()
+    expect(await store.getNote(hostile.id)).toEqual(afterFirstRun)
+    expect(await store.getNote(clean.id)).toEqual(clean)
   })
 
   it('repoints documents off retired fonts once and leaves the rest alone (2.5 migration)', async () => {

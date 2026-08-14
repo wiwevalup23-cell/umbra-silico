@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import type { NoteDocument } from '@/shared/contracts/document'
 import { migrateRetiredDocumentFonts, retiredDocumentFonts } from '@/shared/document-fonts'
+import { documentFontFamilies } from '@/shared/document-styles'
 import { editorFontOptions } from '@/ui/document/rich-text'
 
 function noteDocument(content: NoteDocument['content']['content']): NoteDocument {
@@ -24,13 +25,22 @@ function firstMarkAttrs(document: NoteDocument): Record<string, unknown> | undef
 
 describe('retired document fonts', () => {
   it('repoints every retired face at one the palette still offers', () => {
-    const offered = new Set(editorFontOptions.map((option) => option.value))
+    const allowed = new Set<string>(documentFontFamilies)
 
     for (const [retired, replacement] of Object.entries(retiredDocumentFonts)) {
-      expect(offered.has(retired)).toBe(false)
-      // '' is the "no explicit face" case and is always available.
-      expect(offered.has(replacement)).toBe(true)
+      expect(allowed.has(retired)).toBe(false)
+      // '' is the "no explicit face" case and is always available. The rest is
+      // a compile-time guarantee now; this keeps the retired side honest.
+      expect(replacement === '' || allowed.has(replacement)).toBe(true)
     }
+  })
+
+  it('offers exactly the faces the format allows', () => {
+    // The picker pairs a label with a value; the format owns the values. A
+    // face added to one and not the other would be either unselectable or
+    // silently dropped on the next write.
+    expect(editorFontOptions.filter((option) => option.value).map((option) => option.value))
+      .toEqual([...documentFontFamilies])
   })
 
   it('rewrites a retired face to its replacement', () => {

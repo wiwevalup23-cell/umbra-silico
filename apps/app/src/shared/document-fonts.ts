@@ -1,4 +1,5 @@
 import type { DocumentNode, NoteDocument, TextMark } from '@/shared/contracts/document'
+import type { DocumentFontFamily } from '@/shared/document-styles'
 
 /**
  * Faces dropped from the editor's font palette, mapped to the closest
@@ -8,7 +9,10 @@ import type { DocumentNode, NoteDocument, TextMark } from '@/shared/contracts/do
  * chooses. An empty replacement means "no explicit face": the text returns to
  * the document default.
  */
-export const retiredDocumentFonts: Record<string, string> = {
+// Typed against the palette, so a replacement can only ever be a face the
+// format still allows — otherwise the migration would rewrite one unusable
+// value into another, and the style scrub would drop it on the next write.
+export const retiredDocumentFonts: Record<string, DocumentFontFamily | ''> = {
   'Caveat Variable': 'SN EB Garamond',
   'Inter Variable': '',
   'Roboto Slab Variable': 'Lora Variable',

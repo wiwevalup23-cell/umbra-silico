@@ -26,6 +26,7 @@ import {
   type NoteHistoryRetentionPolicy,
 } from '@/repository/note-history'
 import { migrateRetiredDocumentFonts } from '@/shared/document-fonts'
+import { sanitizeNoteDocumentStyles } from '@/shared/document-styles'
 import {
   createNotePreview,
   createNoteSearchText,
@@ -310,7 +311,9 @@ export class DefaultNoteRepository implements NoteRepository {
     const now = this.clock()
     const noteId = noteIdSchema.parse(this.idFactory('note'))
     const opId = this.createOperationId()
-    const document = parsedInput.document ?? documentV1Contract.createEmpty()
+    const document = sanitizeNoteDocumentStyles(
+      parsedInput.document ?? documentV1Contract.createEmpty(),
+    )
     const note = createDraftLocalNote({
       id: noteId,
       userId: this.userId,
@@ -521,7 +524,9 @@ export class DefaultNoteRepository implements NoteRepository {
     const plaintextNote = assertPlaintextNote(
       existing.isLocked ? this.requireUnlockedSession(noteId, existing) : existing,
     )
-    const document = parsedPatch.document ?? plaintextNote.document
+    const document = parsedPatch.document
+      ? sanitizeNoteDocumentStyles(parsedPatch.document)
+      : plaintextNote.document
     const opId = this.createOperationId()
     const updatedNote: PlaintextLocalNote = {
       ...plaintextNote,
@@ -768,6 +773,9 @@ export class DefaultNoteRepository implements NoteRepository {
 
       await this.localStore.putNote({
         ...note,
+        ...(note.isLocked
+          ? {}
+          : { document: sanitizeNoteDocumentStyles(note.document) }),
         userId: this.userId,
         // The restored copy is local-only until sync sees it.
         syncStatus: 'dirty',
@@ -849,6 +857,50 @@ export class DefaultNoteRepository implements NoteRepository {
       }
 
       await this.localStore.putNote({ ...note, document: migrated.document })
+      changed = true
+    }
+
+    await this.localStore.setSyncState(migrationKey, '1')
+
+    if (changed) {
+      await this.liveQueries.invalidate(['notes', 'trash'])
+    }
+  }
+
+  /**
+   * One-time scrub of style attributes no document is entitled to carry.
+   *
+   * Everything arriving from now on is cleaned at the door, but a note that
+   * was restored from a backup or synced before that has the value sitting in
+   * storage. Nothing renders it — both surfaces refuse — yet it would travel
+   * on through the next export and wait there for a reader whose renderer
+   * forgets to check. Runs once per device; locked notes carry their document
+   * inside the encrypted payload and are cleaned when next unlocked and saved.
+   */
+  async migrateDocumentStyles(): Promise<void> {
+    const migrationKey = 'migrations:document-styles-v1'
+
+    if (await this.localStore.getSyncState(migrationKey)) {
+      return
+    }
+
+    const notes = await this.localStore.listAllNotes()
+    let changed = false
+
+    for (const note of notes) {
+      if (note.isLocked) {
+        continue
+      }
+
+      const sanitized = sanitizeNoteDocumentStyles(note.document)
+
+      // Identity, not a deep compare: the scrub hands back the very object it
+      // was given when there was nothing to strip.
+      if (sanitized === note.document) {
+        continue
+      }
+
+      await this.localStore.putNote({ ...note, document: sanitized })
       changed = true
     }
 

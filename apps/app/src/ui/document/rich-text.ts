@@ -1,15 +1,29 @@
 import { getStyleProperty } from '@tiptap/core'
 import Highlight from '@tiptap/extension-highlight'
 import { FontFamily, FontSize, TextStyleKit } from '@tiptap/extension-text-style'
+import {
+  readDocumentFontFamily,
+  readDocumentFontSize,
+  readHighlightColor,
+  type DocumentFontFamily,
+  type DocumentFontSize,
+} from '@/shared/document-styles'
 
+// Re-exported so a component reads one module for how a note is styled rather
+// than reaching past this surface into the format itself.
+export { readDocumentFontFamily, readDocumentFontSize, readHighlightColor }
+
+// `''` is the "no explicit face" entry: a choice in the picker, never a value
+// a document carries. Typing the rest against the palette is what stops a
+// label being paired with a face the format would refuse.
 export type EditorFontOption = {
   label: string
-  value: string
+  value: DocumentFontFamily | ''
 }
 
 export type EditorTextSizeOption = {
   label: string
-  value: string
+  value: DocumentFontSize | ''
 }
 
 export type EditorHighlightOption = {
@@ -59,73 +73,11 @@ export const editorHighlightOptions: EditorHighlightOption[] = [
 ]
 
 /**
- * The three document attributes that reach a `style` attribute verbatim.
- *
- * Upstream renders them by interpolation — `style: font-family: ${value}` —
- * and a note document is not trusted input: `attrs` is free-form JSON, so a
- * backup, a Telegram import or a synced payload can carry
- * `serif; background: url(https://…)` and turn a "Local only" note into a
- * beacon that reports the reader's address and reading time on open. CSS
- * cannot run script, which is why this is a privacy hole rather than an XSS,
- * and for this product that is the worse of the two.
- *
- * A value that is not on the palette is dropped rather than escaped. Escaping
- * invites a search for the sequence that survives it; a closed set does not.
- * The retired-font migration in `@/shared/document-fonts` already rewrites
- * older documents onto exactly this set before the editor ever sees them.
+ * The marks refuse to render a value the format does not allow, which closes
+ * the hole at the surface. `@/shared/document-styles` owns which values those
+ * are, because the repository has to enforce the same set on documents that
+ * never pass through a toolbar.
  */
-/**
- * Compares font stacks the way CSS means them rather than by spelling.
- *
- * The CSSOM quotes multi-word family names the moment a stack touches a real
- * `style` property, so the value that comes back from a copy-paste round trip
- * is `"SN EB Garamond"` where the palette holds `SN EB Garamond`. Matching on
- * the raw string would drop the face on every paste. Quotes and spacing are
- * the only things normalized away — nothing that could reintroduce a `;`.
- */
-function normalizeFontStack(value: string): string {
-  return value
-    .split(',')
-    .map((family) => family.trim().replace(/^(["'])(.*)\1$/, '$2').trim())
-    .filter(Boolean)
-    .join(', ')
-}
-
-const fontFamiliesByStack = new Map(
-  editorFontOptions
-    .filter((option) => option.value)
-    .map((option) => [normalizeFontStack(option.value), option.value]),
-)
-const supportedFontSizes = new Set(
-  editorTextSizeOptions.map((option) => option.value).filter(Boolean),
-)
-
-/**
- * Returns the palette's own spelling, never the caller's. Echoing the input
- * back — even after it passed the check — would let an unexpected but
- * equivalent spelling reach the style attribute.
- */
-export function readDocumentFontFamily(value: unknown): string | null {
-  return typeof value === 'string'
-    ? fontFamiliesByStack.get(normalizeFontStack(value)) ?? null
-    : null
-}
-
-export function readDocumentFontSize(value: unknown): string | null {
-  const fontSize = typeof value === 'string' ? value.trim() : null
-
-  return fontSize && supportedFontSizes.has(fontSize) ? fontSize : null
-}
-
-/**
- * Any six-digit hex, not just the six on the palette: the shape alone rules
- * out a semicolon or a `url(`, and a highlight the user has already applied
- * should not vanish because the palette was restyled.
- */
-export function readHighlightColor(value: unknown): string | null {
-  return typeof value === 'string' && /^#[0-9a-f]{6}$/i.test(value) ? value : null
-}
-
 // Guarding `parseHTML` as well as `renderHTML` keeps a hostile value from
 // being stored in the first place, so pasted HTML cannot leave one sitting in
 // the document waiting for a future renderer that forgets to check.
