@@ -190,7 +190,7 @@ type ChatShellProps = {
   isSendingImages?: boolean
   messages: ChatMessage[]
   note: PlaintextLocalNote
-  onChangeTitle: (noteId: NoteId, title: string) => Promise<void>
+  onChangeTitle: (noteId: NoteId, title: string) => Promise<unknown>
   onDeleteMessage: (messageId: string) => void
   onEditMessage: (messageId: string, content: ChatMessageContent) => void
   onDismissImageError?: (() => void) | null

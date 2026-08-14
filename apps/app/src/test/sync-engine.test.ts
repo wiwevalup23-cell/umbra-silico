@@ -240,7 +240,7 @@ class MemoryNoteRepository implements NoteRepository {
     throw new Error('Not implemented in sync engine tests.')
   }
 
-  async updateNote(): Promise<void> {
+  async updateNote(): Promise<number> {
     throw new Error('Not implemented in sync engine tests.')
   }
 

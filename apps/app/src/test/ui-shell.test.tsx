@@ -189,8 +189,8 @@ describe('Umbra Silico UI shell', () => {
   })
 
   it('renders the editor shell from note props without a duplicate lock action', async () => {
-    const onChangeDocument = vi.fn(async () => undefined)
-    const onChangeTitle = vi.fn(async () => undefined)
+    const onChangeDocument = vi.fn(async () => 1)
+    const onChangeTitle = vi.fn(async () => 1)
     const note = {
       ...createDraftLocalNote({
         document: {
@@ -270,8 +270,8 @@ describe('Umbra Silico UI shell', () => {
   it('renders and persists table, text, and page layout controls', async () => {
     const onChangeDocument = vi.fn<
       ComponentProps<typeof EditorShell>['onChangeDocument']
-    >(async () => undefined)
-    const onChangeTitle = vi.fn(async () => undefined)
+    >(async () => 1)
+    const onChangeTitle = vi.fn(async () => 1)
     const document = parseNoteDocument({
       schemaVersion: 1,
       editor: 'tiptap',
@@ -492,8 +492,8 @@ describe('Umbra Silico UI shell', () => {
     const rendered = renderUi(
       <EditorShell
         note={note}
-        onChangeDocument={vi.fn(async () => undefined)}
-        onChangeTitle={vi.fn(async () => undefined)}
+        onChangeDocument={vi.fn(async () => 1)}
+        onChangeTitle={vi.fn(async () => 1)}
       />,
     )
     cleanupTasks.push(rendered.cleanup)
@@ -520,7 +520,7 @@ describe('Umbra Silico UI shell', () => {
   it('inserts a table into a note and persists it through manual save', async () => {
     const onChangeDocument = vi.fn<
       ComponentProps<typeof EditorShell>['onChangeDocument']
-    >(async () => undefined)
+    >(async () => 1)
     const note = {
       ...createDraftLocalNote({
         deviceId,
@@ -535,7 +535,7 @@ describe('Umbra Silico UI shell', () => {
       <EditorShell
         note={note}
         onChangeDocument={onChangeDocument}
-        onChangeTitle={vi.fn(async () => undefined)}
+        onChangeTitle={vi.fn(async () => 1)}
       />,
     )
     cleanupTasks.push(rendered.cleanup)
@@ -576,8 +576,8 @@ describe('Umbra Silico UI shell', () => {
   it('debounces title autosave through editor callbacks', async () => {
     vi.useFakeTimers()
 
-    const onChangeDocument = vi.fn(async () => undefined)
-    const onChangeTitle = vi.fn(async () => undefined)
+    const onChangeDocument = vi.fn(async () => 1)
+    const onChangeTitle = vi.fn(async () => 1)
     const note = {
       ...createDraftLocalNote({
         deviceId,
@@ -644,8 +644,8 @@ describe('Umbra Silico UI shell', () => {
     const rendered = renderUi(
       <EditorShell
         note={note}
-        onChangeDocument={vi.fn(async () => undefined)}
-        onChangeTitle={vi.fn(async () => undefined)}
+        onChangeDocument={vi.fn(async () => 1)}
+        onChangeTitle={vi.fn(async () => 1)}
       />,
     )
     cleanupTasks.push(rendered.cleanup)
@@ -695,8 +695,8 @@ describe('Umbra Silico UI shell', () => {
   it('saves immediately through the Save button', async () => {
     vi.useFakeTimers()
 
-    const onChangeDocument = vi.fn(async () => undefined)
-    const onChangeTitle = vi.fn(async () => undefined)
+    const onChangeDocument = vi.fn(async () => 1)
+    const onChangeTitle = vi.fn(async () => 1)
     const note = {
       ...createDraftLocalNote({
         deviceId,

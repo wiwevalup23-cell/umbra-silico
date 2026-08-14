@@ -161,7 +161,7 @@ function createMockRepository() {
     }),
     createNote: vi.fn(async () => createdNoteId),
     deleteFolder: vi.fn(async () => undefined),
-    updateNote: vi.fn(async () => undefined),
+    updateNote: vi.fn(async () => 1),
     deleteNote: vi.fn(async () => undefined),
     moveFolder: vi.fn(async () => undefined),
     moveNoteToFolder: vi.fn(async () => undefined),
@@ -353,9 +353,9 @@ describe('ViewModel hooks', () => {
         ],
       },
     }
-    let updateTitle: ((noteId: NoteId, title: string) => Promise<void>) | null = null
+    let updateTitle: ((noteId: NoteId, title: string) => Promise<number>) | null = null
     let updateDocument:
-      | ((noteId: NoteId, nextDocument: typeof document) => Promise<void>)
+      | ((noteId: NoteId, nextDocument: typeof document) => Promise<number>)
       | null = null
 
     function ActiveNoteActionsProbe() {

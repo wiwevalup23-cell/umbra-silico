@@ -10,8 +10,9 @@ import { useTranslation } from '@/ui/i18n/use-translation'
 
 export type EditorShellProps = {
   note: PlaintextLocalNote
-  onChangeDocument: (noteId: NoteId, document: NoteDocument) => Promise<void>
-  onChangeTitle: (noteId: NoteId, title: string) => Promise<void>
+  /** Both answer with the produced `localRevision`; see `NoteEditorProps`. */
+  onChangeDocument: (noteId: NoteId, document: NoteDocument) => Promise<number>
+  onChangeTitle: (noteId: NoteId, title: string) => Promise<number>
   editorApiRef?: { current: EditorShellApi | null }
   imageResolver?: ImageSourceResolver | null
   onImportImage?: ImportImageHandler | null

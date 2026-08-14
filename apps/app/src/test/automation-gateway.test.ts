@@ -100,7 +100,7 @@ function createMockRepository(note: NoteDetail | null = makePlainNote()): NoteRe
     }),
     createNote: vi.fn(async () => noteId),
     deleteFolder: vi.fn(async () => undefined),
-    updateNote: vi.fn(async () => undefined),
+    updateNote: vi.fn(async () => 1),
     deleteNote: vi.fn(async () => undefined),
     moveFolder: vi.fn(async () => undefined),
     moveNoteToFolder: vi.fn(async () => undefined),

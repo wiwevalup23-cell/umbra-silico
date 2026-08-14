@@ -515,7 +515,7 @@ export class DefaultNoteRepository implements NoteRepository {
     })
   }
 
-  async updateNote(noteId: NoteId, patch: UpdateNotePatch): Promise<void> {
+  async updateNote(noteId: NoteId, patch: UpdateNotePatch): Promise<number> {
     const parsedPatch = updateNotePatchSchema.parse(patch)
     const existing = await this.requireNote(noteId)
     const plaintextNote = assertPlaintextNote(
@@ -560,7 +560,7 @@ export class DefaultNoteRepository implements NoteRepository {
         changedFields: Object.keys(parsedPatch),
       })
       await this.invalidateNote(noteId, folderTags)
-      return
+      return updatedNote.localRevision
     }
 
     const op = this.createOperation('note.update', updatedNote, opId)
@@ -572,6 +572,8 @@ export class DefaultNoteRepository implements NoteRepository {
       changedFields: Object.keys(parsedPatch),
     })
     await this.invalidateNote(noteId, folderTags)
+
+    return updatedNote.localRevision
   }
 
   async deleteNote(noteId: NoteId): Promise<void> {

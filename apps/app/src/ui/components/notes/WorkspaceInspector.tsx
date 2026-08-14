@@ -21,7 +21,7 @@ type WorkspaceInspectorProps = {
   imageResolver?: ImageSourceResolver | null
   noteCount: number
   noteImages?: NoteImageListItem[]
-  onChangeProperties?: (noteId: NoteDetail['id'], properties: NoteProperties) => Promise<void>
+  onChangeProperties?: (noteId: NoteDetail['id'], properties: NoteProperties) => Promise<unknown>
   onCollapse?: () => void
   onOpenHistory?: () => void
   onOpenSettings?: () => void

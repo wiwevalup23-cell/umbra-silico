@@ -77,8 +77,8 @@ async function renderEditor(options: RenderOptions = {}) {
         editorApiRef={options.editorApiRef}
         imageResolver={options.resolver ?? null}
         note={note}
-        onChangeDocument={vi.fn(async () => undefined)}
-        onChangeTitle={vi.fn(async () => undefined)}
+        onChangeDocument={vi.fn(async () => 1)}
+        onChangeTitle={vi.fn(async () => 1)}
         onImportImage={options.onImportImage ?? null}
       />,
     )

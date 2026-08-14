@@ -48,8 +48,13 @@ export type EditorShellApi = {
 
 export type NoteEditorProps = {
   note: PlaintextLocalNote
-  onChangeDocument: (noteId: NoteId, document: NoteDocument) => Promise<void>
-  onChangeTitle: (noteId: NoteId, title: string) => Promise<void>
+  /**
+   * Both writes answer with the `localRevision` they produced, which is how
+   * the editor tells its own save coming back through the live query from a
+   * change made anywhere else.
+   */
+  onChangeDocument: (noteId: NoteId, document: NoteDocument) => Promise<number>
+  onChangeTitle: (noteId: NoteId, title: string) => Promise<number>
   editorApiRef?: { current: EditorShellApi | null }
   imageResolver?: ImageSourceResolver | null
   onImportImage?: ImportImageHandler | null
@@ -76,9 +81,10 @@ function pickImageFiles(files: FileList | null | undefined): File[] {
 /**
  * Manual-save model: the user commits changes with the Save button (or
  * Ctrl/Cmd+S), while a near-real-time background autosave is the actual
- * safety net against losing work to a crash or a closed tab. This can stay
- * short because "echo" content resets are prevented separately, by the
- * incoming-document effect never overwriting a draft or a focused editor.
+ * safety net against losing work to a crash or a closed tab. It can stay this
+ * short because a save landing does not disturb the editor: the incoming
+ * document is matched against the revision of the last write, so our own echo
+ * is recognised rather than applied.
  */
 const backgroundAutosaveIntervalMs = 800
 
@@ -97,6 +103,9 @@ export function NoteEditor({
   const [importingCount, setImportingCount] = useState(0)
   const [mathDraft, setMathDraft] = useState<MathEditorDraft | null>(null)
   const didFocusEmptyNoteRef = useRef(false)
+  // Mounting adopts the note as delivered, so the editor starts out standing
+  // for exactly the stored revision.
+  const lastWrittenRevisionRef = useRef(note.localRevision)
   const onChangeDocumentRef = useRef(onChangeDocument)
   const onChangeTitleRef = useRef(onChangeTitle)
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -112,7 +121,7 @@ export function NoteEditor({
         },
         async save(payload) {
           setAutosaveState('saving')
-          await onChangeDocumentRef.current(
+          lastWrittenRevisionRef.current = await onChangeDocumentRef.current(
             payload.noteId,
             createDocumentFromEditorDoc(payload.doc),
           )
@@ -130,7 +139,13 @@ export function NoteEditor({
         },
         async save(payload) {
           setAutosaveState('saving')
-          await onChangeTitleRef.current(payload.noteId, normalizeTitle(payload.title))
+          // The title shares the note's revision counter with the document, so
+          // its writes have to be recorded here too or the next document
+          // delivery would look like somebody else's.
+          lastWrittenRevisionRef.current = await onChangeTitleRef.current(
+            payload.noteId,
+            normalizeTitle(payload.title),
+          )
           setAutosaveState('saved')
         },
       }),
@@ -204,6 +219,10 @@ export function NoteEditor({
       documentAutosave.schedule({ doc: editor.state.doc, noteId: note.id })
     },
   })
+  const isEditorFocused = useEditorState({
+    editor,
+    selector: ({ editor: currentEditor }) => currentEditor?.isFocused ?? false,
+  }) ?? false
   const pageLayout = useEditorState({
     editor,
     selector: ({ editor: currentEditor }) =>
@@ -430,10 +449,24 @@ export function NoteEditor({
       return
     }
 
-    // While a draft is pending or the user is typing, the incoming document is
-    // the echo of our own save; resetting content would yank the caret and
-    // make the text "jump" mid-keystroke.
-    if (documentAutosave.hasPending() || editor.isFocused) {
+    // A draft the store has not seen is newer than anything it can deliver.
+    if (documentAutosave.hasPending()) {
+      return
+    }
+
+    // Our own save coming back. Nothing to do — but the editor's content now
+    // stands for this revision, so remember it, or the next delivery would
+    // look newer than it is.
+    if (note.localRevision <= lastWrittenRevisionRef.current) {
+      lastWrittenRevisionRef.current = note.localRevision
+      return
+    }
+
+    // Genuinely somebody else's write: another window, a sync, or a version
+    // restored from history. Deferred while the caret is in the document,
+    // because replacing it would drop the selection mid-sentence — the effect
+    // runs again on blur, so nothing is lost by waiting.
+    if (isEditorFocused) {
       return
     }
 
@@ -442,7 +475,9 @@ export function NoteEditor({
     if (!isSameContent(editor.getJSON(), nextContent)) {
       editor.commands.setContent(nextContent, { emitUpdate: false })
     }
-  }, [documentAutosave, editor, note.document])
+
+    lastWrittenRevisionRef.current = note.localRevision
+  }, [documentAutosave, editor, isEditorFocused, note.document, note.localRevision])
 
   useEffect(
     () => () => {

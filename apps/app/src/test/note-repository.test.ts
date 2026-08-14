@@ -691,6 +691,31 @@ describe('DefaultNoteRepository', () => {
     expect(await repository.getNote(noteId)).toMatchObject({ title: 'My Custom Title' })
   })
 
+  it('answers each write with the revision it produced', async () => {
+    const { cleanup, repository } = createRepositoryHarness()
+    cleanupTasks.push(cleanup)
+
+    const noteId = await repository.createNote({})
+    const created = await repository.getNote(noteId)
+
+    // A writer keeping this number can recognise its own change coming back
+    // through a live query, which is the only way to tell it from someone
+    // else's: comparing documents cannot, because a delivery still in flight
+    // and a delivery that is newer both differ from what the writer holds.
+    const afterDocument = await repository.updateNote(noteId, {
+      document: createDocument('First edit'),
+    })
+    expect(afterDocument).toBe((created?.localRevision ?? 0) + 1)
+    expect(await repository.getNote(noteId)).toMatchObject({
+      localRevision: afterDocument,
+    })
+
+    // Title and document share the one counter, so both have to report.
+    const afterTitle = await repository.updateNote(noteId, { title: 'Renamed' })
+    expect(afterTitle).toBe(afterDocument + 1)
+    expect(await repository.getNote(noteId)).toMatchObject({ localRevision: afterTitle })
+  })
+
   it('backfills stale preview/title text once, skips locked notes, and is idempotent (1.1/1.3 migration)', async () => {
     const { cleanup, repository, store } = createRepositoryHarness()
     cleanupTasks.push(cleanup)

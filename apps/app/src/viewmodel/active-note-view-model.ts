@@ -18,9 +18,10 @@ export type ActiveNoteViewModel = {
   activeNoteId: NoteId | null
   note: NoteDetail | null
   setActiveNote(noteId: NoteId | null): void
-  updateDocument(noteId: NoteId, document: NoteDocument): Promise<void>
-  updateProperties(noteId: NoteId, properties: NoteProperties): Promise<void>
-  updateTitle(noteId: NoteId, title: string): Promise<void>
+  /** Each write answers with the `localRevision` it produced; see `NoteRepository.updateNote`. */
+  updateDocument(noteId: NoteId, document: NoteDocument): Promise<number>
+  updateProperties(noteId: NoteId, properties: NoteProperties): Promise<number>
+  updateTitle(noteId: NoteId, title: string): Promise<number>
 }
 
 export function useActiveNoteViewModel(): ActiveNoteViewModel {
@@ -43,7 +44,7 @@ export function useActiveNoteViewModel(): ActiveNoteViewModel {
     note,
     setActiveNote,
     async updateDocument(noteId, document) {
-      await repository.updateNote(noteId, { document })
+      const localRevision = await repository.updateNote(noteId, { document })
 
       // Image GC rides the explicit save: unreferenced images get tombstoned,
       // referenced-but-tombstoned ones restored (undo). A GC failure must
@@ -60,14 +61,22 @@ export function useActiveNoteViewModel(): ActiveNoteViewModel {
       }
 
       syncEngine?.requestSync('outbox-change')
+
+      // The revision of the note write, not of whatever the image reconcile
+      // may have touched — it is the note the editor is comparing against.
+      return localRevision
     },
     async updateProperties(noteId, properties) {
-      await repository.updateNote(noteId, { properties })
+      const localRevision = await repository.updateNote(noteId, { properties })
       syncEngine?.requestSync('outbox-change')
+
+      return localRevision
     },
     async updateTitle(noteId, title) {
-      await repository.updateNote(noteId, { title })
+      const localRevision = await repository.updateNote(noteId, { title })
       syncEngine?.requestSync('outbox-change')
+
+      return localRevision
     },
   }
 }

@@ -55,7 +55,19 @@ export interface NoteRepository {
   moveFolder(folderId: FolderId, parentFolderId: FolderId | null): Promise<void>
   moveNoteToFolder(noteId: NoteId, folderId: FolderId | null): Promise<void>
   renameFolder(folderId: FolderId, name: string): Promise<void>
-  updateNote(noteId: NoteId, patch: UpdateNotePatch): Promise<void>
+  /**
+   * Applies the patch and answers with the `localRevision` it produced.
+   *
+   * A writer that keeps that number can tell its own change coming back
+   * through a live query from someone else's. The editor needs exactly that:
+   * it holds a draft the store has not seen, so it must refuse an incoming
+   * document that is only the echo of its last save, while still accepting one
+   * that is genuinely newer — a version restored from history, say. Comparing
+   * the documents cannot answer it, because a delivery still in flight and a
+   * delivery that is newer both differ from what the editor holds. Only the
+   * order of writes can.
+   */
+  updateNote(noteId: NoteId, patch: UpdateNotePatch): Promise<number>
   deleteNote(noteId: NoteId): Promise<void>
   purgeNote(noteId: NoteId): Promise<void>
   restoreNote(noteId: NoteId): Promise<void>

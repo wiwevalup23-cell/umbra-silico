@@ -45,7 +45,8 @@ export type ChatViewModel = {
   setMessagePinned(messageId: string, pinned: boolean): Promise<void>
 }
 
-type UpdateDocumentFn = (noteId: NoteId, document: NoteDocument) => Promise<void>
+// The result is the note's new revision, which the chat feed has no use for.
+type UpdateDocumentFn = (noteId: NoteId, document: NoteDocument) => Promise<unknown>
 
 export function useChatViewModel(
   note: NoteDetail | null,
