@@ -724,7 +724,7 @@ describe.each(harnesses)('$name contract', (harness) => {
       const tagged = makeNote('note_tagged', 'Tagged note')
       await store.putNote({
         ...tagged,
-        properties: { kind: 'standard', status: 'none', tags: ['Reisen'] },
+        properties: { kind: 'standard', markers: [], status: 'none', tags: ['Reisen'] },
       })
       const removed = makeNote('note_removed', 'Reisen in the title')
       await store.putNote(removed)

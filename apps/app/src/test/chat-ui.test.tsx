@@ -1,8 +1,17 @@
+import { readFileSync } from 'node:fs'
 import { act, type ReactNode } from 'react'
 import { createRoot } from 'react-dom/client'
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import type { ChatMessage, ChatMessageContent } from '@/shared/contracts'
-import { ChatMessageBubble, ChatMessageContentView } from '@/ui/components/chat'
+import {
+  createChatDocument,
+  createDraftLocalNote,
+  deviceIdSchema,
+  noteIdSchema,
+  userIdSchema,
+  type ChatMessage,
+  type ChatMessageContent,
+} from '@/shared/contracts'
+import { ChatMessageBubble, ChatMessageContentView, ChatShell } from '@/ui/components/chat'
 
 ;(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true
 
@@ -30,6 +39,69 @@ afterEach(() => {
 })
 
 describe('saved messages UI', () => {
+  it('keeps secondary chat tools behind an equal-sized titlebar control', () => {
+    const now = '2026-07-20T00:00:00.000Z'
+    const note = createDraftLocalNote({
+      deviceId: deviceIdSchema.parse('device-chat-ui'),
+      document: createChatDocument(),
+      id: noteIdSchema.parse('note-chat-ui'),
+      now,
+      properties: { kind: 'chat', markers: [], status: 'none', tags: [] },
+      title: 'Dance Macabre',
+      userId: userIdSchema.parse('user-chat-ui'),
+    })
+    const container = renderUi(
+      <ChatShell
+        messages={[]}
+        note={note}
+        onChangeTitle={vi.fn(async () => undefined)}
+        onDeleteMessage={vi.fn()}
+        onEditMessage={vi.fn()}
+        onImportTelegram={vi.fn()}
+        onRequestLock={vi.fn()}
+        onSendMessage={vi.fn()}
+        onSetMessagePinned={vi.fn()}
+      />,
+    )
+    const toolsButton = container.querySelector<HTMLButtonElement>(
+      'button[aria-label="Chat tools"]',
+    )
+    const lockButton = container.querySelector<HTMLButtonElement>(
+      'button[aria-label="Lock this chat"]',
+    )
+
+    expect(toolsButton?.classList.contains('sn-chat-titlebar__control')).toBe(true)
+    expect(lockButton?.classList.contains('sn-chat-titlebar__control')).toBe(true)
+    expect(container.querySelector('.sn-chat-tools')).toBeNull()
+
+    act(() => toolsButton?.click())
+
+    expect(toolsButton?.getAttribute('aria-expanded')).toBe('true')
+    expect(container.querySelector('[role="region"][aria-label="Chat tools"]')).not.toBeNull()
+    expect(container.querySelector('input[placeholder="Search messages"]')).not.toBeNull()
+
+    act(() => {
+      document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }))
+    })
+
+    expect(toolsButton?.getAttribute('aria-expanded')).toBe('false')
+    expect(container.querySelector('.sn-chat-tools')).toBeNull()
+  })
+
+  it('keeps date markers quiet and centers composer controls with its input', () => {
+    const css = readFileSync(`${process.cwd()}/src/ui/styles/chat.css`, 'utf8')
+    const titlebarControlRule = css.match(/\.sn-chat-titlebar__control \{([\s\S]*?)\n\}/)?.[1]
+    const dateChipRule = css.match(/\.sn-chat-day__chip \{([\s\S]*?)\n\}/)?.[1]
+    const composerRule = css.match(/\.sn-chat-composer \{([\s\S]*?)\n\}/)?.[1]
+
+    expect(titlebarControlRule).toMatch(/width:\s*38px/)
+    expect(titlebarControlRule).toMatch(/height:\s*38px/)
+    expect(dateChipRule).toMatch(/border:\s*1px solid rgba\(28, 27, 24, 0\.14\)/)
+    expect(dateChipRule).toMatch(/color:\s*var\(--sn-muted-2\)/)
+    expect(dateChipRule).toMatch(/font-size:\s*9px/)
+    expect(composerRule).toMatch(/align-items:\s*center/)
+  })
+
   it('renders persisted text styles, marker colors and KaTeX without live editors', () => {
     const content: ChatMessageContent = [
       {

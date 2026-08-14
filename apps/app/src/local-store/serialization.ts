@@ -225,6 +225,7 @@ export function rowToListItem(row: StoredNoteListRow): NoteListItem {
     updatedAt: row.updatedAt,
     syncStatus: row.syncStatus,
     kind: properties?.kind,
+    propertyMarkers: properties?.markers,
     propertyStatus: properties?.status,
     tags: properties?.tags,
   })

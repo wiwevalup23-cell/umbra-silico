@@ -2,6 +2,7 @@ import type { DragEvent, ReactNode } from 'react'
 import type { NoteId, NoteListItem } from '@/shared/contracts/note'
 import { NoteCard } from '@/ui/components/notes/NoteCard'
 import { UiIcon } from '@/ui/icons/ui/UiIcon'
+import { SquircleButton } from '@/ui/components/silicon/SquircleButton'
 import { useTranslation } from '@/ui/i18n/use-translation'
 import { getPersistencePresentation } from '@/ui/note-presentation'
 
@@ -70,15 +71,12 @@ export function NoteList({
         </div>
         {onCollapse ? (
           <div className="sn-panel-heading__actions">
-            <button
+            <SquircleButton
               aria-label={t('library.collapse')}
-              className="sn-icon-button"
+              className="sn-panel-collapse-button"
+              legacyIcon="chevronLeft"
               onClick={onCollapse}
-              title={t('library.collapse')}
-              type="button"
-            >
-              <UiIcon name="chevronLeft" />
-            </button>
+            />
           </div>
         ) : null}
       </header>

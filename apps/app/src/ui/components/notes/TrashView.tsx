@@ -2,6 +2,7 @@ import { useState } from 'react'
 import type { NoteId, NoteListItem } from '@/shared/contracts/note'
 import { ConfirmationDialog } from '@/ui/components/silicon'
 import { UiIcon } from '@/ui/icons/ui/UiIcon'
+import { SquircleButton } from '@/ui/components/silicon/SquircleButton'
 import { useTranslation } from '@/ui/i18n/use-translation'
 
 type TrashViewProps = {
@@ -49,25 +50,19 @@ export function TrashView({
           </p>
         </div>
         <div className="sn-panel-heading__actions">
-          <button
+          <SquircleButton
             aria-label={t('trash.backToLibrary')}
-            className="sn-icon-button"
+            icon="chevronLeft"
             onClick={onBack}
             title={t('trash.backToLibrary')}
-            type="button"
-          >
-            <UiIcon name="chevronLeft" />
-          </button>
+          />
           {onCollapse ? (
-            <button
+            <SquircleButton
               aria-label={t('library.collapse')}
-              className="sn-icon-button"
+              className="sn-panel-collapse-button"
+              icon="panelLeft"
               onClick={onCollapse}
-              title={t('library.collapse')}
-              type="button"
-            >
-              <UiIcon name="panelLeft" />
-            </button>
+            />
           ) : null}
         </div>
       </header>

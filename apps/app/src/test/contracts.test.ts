@@ -93,9 +93,10 @@ describe('shared contract validation', () => {
       'Research notes',
       'Ideas',
     ])
-    expect(notePropertiesSchema.parse({ status: 'active', tags: ['Work'] })).toEqual({
+    expect(notePropertiesSchema.parse({ status: 'in_progress', tags: ['Work'] })).toEqual({
       kind: 'standard',
-      status: 'active',
+      markers: [],
+      status: 'in_progress',
       tags: ['Work'],
     })
     expect(notePropertiesSchema.parse({ kind: 'chat', status: 'none', tags: [] }).kind).toBe('chat')
@@ -112,13 +113,13 @@ describe('shared contract validation', () => {
     const meeting = createNoteFromTemplate('meeting')
 
     expect(noteDocumentSchema.parse(daily.document).content.content?.length).toBeGreaterThan(2)
-    expect(daily.properties).toEqual({ kind: 'standard', status: 'active', tags: ['daily'] })
-    expect(meeting.properties).toEqual({ kind: 'standard', status: 'active', tags: ['meeting'] })
+    expect(daily.properties).toEqual({ kind: 'standard', markers: [], status: 'in_progress', tags: ['daily'] })
+    expect(meeting.properties).toEqual({ kind: 'standard', markers: [], status: 'in_progress', tags: ['meeting'] })
 
     const chat = createNoteFromTemplate('chat')
 
     expect(chat.title).toBe('Saved Messages')
-    expect(chat.properties).toEqual({ kind: 'chat', status: 'none', tags: [] })
+    expect(chat.properties).toEqual({ kind: 'chat', markers: [], status: 'none', tags: [] })
     expect(chat.document ? isChatDocument(noteDocumentSchema.parse(chat.document)) : false).toBe(
       true,
     )

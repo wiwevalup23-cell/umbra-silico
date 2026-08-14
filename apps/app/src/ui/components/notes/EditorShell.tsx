@@ -8,12 +8,14 @@ import StarterKit from '@tiptap/starter-kit'
 import katex from 'katex'
 import {
   useEffect,
+  useLayoutEffect,
   useMemo,
   useRef,
   useState,
   type CSSProperties,
   type ReactNode,
 } from 'react'
+import { createPortal } from 'react-dom'
 import {
   documentNodeSchema,
   parseNoteDocument,
@@ -41,9 +43,11 @@ import {
 } from '@/ui/editor'
 import { BlockHandle } from '@/ui/components/notes/BlockHandle'
 import { EmptyStatePlayer } from '@/ui/components/notes/EmptyStatePlayer'
+import { SquircleButton } from '@/ui/components/silicon/SquircleButton'
 import { CompassIcon } from '@/ui/icons/compass/CompassIcon'
 import { exportNoteToPdf } from '@/ui/export-note-pdf'
 import { UiIcon } from '@/ui/icons/ui/UiIcon'
+import { LegacyUiIcon } from '@/ui/icons/ui/LegacyUiIcon'
 import { useTranslation } from '@/ui/i18n/use-translation'
 import {
   getLocalSavePresentation,
@@ -75,7 +79,6 @@ type EditorShellProps = {
   onCreateNote: () => void
   isCreatingNote?: boolean
   onBrowseTemplates?: () => void
-  onRequestLock: (noteId: NoteId) => void
   pendingOperations: number
   syncStatus: string
   editorApiRef?: { current: EditorShellApi | null }
@@ -141,19 +144,40 @@ const blockIndentMin = 0
 const blockIndentMax = 6
 const blockLayoutNodeTypes = ['paragraph', 'heading'] as const
 const blockMarginValues = ['tight', 'normal', 'wide'] as const
+const blockLineHeightMin = 1
+const blockLineHeightMax = 3
+const defaultBlockLineHeight = 1.6
+const textAlignValues = ['left', 'center', 'right', 'justify'] as const
+const defaultTextAlign = 'left'
 const pageOffsetMin = 8
 const pageOffsetMax = 132
+/* The page "margins" are really the measure: what makes a document readable is
+   how many characters land on a line, not how many pixels sit beside them. A
+   pixel gap keeps the same size while the column behind it grows with the
+   window, so the line quietly runs past the point the eye can track. Stored in
+   `ch` — the width of "0" in the body face — so it follows the type size. */
+const pageMeasureMin = 40
+const pageMeasureMax = 100
+const defaultPageMeasure = 66
+const defaultPageHeaderOffset = 48
+/* Deliberately larger than the top: a page with equal top and bottom reads as
+   sagging, because the optical centre sits above the geometric one. */
+const defaultPageFooterOffset = 96
 
 type BlockMarginValue = (typeof blockMarginValues)[number]
+type TextAlignValue = (typeof textAlignValues)[number]
 
 type BlockLayoutAttrs = {
   blockIndent: number
+  blockLineHeight: number
   blockMargin: BlockMarginValue
+  textAlign: TextAlignValue
 }
 
 type PageLayoutAttrs = {
   pageFooterOffset: number
   pageHeaderOffset: number
+  pageMeasure: number
 }
 
 declare module '@tiptap/core' {
@@ -162,13 +186,16 @@ declare module '@tiptap/core' {
       decreaseBlockIndent: () => ReturnType
       increaseBlockIndent: () => ReturnType
       setBlockIndent: (level: number) => ReturnType
+      setBlockLineHeight: (lineHeight: number) => ReturnType
       setBlockMargin: (margin: BlockMarginValue) => ReturnType
+      setBlockTextAlign: (alignment: TextAlignValue) => ReturnType
     }
     pageLayout: {
       adjustPageFooterOffset: (delta: number) => ReturnType
       adjustPageHeaderOffset: (delta: number) => ReturnType
       setPageFooterOffset: (offset: number) => ReturnType
       setPageHeaderOffset: (offset: number) => ReturnType
+      setPageMeasure: (margin: number) => ReturnType
     }
   }
 }
@@ -189,6 +216,24 @@ function normalizeBlockMargin(value: unknown): BlockMarginValue {
     : 'normal'
 }
 
+function normalizeBlockLineHeight(value: unknown): number {
+  const parsed = typeof value === 'number' ? value : Number(value)
+
+  if (!Number.isFinite(parsed)) {
+    return defaultBlockLineHeight
+  }
+
+  return Math.round(
+    Math.min(blockLineHeightMax, Math.max(blockLineHeightMin, parsed)) * 100,
+  ) / 100
+}
+
+function normalizeTextAlign(value: unknown): TextAlignValue {
+  return textAlignValues.includes(value as TextAlignValue)
+    ? (value as TextAlignValue)
+    : defaultTextAlign
+}
+
 function clampPageOffset(value: unknown): number {
   const parsed = typeof value === 'number' ? value : Number(value)
 
@@ -199,17 +244,39 @@ function clampPageOffset(value: unknown): number {
   return Math.min(pageOffsetMax, Math.max(pageOffsetMin, Math.round(parsed)))
 }
 
+function clampPageMeasure(value: unknown): number {
+  const parsed = typeof value === 'number' ? value : Number(value)
+
+  if (!Number.isFinite(parsed)) {
+    return defaultPageMeasure
+  }
+
+  return Math.min(
+    pageMeasureMax,
+    Math.max(pageMeasureMin, Math.round(parsed)),
+  )
+}
+
 function getPageLayout(state: EditorState): PageLayoutAttrs {
   return {
-    pageFooterOffset: clampPageOffset(state.doc.attrs.pageFooterOffset ?? 40),
-    pageHeaderOffset: clampPageOffset(state.doc.attrs.pageHeaderOffset ?? 40),
+    pageFooterOffset: clampPageOffset(
+      state.doc.attrs.pageFooterOffset ?? defaultPageFooterOffset,
+    ),
+    pageHeaderOffset: clampPageOffset(
+      state.doc.attrs.pageHeaderOffset ?? defaultPageHeaderOffset,
+    ),
+    pageMeasure: clampPageMeasure(
+      state.doc.attrs.pageMeasure ?? defaultPageMeasure,
+    ),
   }
 }
 
 function getNodeBlockLayout(node: ProseMirrorNode): BlockLayoutAttrs {
   return {
     blockIndent: clampBlockIndent(node.attrs.blockIndent),
+    blockLineHeight: normalizeBlockLineHeight(node.attrs.blockLineHeight),
     blockMargin: normalizeBlockMargin(node.attrs.blockMargin),
+    textAlign: normalizeTextAlign(node.attrs.textAlign),
   }
 }
 
@@ -253,7 +320,12 @@ function getSelectedBlockLayout(state: EditorState): BlockLayoutAttrs {
 
   return firstNode
     ? getNodeBlockLayout(firstNode)
-    : { blockIndent: blockIndentMin, blockMargin: 'normal' }
+    : {
+        blockIndent: blockIndentMin,
+        blockLineHeight: defaultBlockLineHeight,
+        blockMargin: 'normal',
+        textAlign: defaultTextAlign,
+      }
 }
 
 function updateSelectedBlockLayout(
@@ -315,6 +387,37 @@ const BlockLayout = Extension.create({
                 : {}
             },
           },
+          blockLineHeight: {
+            default: defaultBlockLineHeight,
+            parseHTML: (element) =>
+              normalizeBlockLineHeight(
+                element.getAttribute('data-block-line-height') ||
+                  element.style.lineHeight,
+              ),
+            renderHTML: (attributes: Partial<BlockLayoutAttrs>) => {
+              const lineHeight = normalizeBlockLineHeight(attributes.blockLineHeight)
+
+              return {
+                'data-block-line-height': String(lineHeight),
+                style: `line-height: ${lineHeight}`,
+              }
+            },
+          },
+          textAlign: {
+            default: defaultTextAlign,
+            parseHTML: (element) =>
+              normalizeTextAlign(
+                element.getAttribute('data-text-align') || element.style.textAlign,
+              ),
+            renderHTML: (attributes: Partial<BlockLayoutAttrs>) => {
+              const textAlign = normalizeTextAlign(attributes.textAlign)
+
+              return {
+                'data-text-align': textAlign,
+                style: `text-align: ${textAlign}`,
+              }
+            },
+          },
         },
       },
     ]
@@ -346,11 +449,23 @@ const BlockLayout = Extension.create({
           updateSelectedBlockLayout(state, dispatch, {
             blockIndent: clampBlockIndent(level),
           }),
+      setBlockLineHeight:
+        (lineHeight) =>
+        ({ dispatch, state }) =>
+          updateSelectedBlockLayout(state, dispatch, {
+            blockLineHeight: normalizeBlockLineHeight(lineHeight),
+          }),
       setBlockMargin:
         (margin) =>
         ({ dispatch, state }) =>
           updateSelectedBlockLayout(state, dispatch, {
             blockMargin: normalizeBlockMargin(margin),
+          }),
+      setBlockTextAlign:
+        (alignment) =>
+        ({ dispatch, state }) =>
+          updateSelectedBlockLayout(state, dispatch, {
+            textAlign: normalizeTextAlign(alignment),
           }),
     }
   },
@@ -365,10 +480,13 @@ const PageLayout = Extension.create({
         types: ['doc'],
         attributes: {
           pageFooterOffset: {
-            default: 40,
+            default: defaultPageFooterOffset,
           },
           pageHeaderOffset: {
-            default: 40,
+            default: defaultPageHeaderOffset,
+          },
+          pageMeasure: {
+            default: defaultPageMeasure,
           },
         },
       },
@@ -431,6 +549,20 @@ const PageLayout = Extension.create({
 
           return true
         },
+      setPageMeasure:
+        (margin) =>
+        ({ dispatch, state }) => {
+          if (dispatch) {
+            dispatch(
+              state.tr.setDocAttribute(
+                'pageMeasure',
+                clampPageMeasure(margin),
+              ),
+            )
+          }
+
+          return true
+        },
     }
   },
 })
@@ -488,15 +620,18 @@ function ToolbarButton({
   )
 }
 
-type MenuButtonProps = ToolbarButtonProps
+type MenuButtonProps = Omit<ToolbarButtonProps, 'children'> & {
+  icon: ReactNode
+}
 
-function MenuButton({
-  children,
-  disabled = false,
-  label,
-  onPress,
-  pressed = false,
-}: MenuButtonProps) {
+/**
+ * A row in the "more tools" menu: mark, then name.
+ *
+ * The visible name is the same translated string the button announces, which
+ * is what keeps the menu in the user's language — it used to render hardcoded
+ * English children beside a translated `aria-label`.
+ */
+function MenuButton({ disabled = false, icon, label, onPress, pressed = false }: MenuButtonProps) {
   return (
     <button
       aria-label={label}
@@ -507,8 +642,70 @@ function MenuButton({
       title={label}
       type="button"
     >
-      {children}
+      <span aria-hidden="true" className="sn-editor-menu-button__icon">{icon}</span>
+      <span className="sn-editor-menu-button__label">{label}</span>
     </button>
+  )
+}
+
+type LayoutNumberFieldProps = {
+  disabled?: boolean
+  label: string
+  max: number
+  min: number
+  onCommit: (value: number) => void
+  step?: number
+  unit: string
+  value: number
+}
+
+function LayoutNumberField({
+  disabled = false,
+  label,
+  max,
+  min,
+  onCommit,
+  step = 1,
+  unit,
+  value,
+}: LayoutNumberFieldProps) {
+  return (
+    <label className="sn-editor-page-settings__field">
+      <span className="sn-editor-page-settings__name">{label}</span>
+      <input
+        aria-label={label}
+        className="sn-editor-tools-menu__number"
+        defaultValue={value}
+        disabled={disabled}
+        key={value}
+        max={max}
+        min={min}
+        onBlur={(event) => onCommit(event.currentTarget.valueAsNumber)}
+        onKeyDown={(event) => {
+          if (event.key === 'Enter') {
+            event.preventDefault()
+            event.currentTarget.blur()
+          }
+        }}
+        step={step}
+        type="number"
+      />
+      <span className="sn-editor-page-settings__unit">{unit}</span>
+    </label>
+  )
+}
+
+function TextAlignmentGlyph({ alignment }: { alignment: TextAlignValue }) {
+  return (
+    <span
+      aria-hidden="true"
+      className="sn-text-alignment-glyph"
+      data-alignment={alignment}
+    >
+      <i />
+      <i />
+      <i />
+    </span>
   )
 }
 
@@ -519,21 +716,38 @@ function EditorToolbar({
 }: EditorToolbarProps) {
   const { t } = useTranslation()
   const [isHighlightMenuOpen, setIsHighlightMenuOpen] = useState(false)
-  const [isMoreMenuOpen, setIsMoreMenuOpen] = useState(false)
+  // One "more tools" drawer held every aspect at once, so finding a table
+  // command meant reading past the block ones. Each aspect gets its own panel.
+  const [openPanel, setOpenPanel] = useState<'blocks' | 'table' | null>(null)
   const highlightMenuRef = useRef<HTMLDivElement>(null)
   const moreMenuRef = useRef<HTMLDivElement>(null)
+  const toolsMenuRef = useRef<HTMLDivElement>(null)
+  const [toolsMenuStyle, setToolsMenuStyle] = useState<CSSProperties | null>(null)
   const state = useEditorState({
     editor,
     selector: ({ editor: currentEditor }) => ({
       blockLayout: currentEditor
         ? getSelectedBlockLayout(currentEditor.state)
-        : { blockIndent: blockIndentMin, blockMargin: 'normal' as const },
+        : {
+            blockIndent: blockIndentMin,
+            blockLineHeight: defaultBlockLineHeight,
+            blockMargin: 'normal' as const,
+            textAlign: defaultTextAlign as TextAlignValue,
+          },
       canAddTableColumn: currentEditor?.can().addColumnAfter() ?? false,
       canAddTableRow: currentEditor?.can().addRowAfter() ?? false,
       canDeleteTable: currentEditor?.can().deleteTable() ?? false,
+      canDeleteTableColumn: currentEditor?.can().deleteColumn() ?? false,
+      canDeleteTableRow: currentEditor?.can().deleteRow() ?? false,
+      canMergeCells: currentEditor?.can().mergeCells() ?? false,
+      canSplitCell: currentEditor?.can().splitCell() ?? false,
       pageLayout: currentEditor
         ? getPageLayout(currentEditor.state)
-        : { pageFooterOffset: 40, pageHeaderOffset: 40 },
+        : {
+            pageFooterOffset: defaultPageFooterOffset,
+            pageHeaderOffset: defaultPageHeaderOffset,
+            pageMeasure: defaultPageMeasure,
+          },
       canRedo: currentEditor?.can().redo() ?? false,
       canUndo: currentEditor?.can().undo() ?? false,
       fontFamily: (currentEditor?.getAttributes('textStyle').fontFamily as string | undefined) ?? '',
@@ -557,11 +771,24 @@ function EditorToolbar({
     }),
   })
   const toolbarState = state ?? {
-    blockLayout: { blockIndent: blockIndentMin, blockMargin: 'normal' as const },
+    blockLayout: {
+      blockIndent: blockIndentMin,
+      blockLineHeight: defaultBlockLineHeight,
+      blockMargin: 'normal' as const,
+      textAlign: defaultTextAlign as TextAlignValue,
+    },
     canAddTableColumn: false,
     canAddTableRow: false,
     canDeleteTable: false,
-    pageLayout: { pageFooterOffset: 40, pageHeaderOffset: 40 },
+    canDeleteTableColumn: false,
+    canDeleteTableRow: false,
+    canMergeCells: false,
+    canSplitCell: false,
+    pageLayout: {
+      pageFooterOffset: defaultPageFooterOffset,
+      pageHeaderOffset: defaultPageHeaderOffset,
+      pageMeasure: defaultPageMeasure,
+    },
     canRedo: false,
     canUndo: false,
     fontFamily: '',
@@ -584,7 +811,7 @@ function EditorToolbar({
   }
 
   useEffect(() => {
-    if (!isHighlightMenuOpen && !isMoreMenuOpen) {
+    if (!isHighlightMenuOpen && !openPanel) {
       return
     }
 
@@ -593,15 +820,18 @@ function EditorToolbar({
         setIsHighlightMenuOpen(false)
       }
 
-      if (!moreMenuRef.current?.contains(event.target as Node)) {
-        setIsMoreMenuOpen(false)
+      if (
+        !moreMenuRef.current?.contains(event.target as Node) &&
+        !toolsMenuRef.current?.contains(event.target as Node)
+      ) {
+        setOpenPanel(null)
       }
     }
 
     function handleKeyDown(event: KeyboardEvent) {
       if (event.key === 'Escape') {
         setIsHighlightMenuOpen(false)
-        setIsMoreMenuOpen(false)
+        setOpenPanel(null)
       }
     }
 
@@ -612,7 +842,59 @@ function EditorToolbar({
       document.removeEventListener('pointerdown', handlePointerDown)
       document.removeEventListener('keydown', handleKeyDown)
     }
-  }, [isHighlightMenuOpen, isMoreMenuOpen])
+  }, [isHighlightMenuOpen, openPanel])
+
+  useLayoutEffect(() => {
+    if (!openPanel) {
+      setToolsMenuStyle(null)
+      return
+    }
+
+    function placeToolsMenu() {
+      const anchor = moreMenuRef.current
+      const menu = toolsMenuRef.current
+
+      if (!anchor) {
+        return
+      }
+
+      const toolbar = anchor.closest('.sn-editor-toolbar')
+      const anchorRect = anchor.getBoundingClientRect()
+      const toolbarRect = toolbar?.getBoundingClientRect() ?? anchorRect
+      const viewportMargin = 12
+      const menuWidth = Math.min(440, window.innerWidth - viewportMargin * 2)
+      const left = Math.min(
+        window.innerWidth - menuWidth - viewportMargin,
+        Math.max(viewportMargin, anchorRect.right - menuWidth),
+      )
+      const maxHeight = Math.min(680, window.innerHeight * 0.72)
+      const measuredHeight = Math.min(menu?.scrollHeight ?? maxHeight, maxHeight)
+      const spaceBelow = window.innerHeight - toolbarRect.bottom - viewportMargin - 8
+      const openAbove = spaceBelow < Math.min(measuredHeight, 280) && toolbarRect.top > spaceBelow
+      const top = openAbove
+        ? Math.max(viewportMargin, toolbarRect.top - measuredHeight - 8)
+        : toolbarRect.bottom + 8
+
+      setToolsMenuStyle({
+        left,
+        maxHeight: openAbove
+          ? Math.min(maxHeight, toolbarRect.top - viewportMargin - 8)
+          : Math.min(maxHeight, window.innerHeight - top - viewportMargin),
+        top,
+        visibility: 'visible',
+        width: menuWidth,
+      })
+    }
+
+    placeToolsMenu()
+    window.addEventListener('resize', placeToolsMenu)
+    document.addEventListener('scroll', placeToolsMenu, true)
+
+    return () => {
+      window.removeEventListener('resize', placeToolsMenu)
+      document.removeEventListener('scroll', placeToolsMenu, true)
+    }
+  }, [openPanel])
 
   function runCommand(command: () => void) {
     command()
@@ -735,7 +1017,7 @@ function EditorToolbar({
             label={t('editor.markerColor')}
             onPress={() => {
               setIsHighlightMenuOpen((isOpen) => !isOpen)
-              setIsMoreMenuOpen(false)
+              setOpenPanel(null)
             }}
             pressed={Boolean(toolbarState.highlightColor)}
           >
@@ -876,162 +1158,269 @@ function EditorToolbar({
       >
         <ToolbarButton
           disabled={!editor}
-          label={t('editor.moreTools')}
+          label={t('editor.blocksPanel')}
           onPress={() => {
-            setIsMoreMenuOpen((isOpen) => !isOpen)
+            setOpenPanel((current) => (current === 'blocks' ? null : 'blocks'))
             setIsHighlightMenuOpen(false)
           }}
-          pressed={isMoreMenuOpen}
+          pressed={openPanel === 'blocks'}
         >
-          <UiIcon name="moreHorizontal" />
+          <CompassIcon name="callout" />
         </ToolbarButton>
-        {isMoreMenuOpen ? (
-          <div className="sn-editor-tools-menu" role="menu">
-            <div className="sn-editor-tools-menu__section" role="group">
-              <span className="sn-editor-tools-menu__label">Formatting</span>
-              <div className="sn-editor-tools-menu__row">
-                <MenuButton
-                  disabled={!editor}
-                  label={t('editor.strike')}
-                  onPress={() => runCommand(() => editor?.chain().focus().toggleStrike().run())}
-                  pressed={toolbarState.isStrike}
-                >
-                  Strike
-                </MenuButton>
-                <MenuButton
-                  disabled={!editor}
-                  label={t('editor.inlineCode')}
-                  onPress={() => runCommand(() => editor?.chain().focus().toggleCode().run())}
-                  pressed={toolbarState.isCode}
-                >
-                  Inline code
-                </MenuButton>
-                <MenuButton
-                  disabled={!editor}
-                  label={t('editor.heading2')}
-                  onPress={() => runCommand(() => editor?.chain().focus().toggleHeading({ level: 2 }).run())}
-                  pressed={toolbarState.isHeading2}
-                >
-                  Heading 2
-                </MenuButton>
-                <MenuButton
-                  disabled={!editor}
-                  label={t('editor.blockquote')}
-                  onPress={() => runCommand(() => editor?.chain().focus().toggleBlockquote().run())}
-                  pressed={toolbarState.isBlockquote}
-                >
-                  Quote
-                </MenuButton>
-                <MenuButton
-                  disabled={!editor}
-                  label={t('editor.orderedList')}
-                  onPress={() => runCommand(() => editor?.chain().focus().toggleOrderedList().run())}
-                  pressed={toolbarState.isOrderedList}
-                >
-                  Numbered list
-                </MenuButton>
-              </div>
-            </div>
+        <ToolbarButton
+          disabled={!editor}
+          label={t('editor.tablePanel')}
+          onPress={() => {
+            setOpenPanel((current) => (current === 'table' ? null : 'table'))
+            setIsHighlightMenuOpen(false)
+          }}
+          pressed={openPanel === 'table'}
+        >
+          <CompassIcon name="table" />
+        </ToolbarButton>
 
+        {openPanel === 'blocks' ? createPortal(
+          <div
+            aria-label={t('editor.blocksPanel')}
+            className="sn-editor-tools-menu sn-editor-tools-menu--blocks sn-editor-tools-menu--floating"
+            ref={toolsMenuRef}
+            role="dialog"
+            style={toolsMenuStyle ?? { visibility: 'hidden' }}
+          >
             <div className="sn-editor-tools-menu__section" role="group">
-              <span className="sn-editor-tools-menu__label">Blocks</span>
-              <div className="sn-editor-tools-menu__row">
-                <MenuButton
-                  disabled={!editor}
-                  label={t('editor.insertDivider')}
-                  onPress={() => {
-                    runCommand(() => editor?.chain().focus().setHorizontalRule().run())
-                  }}
-                >
-                  Divider
-                </MenuButton>
-                <MenuButton
-                  disabled={!editor}
-                  label={t('editor.codeBlock')}
-                  onPress={() => {
-                    runCommand(() => {
-                      if (editor) turnInto(editor, 'codeBlock')
-                    })
-                  }}
-                  pressed={toolbarState.isCodeBlock}
-                >
-                  Code
-                </MenuButton>
-                <MenuButton
-                  disabled={!editor}
-                  label={t('editor.todo')}
-                  onPress={() => {
-                    runCommand(() => {
-                      if (editor) turnInto(editor, 'taskList')
-                    })
-                  }}
-                  pressed={toolbarState.isTaskList}
-                >
-                  To-do
-                </MenuButton>
-                <MenuButton
-                  disabled={!editor}
-                  label={t('editor.toggle')}
-                  onPress={() => {
-                    runCommand(() => {
-                      if (editor) turnInto(editor, 'toggle')
-                    })
-                  }}
-                  pressed={toolbarState.isDetails}
-                >
-                  Toggle
-                </MenuButton>
-                <MenuButton
-                  disabled={!editor}
-                  label={t('editor.callout')}
-                  onPress={() => {
-                    runCommand(() => {
-                      if (editor) turnInto(editor, 'callout')
-                    })
-                  }}
-                  pressed={toolbarState.isCallout}
-                >
-                  Callout
-                </MenuButton>
-                <MenuButton
-                  disabled={!editor}
-                  label={t('editor.inlineEquation')}
-                  onPress={() => {
-                    onOpenMath('inline')
-                    setIsMoreMenuOpen(false)
-                  }}
-                >
-                  Inline equation
-                </MenuButton>
-                <MenuButton
-                  disabled={!editor}
-                  label={t('editor.equationBlock')}
-                  onPress={() => {
-                    onOpenMath('block')
-                    setIsMoreMenuOpen(false)
-                  }}
-                >
-                  Equation block
-                </MenuButton>
-                {onInsertImage ? (
+              <span className="sn-editor-tools-menu__label">{t('editor.groupLayout')}</span>
+              <div className="sn-editor-tools-menu__row sn-editor-tools-menu__row--alignment">
+                {textAlignValues.map((alignment) => (
                   <MenuButton
                     disabled={!editor}
-                    label={t('editor.insertImage')}
+                    icon={<TextAlignmentGlyph alignment={alignment} />}
+                    key={alignment}
+                    label={t(`editor.align${alignment[0].toUpperCase()}${alignment.slice(1)}` as 'editor.alignLeft')}
                     onPress={() => {
-                      runCommand(() => onInsertImage())
+                      editor?.commands.setBlockTextAlign(alignment)
                     }}
-                  >
-                    Image
-                  </MenuButton>
-                ) : null}
+                    pressed={toolbarState.blockLayout.textAlign === alignment}
+                  />
+                ))}
               </div>
             </div>
 
             <div className="sn-editor-tools-menu__section" role="group">
-              <span className="sn-editor-tools-menu__label">Table</span>
+              <span className="sn-editor-tools-menu__label">{t('editor.lineSpacing')}</span>
+              <div className="sn-editor-layout-presets">
+                {/* Even 0.2 steps. The old ladder wasted a slot on 1.45 and
+                    1.5 — three per cent apart, indistinguishable — and offered
+                    1.0, at which body lines touch. */}
+                {[1.2, 1.4, 1.6, 1.8, 2].map((lineHeight) => (
+                  <button
+                    className="sn-editor-layout-preset"
+                    data-active={toolbarState.blockLayout.blockLineHeight === lineHeight}
+                    disabled={!editor}
+                    key={lineHeight}
+                    onClick={() => editor?.commands.setBlockLineHeight(lineHeight)}
+                    type="button"
+                  >
+                    {lineHeight}
+                  </button>
+                ))}
+              </div>
+              <LayoutNumberField
+                disabled={!editor}
+                label={t('editor.customValue')}
+                max={blockLineHeightMax}
+                min={blockLineHeightMin}
+                onCommit={(value) => editor?.commands.setBlockLineHeight(value)}
+                step={0.05}
+                unit="×"
+                value={toolbarState.blockLayout.blockLineHeight}
+              />
+            </div>
+
+            <div className="sn-editor-tools-menu__section" role="group">
+              <span className="sn-editor-tools-menu__label">{t('editor.paragraphSpacing')}</span>
+              <div className="sn-editor-layout-presets">
+                {blockMarginValues.map((margin) => (
+                  <button
+                    className="sn-editor-layout-preset"
+                    data-active={toolbarState.blockLayout.blockMargin === margin}
+                    disabled={!editor}
+                    key={margin}
+                    onClick={() => editor?.commands.setBlockMargin(margin)}
+                    type="button"
+                  >
+                    {t(`editor.spacing${margin[0].toUpperCase()}${margin.slice(1)}` as 'editor.spacingTight')}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="sn-editor-tools-menu__section" role="group">
+              <span className="sn-editor-tools-menu__label">{t('editor.pageMargins')}</span>
+              <div className="sn-editor-layout-presets">
+                {/* Wider margins mean a shorter line, so the presets run the
+                    measure the other way: 74 characters with the text nearly
+                    filling the sheet, 60 with a broad margin either side. */}
+                {([
+                  ['editor.marginNarrow', 74, 40, 80],
+                  ['editor.marginNormal', defaultPageMeasure, defaultPageHeaderOffset, defaultPageFooterOffset],
+                  ['editor.marginWide', 60, 56, 112],
+                ] as const).map(([labelKey, measure, top, bottom]) => (
+                  <button
+                    className="sn-editor-layout-preset"
+                    data-active={
+                      toolbarState.pageLayout.pageMeasure === measure &&
+                      toolbarState.pageLayout.pageHeaderOffset === top &&
+                      toolbarState.pageLayout.pageFooterOffset === bottom
+                    }
+                    disabled={!editor}
+                    key={labelKey}
+                    onClick={() => {
+                      editor?.commands.setPageMeasure(measure)
+                      editor?.commands.setPageHeaderOffset(top)
+                      editor?.commands.setPageFooterOffset(bottom)
+                    }}
+                    type="button"
+                  >
+                    {t(labelKey)}
+                  </button>
+                ))}
+              </div>
+              <div className="sn-editor-page-settings">
+                <LayoutNumberField
+                  disabled={!editor}
+                  label={t('editor.measure')}
+                  max={pageMeasureMax}
+                  min={pageMeasureMin}
+                  onCommit={(value) => editor?.commands.setPageMeasure(value)}
+                  unit={t('editor.characters')}
+                  value={toolbarState.pageLayout.pageMeasure}
+                />
+                <LayoutNumberField
+                  disabled={!editor}
+                  label={t('editor.marginTop')}
+                  max={pageOffsetMax}
+                  min={pageOffsetMin}
+                  onCommit={(value) => editor?.commands.setPageHeaderOffset(value)}
+                  unit={t('editor.pixels')}
+                  value={toolbarState.pageLayout.pageHeaderOffset}
+                />
+                <LayoutNumberField
+                  disabled={!editor}
+                  label={t('editor.marginBottom')}
+                  max={pageOffsetMax}
+                  min={pageOffsetMin}
+                  onCommit={(value) => editor?.commands.setPageFooterOffset(value)}
+                  unit={t('editor.pixels')}
+                  value={toolbarState.pageLayout.pageFooterOffset}
+                />
+              </div>
+            </div>
+
+            <div className="sn-editor-tools-menu__section" role="group">
+              <span className="sn-editor-tools-menu__label">{t('editor.groupText')}</span>
               <div className="sn-editor-tools-menu__row">
                 <MenuButton
+                  disabled={!editor}
+                  icon={<CompassIcon name="quote" />}
+                  label={t('editor.paragraph')}
+                  onPress={() => { if (editor) turnInto(editor, 'paragraph') }}
+                />
+                <MenuButton
+                  disabled={!editor}
+                  icon={<CompassIcon name="heading1" />}
+                  label={t('editor.heading1')}
+                  onPress={() => { if (editor) turnInto(editor, 'heading1') }}
+                  pressed={toolbarState.isHeading1}
+                />
+                <MenuButton
+                  disabled={!editor}
+                  icon={<CompassIcon name="heading2" />}
+                  label={t('editor.heading2')}
+                  onPress={() => { if (editor) turnInto(editor, 'heading2') }}
+                  pressed={toolbarState.isHeading2}
+                />
+                <MenuButton
+                  disabled={!editor}
+                  icon={<CompassIcon name="heading2" />}
+                  label={t('editor.heading3')}
+                  onPress={() => { if (editor) turnInto(editor, 'heading3') }}
+                />
+                <MenuButton
+                  disabled={!editor}
+                  icon={<CompassIcon name="quote" />}
+                  label={t('editor.blockquote')}
+                  onPress={() => { if (editor) turnInto(editor, 'blockquote') }}
+                  pressed={toolbarState.isBlockquote}
+                />
+                <MenuButton
+                  disabled={!editor}
+                  icon={<CompassIcon name="code" />}
+                  label={t('editor.codeBlock')}
+                  onPress={() => { if (editor) turnInto(editor, 'codeBlock') }}
+                  pressed={toolbarState.isCodeBlock}
+                />
+              </div>
+            </div>
+
+            <div className="sn-editor-tools-menu__section" role="group">
+              <span className="sn-editor-tools-menu__label">{t('editor.groupLists')}</span>
+              <div className="sn-editor-tools-menu__row">
+                <MenuButton
+                  disabled={!editor}
+                  icon={<CompassIcon name="bulletList" />}
+                  label={t('editor.bulletList')}
+                  onPress={() => { if (editor) turnInto(editor, 'bulletList') }}
+                  pressed={toolbarState.isBulletList}
+                />
+                <MenuButton
+                  disabled={!editor}
+                  icon={<CompassIcon name="numberedList" />}
+                  label={t('editor.orderedList')}
+                  onPress={() => { if (editor) turnInto(editor, 'orderedList') }}
+                  pressed={toolbarState.isOrderedList}
+                />
+                <MenuButton
+                  disabled={!editor}
+                  icon={<CompassIcon name="checkbox" />}
+                  label={t('editor.todo')}
+                  onPress={() => { if (editor) turnInto(editor, 'taskList') }}
+                  pressed={toolbarState.isTaskList}
+                />
+                <MenuButton
+                  disabled={!editor}
+                  icon={<CompassIcon name="toggle" />}
+                  label={t('editor.toggle')}
+                  onPress={() => { if (editor) turnInto(editor, 'toggle') }}
+                  pressed={toolbarState.isDetails}
+                />
+              </div>
+            </div>
+
+            <div className="sn-editor-tools-menu__section" role="group">
+              <span className="sn-editor-tools-menu__label">{t('editor.groupInsert')}</span>
+              <div className="sn-editor-tools-menu__row">
+                <MenuButton
+                  disabled={!editor}
+                  icon={<CompassIcon name="callout" />}
+                  label={t('editor.callout')}
+                  onPress={() => { if (editor) turnInto(editor, 'callout') }}
+                  pressed={toolbarState.isCallout}
+                />
+                <MenuButton
+                  disabled={!editor}
+                  icon={<CompassIcon name="divider" />}
+                  label={t('editor.insertDivider')}
+                  onPress={() => runCommand(() => editor?.chain().focus().setHorizontalRule().run())}
+                />
+                <MenuButton
+                  disabled={!editor || !onInsertImage}
+                  icon={<CompassIcon name="image" />}
+                  label={t('editor.insertImage')}
+                  onPress={() => runCommand(() => onInsertImage?.())}
+                />
+                <MenuButton
                   disabled={!editor || toolbarState.isTable}
+                  icon={<CompassIcon name="table" />}
                   label={t('editor.insertTable')}
                   onPress={() => {
                     runCommand(() =>
@@ -1042,69 +1431,135 @@ function EditorToolbar({
                         .run(),
                     )
                   }}
-                >
-                  Insert table
-                </MenuButton>
+                />
                 <MenuButton
-                  disabled={!editor || !toolbarState.canAddTableColumn}
-                  label={t('editor.addColumn')}
-                  onPress={() => {
-                    runCommand(() => editor?.chain().focus().addColumnAfter().run())
-                  }}
-                >
-                  Add column
-                </MenuButton>
+                  disabled={!editor}
+                  icon={<span className="sn-editor-menu-button__glyph">∑</span>}
+                  label={t('editor.inlineEquation')}
+                  onPress={() => onOpenMath('inline')}
+                />
+                <MenuButton
+                  disabled={!editor}
+                  icon={<span className="sn-editor-menu-button__glyph">∑</span>}
+                  label={t('editor.equationBlock')}
+                  onPress={() => onOpenMath('block')}
+                />
+              </div>
+            </div>
+          </div>,
+          document.body,
+        ) : null}
+
+        {openPanel === 'table' ? createPortal(
+          <div
+            className="sn-editor-tools-menu sn-editor-tools-menu--floating"
+            ref={toolsMenuRef}
+            role="menu"
+            style={toolsMenuStyle ?? { visibility: 'hidden' }}
+          >
+            {!toolbarState.isTable ? (
+              <p className="sn-editor-tools-menu__empty">{t('editor.tableEmptyHint')}</p>
+            ) : null}
+
+            <div className="sn-editor-tools-menu__section" role="group">
+              <span className="sn-editor-tools-menu__label">{t('editor.groupTableRows')}</span>
+              <div className="sn-editor-tools-menu__row">
                 <MenuButton
                   disabled={!editor || !toolbarState.canAddTableRow}
-                  label={t('editor.addRow')}
-                  onPress={() => {
-                    runCommand(() => editor?.chain().focus().addRowAfter().run())
-                  }}
-                >
-                  Add row
-                </MenuButton>
+                  icon={<UiIcon name="arrowUp" />}
+                  label={t('editor.addRowBefore')}
+                  onPress={() => runCommand(() => editor?.chain().focus().addRowBefore().run())}
+                />
+                <MenuButton
+                  disabled={!editor || !toolbarState.canAddTableRow}
+                  icon={<UiIcon name="arrowDown" />}
+                  label={t('editor.addRowAfter')}
+                  onPress={() => runCommand(() => editor?.chain().focus().addRowAfter().run())}
+                />
+                <MenuButton
+                  disabled={!editor || !toolbarState.canDeleteTableRow}
+                  icon={<UiIcon name="trash" />}
+                  label={t('editor.deleteRow')}
+                  onPress={() => runCommand(() => editor?.chain().focus().deleteRow().run())}
+                />
                 <MenuButton
                   disabled={!editor || !toolbarState.isTable}
+                  icon={<CompassIcon name="table" />}
                   label={t('editor.toggleHeaderRow')}
-                  onPress={() => {
-                    runCommand(() => editor?.chain().focus().toggleHeaderRow().run())
-                  }}
-                >
-                  Header row
-                </MenuButton>
-                <MenuButton
-                  disabled={!editor || !toolbarState.canDeleteTable}
-                  label={t('editor.deleteTable')}
-                  onPress={() => {
-                    runCommand(() => editor?.chain().focus().deleteTable().run())
-                  }}
-                >
-                  Delete table
-                </MenuButton>
+                  onPress={() => runCommand(() => editor?.chain().focus().toggleHeaderRow().run())}
+                />
               </div>
             </div>
 
             <div className="sn-editor-tools-menu__section" role="group">
-              <span className="sn-editor-tools-menu__label">History</span>
+              <span className="sn-editor-tools-menu__label">{t('editor.groupTableColumns')}</span>
               <div className="sn-editor-tools-menu__row">
                 <MenuButton
-                  disabled={!editor || !toolbarState.canUndo}
-                  label={t('editor.undo')}
-                  onPress={() => runCommand(() => editor?.chain().focus().undo().run())}
-                >
-                  Undo
-                </MenuButton>
+                  disabled={!editor || !toolbarState.canAddTableColumn}
+                  icon={<UiIcon name="chevronLeft" />}
+                  label={t('editor.addColumnBefore')}
+                  onPress={() => runCommand(() => editor?.chain().focus().addColumnBefore().run())}
+                />
                 <MenuButton
-                  disabled={!editor || !toolbarState.canRedo}
-                  label={t('editor.redo')}
-                  onPress={() => runCommand(() => editor?.chain().focus().redo().run())}
-                >
-                  Redo
-                </MenuButton>
+                  disabled={!editor || !toolbarState.canAddTableColumn}
+                  icon={<UiIcon name="chevronRight" />}
+                  label={t('editor.addColumnAfter')}
+                  onPress={() => runCommand(() => editor?.chain().focus().addColumnAfter().run())}
+                />
+                <MenuButton
+                  disabled={!editor || !toolbarState.canDeleteTableColumn}
+                  icon={<UiIcon name="trash" />}
+                  label={t('editor.deleteColumn')}
+                  onPress={() => runCommand(() => editor?.chain().focus().deleteColumn().run())}
+                />
+                <MenuButton
+                  disabled={!editor || !toolbarState.isTable}
+                  icon={<CompassIcon name="table" />}
+                  label={t('editor.toggleHeaderColumn')}
+                  onPress={() => runCommand(() => editor?.chain().focus().toggleHeaderColumn().run())}
+                />
               </div>
             </div>
 
-          </div>
+            <div className="sn-editor-tools-menu__section" role="group">
+              <span className="sn-editor-tools-menu__label">{t('editor.groupTableCells')}</span>
+              <div className="sn-editor-tools-menu__row">
+                <MenuButton
+                  disabled={!editor || !toolbarState.canMergeCells}
+                  icon={<CompassIcon name="table" />}
+                  label={t('editor.mergeCells')}
+                  onPress={() => runCommand(() => editor?.chain().focus().mergeCells().run())}
+                />
+                <MenuButton
+                  disabled={!editor || !toolbarState.canSplitCell}
+                  icon={<CompassIcon name="table" />}
+                  label={t('editor.splitCell')}
+                  onPress={() => runCommand(() => editor?.chain().focus().splitCell().run())}
+                />
+                <MenuButton
+                  disabled={!editor || toolbarState.isTable}
+                  icon={<CompassIcon name="table" />}
+                  label={t('editor.insertTable')}
+                  onPress={() => {
+                    runCommand(() =>
+                      editor
+                        ?.chain()
+                        .focus()
+                        .insertTable({ cols: 3, rows: 3, withHeaderRow: true })
+                        .run(),
+                    )
+                  }}
+                />
+                <MenuButton
+                  disabled={!editor || !toolbarState.canDeleteTable}
+                  icon={<UiIcon name="trash" />}
+                  label={t('editor.deleteTable')}
+                  onPress={() => runCommand(() => editor?.chain().focus().deleteTable().run())}
+                />
+              </div>
+            </div>
+          </div>,
+          document.body,
         ) : null}
       </div>
       <span className="sn-editor-toolbar__divider" aria-hidden="true" />
@@ -1188,23 +1643,13 @@ function MathEditorPanel({
 
   return (
     <section aria-label={t('editor.equationEditor')} className="sn-math-editor">
-      <div className="sn-math-editor__header">
-        <div>
-          <span className="sn-math-editor__eyebrow">KaTeX · LaTeX</span>
-          <strong>
-            {t(draft.kind === 'block' ? 'editor.equationBlock' : 'editor.inlineEquation')}
-          </strong>
-        </div>
-        <button
-          aria-label={t('editor.closeEquationEditor')}
-          className="sn-math-editor__close"
-          onClick={onCancel}
-          type="button"
-        >
-          <UiIcon name="close" />
-        </button>
-      </div>
-      <MathPreview kind={draft.kind} latex={draft.latex} />
+      <span
+        aria-hidden="true"
+        className="sn-math-editor__mark"
+        title={t(draft.kind === 'block' ? 'editor.equationBlock' : 'editor.inlineEquation')}
+      >
+        ∑
+      </span>
       <label className="sn-math-editor__field">
         <span className="sn-sr-only">{t('editor.latexExpression')}</span>
         <input
@@ -1227,24 +1672,37 @@ function MathEditorPanel({
           value={draft.latex}
         />
       </label>
-      <div className="sn-math-editor__footer">
-        <span>Rendered while you type · click a formula later to edit</span>
-        <div className="sn-math-editor__actions">
-          {onDelete ? (
-            <button className="sn-math-editor__delete" onClick={onDelete} type="button">
-              Delete
-            </button>
-          ) : null}
-          <button onClick={onCancel} type="button">Cancel</button>
+      <MathPreview kind={draft.kind} latex={draft.latex} />
+      <div className="sn-math-editor__actions">
+        {onDelete ? (
           <button
-            className="sn-math-editor__save"
-            disabled={!draft.latex.trim()}
-            onClick={onSave}
+            aria-label={t('editor.equationDelete')}
+            className="sn-math-editor__delete"
+            onClick={onDelete}
+            title={t('editor.equationDelete')}
             type="button"
           >
-            {draft.mode === 'edit' ? 'Update' : 'Insert'}
+            <UiIcon name="trash" />
           </button>
-        </div>
+        ) : null}
+        <button
+          aria-label={t('editor.closeEquationEditor')}
+          onClick={onCancel}
+          title={t('editor.closeEquationEditor')}
+          type="button"
+        >
+          <UiIcon name="close" />
+        </button>
+        <button
+          aria-label={t(draft.mode === 'edit' ? 'editor.equationUpdate' : 'editor.equationInsert')}
+          className="sn-math-editor__save"
+          disabled={!draft.latex.trim()}
+          onClick={onSave}
+          title={t(draft.mode === 'edit' ? 'editor.equationUpdate' : 'editor.equationInsert')}
+          type="button"
+        >
+          <UiIcon name="check" />
+        </button>
       </div>
     </section>
   )
@@ -1254,7 +1712,6 @@ type EditableNoteEditorProps = {
   note: PlaintextLocalNote
   onChangeDocument: (noteId: NoteId, document: NoteDocument) => Promise<void>
   onChangeTitle: (noteId: NoteId, title: string) => Promise<void>
-  onRequestLock: (noteId: NoteId) => void
   editorApiRef?: { current: EditorShellApi | null }
   imageResolver?: ImageSourceResolver | null
   onImportImage?: ImportImageHandler | null
@@ -1279,7 +1736,6 @@ function EditableNoteEditor({
   note,
   onChangeDocument,
   onChangeTitle,
-  onRequestLock,
   editorApiRef,
   imageResolver = null,
   onImportImage = null,
@@ -1453,8 +1909,16 @@ function EditableNoteEditor({
     selector: ({ editor: currentEditor }) =>
       currentEditor
         ? getPageLayout(currentEditor.state)
-        : { pageFooterOffset: 40, pageHeaderOffset: 40 },
-  }) ?? { pageFooterOffset: 40, pageHeaderOffset: 40 }
+        : {
+            pageFooterOffset: defaultPageFooterOffset,
+            pageHeaderOffset: defaultPageHeaderOffset,
+            pageMeasure: defaultPageMeasure,
+          },
+  }) ?? {
+    pageFooterOffset: defaultPageFooterOffset,
+    pageHeaderOffset: defaultPageHeaderOffset,
+    pageMeasure: defaultPageMeasure,
+  }
   const savePresentation = getLocalSavePresentation(autosaveState)
   const statusBadges = [
     {
@@ -1627,6 +2091,13 @@ function EditableNoteEditor({
         },
       },
     })
+    // The empty-note placeholder is drawn by CSS on the first paragraph, which
+    // cannot read an attribute set on the editor root — so the copy travels
+    // down as a custom property instead of being frozen into the stylesheet.
+    editor.view.dom.style.setProperty(
+      '--sn-editor-placeholder',
+      JSON.stringify(t('editor.placeholder')),
+    )
     editor.view.dispatch(editor.state.tr)
   }, [editor, t])
 
@@ -1715,12 +2186,21 @@ function EditableNoteEditor({
   }, [documentAutosave, titleAutosave])
 
   return (
-    <div className="sn-editor-paper-sheet">
+    <div
+      className="sn-editor-paper-sheet"
+      style={
+        {
+          '--sn-page-footer-offset': `${pageLayout.pageFooterOffset}px`,
+          '--sn-page-header-offset': `${pageLayout.pageHeaderOffset}px`,
+          '--sn-page-measure': `${pageLayout.pageMeasure}ch`,
+        } as CSSProperties
+      }
+    >
       <header className="sn-editor-topbar">
         <div className="sn-editor-title-row">
           <div className="sn-editor-title-group">
             <span className="sn-editor-icon">
-              <UiIcon name="document" />
+              <LegacyUiIcon name="document" />
             </span>
             <label className="sn-editor-title-label" htmlFor="sn-editor-title">
               <span className="sn-sr-only">{t('editor.noteTitle')}</span>
@@ -1764,44 +2244,24 @@ function EditableNoteEditor({
             ))}
           </div>
           <div className="sn-editor-actions">
-            <button
+            <SquircleButton
               aria-label={t('editor.exportPdf')}
-              className="sn-icon-button sn-pdf-export-button"
+              className="sn-pdf-export-button"
+              icon="download"
               onClick={() => exportNoteToPdf(titleDraft)}
+              size="small"
               title={t('editor.exportPdfHint')}
-              type="button"
-            >
-              <UiIcon name="download" />
-              <span>PDF</span>
-            </button>
-            <button
+            />
+            <SquircleButton
               aria-label={t('editor.saveNote')}
-              className="sn-icon-button"
               disabled={autosaveState === 'saved' || autosaveState === 'saving'}
+              icon="save"
               onClick={() => {
                 void Promise.all([titleAutosave.flush(), documentAutosave.flush()])
               }}
+              size="small"
               title={t('editor.saveNoteHint')}
-              type="button"
-            >
-              <UiIcon name="save" />
-            </button>
-            <button
-              aria-label={t('editor.lockNote')}
-              className="sn-icon-button"
-              onClick={() => {
-                void Promise.all([
-                  titleAutosave.flush(),
-                  documentAutosave.flush(),
-                ]).finally(() => {
-                  onRequestLock(note.id)
-                })
-              }}
-              title={t('editor.lockNote')}
-              type="button"
-            >
-              <UiIcon name="lock" />
-            </button>
+            />
           </div>
         </div>
       </header>
@@ -1862,22 +2322,16 @@ function EditableNoteEditor({
       ) : null}
 
       <ImageSourceContext.Provider value={imageResolver}>
-        <div
-          className="sn-editor-paper sn-editor-paper--editable"
-          style={
-            {
-              '--sn-page-footer-offset': `${pageLayout.pageFooterOffset}px`,
-              '--sn-page-header-offset': `${pageLayout.pageHeaderOffset}px`,
-            } as CSSProperties
-          }
-        >
+        <div className="sn-editor-paper sn-editor-paper--editable">
           <h1 className="sn-print-note-title">{normalizeTitle(titleDraft)}</h1>
           <div className="sn-page-layout-frame">
-            <BlockHandle
-              editor={editor}
-              onInsertImage={canInsertImages ? openImagePicker : null}
-            />
-            <EditorContent className="sn-editor-content" editor={editor} />
+            <div className="sn-editor-reading-column">
+              <BlockHandle
+                editor={editor}
+                onInsertImage={canInsertImages ? openImagePicker : null}
+              />
+              <EditorContent className="sn-editor-content" editor={editor} />
+            </div>
           </div>
         </div>
       </ImageSourceContext.Provider>
@@ -1893,7 +2347,6 @@ export function EditorShell({
   onCreateNote,
   isCreatingNote = false,
   onBrowseTemplates,
-  onRequestLock,
   pendingOperations,
   syncStatus,
   editorApiRef,
@@ -1980,11 +2433,6 @@ export function EditorShell({
                   </span>
                 ))}
               </div>
-              <div className="sn-editor-actions">
-                <button className="sn-icon-button" disabled title={t('editor.alreadyLocked')} type="button">
-                  <UiIcon name="lock" />
-                </button>
-              </div>
             </div>
           </header>
 
@@ -2005,7 +2453,6 @@ export function EditorShell({
           onChangeDocument={onChangeDocument}
           onChangeTitle={onChangeTitle}
           onImportImage={onImportImage}
-          onRequestLock={onRequestLock}
         />
       )}
     </article>

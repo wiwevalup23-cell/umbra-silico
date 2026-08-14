@@ -1,5 +1,6 @@
 import {
   useEffect,
+  useId,
   useLayoutEffect,
   useMemo,
   useRef,
@@ -225,10 +226,14 @@ export function ChatShell({
 }: ChatShellProps) {
   const { t } = useTranslation()
   const feedRef = useRef<HTMLDivElement>(null)
+  const toolsButtonRef = useRef<HTMLButtonElement>(null)
+  const toolsPanelRef = useRef<HTMLDivElement>(null)
+  const toolsPanelId = useId()
   const [titleDraft, setTitleDraft] = useState(note.title)
   const [isDragActive, setIsDragActive] = useState(false)
   const [editingMessageId, setEditingMessageId] = useState<string | null>(null)
   const [composeSide, setComposeSide] = useState<ChatMessageSide>('self')
+  const [isToolsOpen, setToolsOpen] = useState(false)
   const [pinnedOnly, setPinnedOnly] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
   const [pendingDayKey, setPendingDayKey] = useState<string | null>(null)
@@ -240,11 +245,44 @@ export function ChatShell({
     setTitleDraft(note.title)
     setEditingMessageId(null)
     setComposeSide('self')
+    setToolsOpen(false)
     setPinnedOnly(false)
     setPendingDayKey(null)
     setSearchQuery('')
     setVisibleLimit(visibleMessagesStep)
   }, [note.id, note.title])
+
+  useEffect(() => {
+    if (!isToolsOpen) {
+      return
+    }
+
+    const handlePointerDown = (event: PointerEvent) => {
+      const target = event.target as Node
+
+      if (
+        !toolsButtonRef.current?.contains(target) &&
+        !toolsPanelRef.current?.contains(target)
+      ) {
+        setToolsOpen(false)
+      }
+    }
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        event.preventDefault()
+        setToolsOpen(false)
+        toolsButtonRef.current?.focus()
+      }
+    }
+
+    document.addEventListener('pointerdown', handlePointerDown)
+    document.addEventListener('keydown', handleKeyDown)
+
+    return () => {
+      document.removeEventListener('pointerdown', handlePointerDown)
+      document.removeEventListener('keydown', handleKeyDown)
+    }
+  }, [isToolsOpen])
 
   const normalizedSearchQuery = searchQuery.trim().toLocaleLowerCase()
   const isFiltering = pinnedOnly || normalizedSearchQuery.length > 0
@@ -371,9 +409,19 @@ export function ChatShell({
     <ImageSourceContext.Provider value={imageResolver}>
       <section aria-label="Chat" className="sn-chat-shell">
         <header className="sn-chat-titlebar">
-          <span aria-hidden="true" className="sn-chat-titlebar__plate">
-            <UiIcon name="chat" />
-          </span>
+          <button
+            aria-controls={toolsPanelId}
+            aria-expanded={isToolsOpen}
+            aria-label={t('chat.tools')}
+            className="sn-chat-titlebar__control sn-chat-titlebar__tools-trigger"
+            data-active={isFiltering}
+            onClick={() => setToolsOpen((open) => !open)}
+            ref={toolsButtonRef}
+            title={t('chat.tools')}
+            type="button"
+          >
+            <UiIcon name="moreHorizontal" />
+          </button>
           <span aria-hidden="true" className="sn-chat-titlebar__ridge" />
           <input
             aria-label={t('chat.title')}
@@ -392,85 +440,97 @@ export function ChatShell({
           <span aria-hidden="true" className="sn-chat-titlebar__ridge" />
           <button
             aria-label={t('chat.lock')}
-            className="sn-icon-button sn-chat-titlebar__lock"
+            className="sn-chat-titlebar__control sn-chat-titlebar__lock"
             onClick={() => onRequestLock(note.id)}
             title={t('chat.lock')}
             type="button"
           >
             <UiIcon name="lock" />
           </button>
+          {isToolsOpen ? (
+            <div
+              aria-label={t('chat.tools')}
+              className="sn-chat-tools"
+              id={toolsPanelId}
+              ref={toolsPanelRef}
+              role="region"
+            >
+              <label className="sn-chat-tools__search">
+                <UiIcon height={15} name="search" width={15} />
+                <span className="sn-visually-hidden">{t('chat.searchMessages')}</span>
+                <input
+                  onChange={(event) => setSearchQuery(event.target.value)}
+                  placeholder={t('chat.searchMessages')}
+                  type="search"
+                  value={searchQuery}
+                />
+              </label>
+              <button
+                aria-pressed={pinnedOnly}
+                className="sn-chat-tools__button"
+                data-active={pinnedOnly}
+                disabled={pinnedCount === 0}
+                onClick={() => setPinnedOnly((current) => !current)}
+                type="button"
+              >
+                <UiIcon height={14} name="pin" width={14} />
+                Pinned {pinnedCount > 0 ? `(${pinnedCount})` : ''}
+              </button>
+              <label className="sn-chat-tools__date">
+                <UiIcon height={14} name="calendar" width={14} />
+                <span className="sn-visually-hidden">{t('chat.jumpToDate')}</span>
+                <select
+                  aria-label={t('chat.jumpToDate')}
+                  disabled={allFilteredGroups.length === 0}
+                  onChange={(event) => {
+                    const dayKey = event.target.value
+
+                    if (!dayKey) {
+                      return
+                    }
+
+                    const firstMessageIndex = filteredMessages.findIndex(
+                      (message) => formatDayKey(message.createdAt) === dayKey,
+                    )
+
+                    if (firstMessageIndex >= 0) {
+                      const messagesFromTarget = filteredMessages.length - firstMessageIndex
+                      setVisibleLimit((limit) => Math.max(limit, messagesFromTarget))
+                      setPendingDayKey(dayKey)
+                      setToolsOpen(false)
+                    }
+                  }}
+                  value=""
+                >
+                  <option value="">{t('chat.jumpToDate')}</option>
+                  {allFilteredGroups.map((group) => (
+                    <option key={group.key} value={group.key}>
+                      {group.label}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              {onImportTelegram ? (
+                <button
+                  className="sn-chat-tools__button"
+                  onClick={() => {
+                    setToolsOpen(false)
+                    onImportTelegram()
+                  }}
+                  type="button"
+                >
+                  <UiIcon height={14} name="arrowDown" width={14} />
+                  Import
+                </button>
+              ) : null}
+              {isFiltering ? (
+                <span aria-live="polite" className="sn-chat-tools__results">
+                  {filteredMessages.length} found
+                </span>
+              ) : null}
+            </div>
+          ) : null}
         </header>
-        <div className="sn-chat-tools">
-          <label className="sn-chat-tools__search">
-            <UiIcon height={15} name="search" width={15} />
-            <span className="sn-visually-hidden">Search messages</span>
-            <input
-              onChange={(event) => setSearchQuery(event.target.value)}
-              placeholder={t('chat.searchMessages')}
-              type="search"
-              value={searchQuery}
-            />
-          </label>
-          <button
-            aria-pressed={pinnedOnly}
-            className="sn-chat-tools__button"
-            data-active={pinnedOnly}
-            disabled={pinnedCount === 0}
-            onClick={() => setPinnedOnly((current) => !current)}
-            type="button"
-          >
-            <UiIcon height={14} name="pin" width={14} />
-            Pinned {pinnedCount > 0 ? `(${pinnedCount})` : ''}
-          </button>
-          <label className="sn-chat-tools__date">
-            <UiIcon height={14} name="calendar" width={14} />
-            <span className="sn-visually-hidden">Jump to date</span>
-            <select
-              aria-label={t('chat.jumpToDate')}
-              disabled={allFilteredGroups.length === 0}
-              onChange={(event) => {
-                const dayKey = event.target.value
-
-                if (!dayKey) {
-                  return
-                }
-
-                const firstMessageIndex = filteredMessages.findIndex(
-                  (message) => formatDayKey(message.createdAt) === dayKey,
-                )
-
-                if (firstMessageIndex >= 0) {
-                  const messagesFromTarget = filteredMessages.length - firstMessageIndex
-                  setVisibleLimit((limit) => Math.max(limit, messagesFromTarget))
-                  setPendingDayKey(dayKey)
-                }
-              }}
-              value=""
-            >
-              <option value="">{t('chat.jumpToDate')}</option>
-              {allFilteredGroups.map((group) => (
-                <option key={group.key} value={group.key}>
-                  {group.label}
-                </option>
-              ))}
-            </select>
-          </label>
-          {onImportTelegram ? (
-            <button
-              className="sn-chat-tools__button"
-              onClick={onImportTelegram}
-              type="button"
-            >
-              <UiIcon height={14} name="arrowDown" width={14} />
-              Import
-            </button>
-          ) : null}
-          {isFiltering ? (
-            <span aria-live="polite" className="sn-chat-tools__results">
-              {filteredMessages.length} found
-            </span>
-          ) : null}
-        </div>
 
         <div
           className="sn-chat-feed"

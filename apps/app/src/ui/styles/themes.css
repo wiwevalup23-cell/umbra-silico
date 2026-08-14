@@ -1,0 +1,385 @@
+/* Alternate themes.
+   ----------------------------------------------------------------------
+   The warm Platinum theme in silicon-nostalgia.css is the product, and it
+   stays the default: with no data-theme on the document, nothing in this
+   file applies. Themes are additive overrides, never edits to :root.
+
+   :root[data-theme="..."] is specificity (0,2,0) against :root's (0,1,0),
+   so a theme wins regardless of the order these files happen to load in.
+
+   --------------------------------------------------------------------
+   LILAC PLATINUM
+   Derived from a photograph of a wall of CRTs under violet light, by rule
+   rather than by eye: every token keeps the lightness and chroma it has in
+   the warm theme and only rotates its hue onto the path measured off that
+   photograph. Two consequences worth knowing before editing this block:
+
+     * The warm theme's contrast guarantees carry over by construction —
+       each semantic pair lands within 0.03 of its warm counterpart — so
+       this is not a palette that needs re-proving every time it is touched.
+       It does need re-proving if a lightness changes.
+
+     * The hue is not one number. The photograph runs magenta in shadow
+       (~327deg) and violet in the glow (~301deg), so ink and surfaces sit
+       at different hues on purpose. That spread is the theme's depth; a
+       single-hue tint reads flat next to it.
+
+   The sheet stays all but white. That is forced, not chosen: violet has
+   roughly 2.3x less chroma headroom than the old yellow at the top of the
+   range — at okL 0.997 sRGB allows C=0.0055 — so there is nothing to tint
+   it with. Mac OS 8.5 tinted its chrome and left document content white
+   for the same reason, which is convenient.
+
+   Semantic colours and status markers keep the hue that identifies them:
+   a green that stopped being green would cost more than it gained.
+   --sn-calibration-strip is absent here on purpose — it is a colour
+   reference, and a reference that moves with the theme is not one.
+   ---------------------------------------------------------------------- */
+
+/* While the palette is being swapped, nothing animates. This is both a taste
+   call — a theme change should land at once, not smear across 140ms of
+   per-element cross-fades — and a correctness one: a transitioned property
+   whose value comes from a custom property does not re-resolve when that
+   custom property changes, and stays on the old colour until an unrelated
+   recalc happens. See applyTheme() in shared/themes.ts. */
+:root[data-theme-switching],
+:root[data-theme-switching] *,
+:root[data-theme-switching] *::before,
+:root[data-theme-switching] *::after {
+  transition: none !important;
+}
+
+/* The bare attribute selector is what lets a settings swatch preview a theme
+   that is not currently running, by scoping the palette to a nested element.
+   The :root form is kept alongside it so the document-level case wins on
+   specificity (0,2,0) rather than on which file happened to load last. */
+:root[data-theme='platinum'],
+[data-theme='platinum'] {
+  /* Platinum *is* :root, so this block exists only so that a nested preview
+     does not inherit whichever theme is active around it. theme-tokens.test.ts
+     pins these to the real :root values, so they cannot drift into a lie. */
+  --sn-bg: #e1dcd2;
+  --sn-paper-bg: #fffefa;
+  --sn-selection: #365f80;
+}
+
+:root[data-theme='lilac'],
+[data-theme='lilac'] {
+  color-scheme: light;
+
+  /* Case, panels and the sheet */
+  --sn-bg: #dedbe5;
+  --sn-bg-soft: #efebf6;
+  --sn-panel-bg: rgba(239, 235, 246, 0.94);
+  --sn-editor-base: #cecad4;
+  --sn-editor-window: #fdfdff;
+  --sn-canvas-bg: #efebf6;
+  --sn-paper-bg: #fefeff;
+  --sn-surface: rgba(239, 235, 246, 0.92);
+  --sn-surface-solid: #efebf6;
+  --sn-surface-muted: #e3e0eb;
+  --sn-surface-hover: #e8e4ef;
+
+  /* Backdrop layers (the runtime rewrites these; these are the resting values) */
+  --sn-background-grid-y: linear-gradient(rgba(255, 255, 255, 0.32) 1px, transparent 1px);
+  --sn-background-grid-x: linear-gradient(90deg, rgba(255, 255, 255, 0.2) 1px, transparent 1px);
+  --sn-background-wash: linear-gradient(rgba(222, 219, 229, 0.42), rgba(222, 219, 229, 0.42));
+  --sn-background-pattern-y: linear-gradient(rgba(255, 255, 255, 0.32) 1px, transparent 1px);
+  --sn-background-pattern-x: linear-gradient(90deg, rgba(255, 255, 255, 0.2) 1px, transparent 1px);
+  --sn-background-scrim: linear-gradient(rgba(222, 219, 229, 0), rgba(222, 219, 229, 0));
+
+  /* Ink */
+  --sn-ink: #1c1a1d;
+  --sn-ink-soft: #373338;
+  --sn-muted: #655f67;
+  --sn-muted-2: #6f6972;
+  --sn-focus: #1c1a1d;
+
+  /* Rules and hairlines */
+  --sn-border: rgba(28, 26, 29, 0.14);
+  --sn-border-strong: rgba(28, 26, 29, 0.32);
+  --sn-border-hairline: rgba(28, 26, 29, 0.07);
+  --sn-border-control: rgba(28, 26, 29, 0.45);
+  --sn-muted-line: rgba(28, 26, 29, 0.11);
+  --sn-border-hover: #706673;
+
+  /* Accent */
+  --sn-selection: #7C3E85;
+  --sn-selection-strong: #652C66;
+  --sn-selection-soft: rgba(124, 62, 133, 0.1);
+
+  /* Semantic */
+  --sn-success: #477765;
+  --sn-pending: #956521;
+  --sn-danger: #9b3f40;
+  --sn-warning-ink: #76501d;
+
+  /* Status markers (categorical: each keeps the hue its name promises) */
+  --umbra-graphite: #3c393d;
+  --umbra-dust-blue: #5e6e87;
+  --umbra-old-gold: #9e8040;
+  --umbra-muted-green: #547662;
+  --umbra-faded-red: #8b5856;
+  --umbra-fog-violet: #736381;
+  --umbra-grey-beige: #94909e;
+
+  /* Platinum relief */
+  --sn-bevel-border: #847c8c;
+  --sn-bevel-bg: linear-gradient(180deg, #ffffff 0%, #e9e5f1 55%, #dad6e4 100%);
+  --sn-bevel-bg-hover: linear-gradient(180deg, #ffffff 0%, #efebf6 55%, #e1ddea 100%);
+  --sn-bevel-bg-active: linear-gradient(180deg, #d5d1df, #e6e2ee);
+  --sn-bevel-shadow: inset 0 1px 0 #ffffff, 0 1px 2px rgba(40, 35, 42, 0.28);
+  --sn-bevel-shadow-pressed: inset 0 1px 3px rgba(40, 35, 42, 0.35);
+  --sn-field-shadow: inset 0 2px 3px rgba(40, 35, 42, 0.12);
+  --sn-shadow-soft: 0 22px 54px rgba(31, 28, 33, 0.12);
+  --sn-shadow-panel: 0 16px 36px rgba(31, 28, 33, 0.08);
+  --sn-shadow-control: 2px 2px 0 rgba(28, 26, 29, 0.34);
+  --sn-shadow-control-pressed: 1px 1px 0 rgba(28, 26, 29, 0.34);
+  --sn-stripe-line: repeating-linear-gradient( 0deg, transparent 0 1px, rgba(28, 26, 29, 0.26) 1px 2px );
+  --sn-stripe-line-vertical: repeating-linear-gradient( 90deg, transparent 0 1px, rgba(28, 26, 29, 0.24) 1px 2px );
+
+  /* Raised surfaces */
+  --sn-menu-bg: #f4f1fa;
+  --sn-command-bg: #f5f2fb;
+  --sn-chat-bubble-bg: #f9f6ff;
+  --sn-chat-bubble-other-top: #eeeaf5;
+  --sn-chat-bubble-other-bottom: #e3dfec;
+  --sn-chat-footer-bg: #f0ecf7;
+  --sn-import-actions-bg: #f0ecf7;
+  --sn-swatch-bg: #f6f4fc;
+  --sn-math-editor-bg: #ebe8f2;
+  --sn-password-button-bg: #e9e5f0;
+  --sn-titlebar-bg: #eae6f2;
+  --sn-titlebar-button-bg: #e1ddea;
+  --sn-boot-bg: #f2f0f7;
+
+  /* Controls and secondary ink */
+  --sn-control-ink: #3c353d;
+  --sn-control-ink-hover: #342f35;
+  --sn-author-active-top: #4b454b;
+  --sn-author-active-bottom: #2c292d;
+  --sn-meta-ink: #89858f;
+  --sn-dialog-ink: #575157;
+  --sn-field-label-ink: #6e6870;
+  --sn-lightbox-ink: #edeaf3;
+
+  /* Danger family */
+  --sn-danger-ink: #8f2d31;
+  --sn-danger-ink-deep: #792e2f;
+  --sn-danger-ink-alt: #8c3235;
+  --sn-danger-ink-chat: #8c393a;
+  --sn-danger-ink-mini: #7f292c;
+  --sn-danger-border: #7d2d2f;
+  --sn-danger-button-top: #a94a4a;
+  --sn-danger-bg: #f7e4e3;
+  --sn-danger-icon-bottom: #f1dedd;
+  --sn-danger-on: #fffaf9;
+  /* Consumed from TypeScript, where a literal would be invisible to this
+     file: the backdrop scrim fades toward the case colour, and scanlines
+     are drawn in the theme's own ink. */
+  --sn-bg-rgb: 222, 219, 229;
+  --sn-scanline-rgb: 28, 26, 29;
+
+  /* Surface veils. Rotated onto the violet path like everything else,
+     except the two semantic ones, which keep the hue that names them. */
+  --sn-veil-rgb: 255, 255, 255;
+  --sn-veil-paper-rgb: 254, 254, 255;
+  --sn-veil-paper-warm-rgb: 254, 254, 255;
+  --sn-veil-sheet-rgb: 253, 253, 255;
+  --sn-veil-menu-rgb: 244, 241, 250;
+  --sn-veil-warm-rgb: 246, 244, 252;
+  --sn-veil-deep-rgb: 235, 232, 242;
+  --sn-veil-danger-rgb: 255, 246, 245;
+  --sn-veil-warning-rgb: 254, 228, 200;
+
+  /* The player keeps its warm art on a light case — a cream illustration on a
+     lilac desk still reads as an object sitting on it. Only the ink shifts. */
+  --sn-player-ink-rgb: 0, 0, 0;
+  --sn-player-ink-muted: #757079;
+  --sn-player-hello-ink: #131117;
+  --sn-player-shadow-rgb: 40, 35, 42;
+}
+
+/* --------------------------------------------------------------------
+   CRT ROOM
+   The dark theme could not be derived the way Lilac was. Rotating hue at
+   fixed lightness works when the lightness is already right; here it has
+   to invert, so every contrast guarantee is re-earned from scratch rather
+   than inherited, and the Platinum relief is re-drawn rather than flipped.
+
+   Why the relief could not simply invert: --sn-bevel-shadow in the warm
+   theme is `inset 0 1px 0 #ffffff` — light catching the top edge of a
+   raised control. Inverted, a white inset line on a dark control reads as
+   a scratch rather than as light. The same physics on a dark case gives a
+   low-alpha light instead, and the drop shadow has to carry much more of
+   the depth, because there is no bright surround bouncing light back.
+
+   Two inversions worth knowing about before editing:
+     * The sheet is the lightest surface, not the darkest. In the photo the
+       screens glow; a note is a screen, so it comes forward off the case.
+     * The primary button flips to a light fill. In the warm theme it is a
+       dark button with --sn-paper-bg as its text; on a dark case that
+       button would disappear, so the fill goes light and the (now dark)
+       paper token keeps working as its text colour.
+
+   Lightness sits inside the range the photograph actually occupies — its
+   darkest cluster measures okL 0.209 — rather than running down to black.
+   -------------------------------------------------------------------- */
+
+:root[data-theme='crt'],
+[data-theme='crt'] {
+  color-scheme: dark;
+
+  /* Case, panels and the sheet — the sheet is a screen here, so it is the lightest */
+  --sn-bg: #1D0F25;
+  --sn-bg-soft: #2F1F34;
+  --sn-panel-bg: rgba(46, 32, 51, 0.94);
+  --sn-editor-base: #24162B;
+  --sn-editor-window: #443146;
+  --sn-canvas-bg: #2F1F34;
+  --sn-paper-bg: #402E43;
+  --sn-surface: rgba(46, 32, 51, 0.92);
+  --sn-surface-solid: #2F1F34;
+  --sn-surface-muted: #291A30;
+  --sn-surface-hover: #37253B;
+
+  /* Backdrop layers (the runtime rewrites these; these are the resting values) */
+  --sn-background-grid-y: linear-gradient(rgba(233, 229, 240, 0.09) 1px, transparent 1px);
+  --sn-background-grid-x: linear-gradient(90deg, rgba(233, 229, 240, 0.06) 1px, transparent 1px);
+  --sn-background-wash: linear-gradient(rgba(29, 15, 37, 0.42), rgba(29, 15, 37, 0.42));
+  --sn-background-pattern-y: linear-gradient(rgba(233, 229, 240, 0.09) 1px, transparent 1px);
+  --sn-background-pattern-x: linear-gradient(90deg, rgba(233, 229, 240, 0.06) 1px, transparent 1px);
+  --sn-background-scrim: linear-gradient(rgba(29, 15, 37, 0), rgba(29, 15, 37, 0));
+
+  /* Ink */
+  --sn-ink: #E6E3EC;
+  --sn-ink-soft: #CECAD5;
+  --sn-muted: #A9A3B2;
+  --sn-muted-2: #A29CAB;
+  --sn-focus: #C8A9F8;
+
+  /* Rules and hairlines — light on a dark case, not dark on a light one */
+  --sn-border: rgba(233, 229, 240, 0.14);
+  --sn-border-strong: rgba(233, 229, 240, 0.30);
+  --sn-border-hairline: rgba(233, 229, 240, 0.08);
+  --sn-border-control: rgba(233, 229, 240, 0.38);
+  --sn-muted-line: rgba(233, 229, 240, 0.12);
+  --sn-border-hover: #7B7081;
+
+  /* Accent */
+  --sn-selection: #B790EC;
+  --sn-selection-strong: #C8A9F8;
+  --sn-selection-soft: rgba(183, 144, 236, 0.16);
+
+  /* Semantic */
+  --sn-success: #90CDB7;
+  --sn-pending: #D4B072;
+  --sn-danger: #E88381;
+  --sn-warning-ink: #D4B278;
+
+  /* Status markers */
+  --umbra-graphite: #78727A;
+  --umbra-dust-blue: #728EB7;
+  --umbra-old-gold: #C7A662;
+  --umbra-muted-green: #7CAB8F;
+  --umbra-faded-red: #C37C79;
+  --umbra-fog-violet: #A185B8;
+  --umbra-grey-beige: #B3AEBF;
+
+  /* Platinum relief, re-drawn rather than inverted */
+  --sn-bevel-border: #624D64;
+  --sn-bevel-bg: linear-gradient(180deg, #493C4A 0%, #402E43 55%, #38263C 100%);
+  --sn-bevel-bg-hover: linear-gradient(180deg, #524452 0%, #453846 55%, #402E43 100%);
+  --sn-bevel-bg-active: linear-gradient(180deg, #342338, #3F2C42);
+  --sn-bevel-shadow: inset 0 1px 0 rgba(233, 229, 240, 0.14), 0 1px 2px rgba(0, 0, 0, 0.55);
+  --sn-bevel-shadow-pressed: inset 0 1px 3px rgba(0, 0, 0, 0.55);
+  --sn-field-shadow: inset 0 2px 3px rgba(0, 0, 0, 0.42);
+  --sn-shadow-soft: 0 22px 54px rgba(0, 0, 0, 0.52);
+  --sn-shadow-panel: 0 16px 36px rgba(0, 0, 0, 0.42);
+  --sn-shadow-control: 2px 2px 0 rgba(0, 0, 0, 0.55);
+  --sn-shadow-control-pressed: 1px 1px 0 rgba(0, 0, 0, 0.55);
+  --sn-stripe-line: repeating-linear-gradient(0deg, transparent 0 1px, rgba(233, 229, 240, 0.16) 1px 2px);
+  --sn-stripe-line-vertical: repeating-linear-gradient(90deg, transparent 0 1px, rgba(233, 229, 240, 0.14) 1px 2px);
+
+  /* Raised surfaces — a popover comes forward, so on dark it goes lighter */
+  --sn-menu-bg: #3C2A40;
+  --sn-command-bg: #3D2B41;
+  --sn-chat-bubble-bg: #453147;
+  --sn-chat-bubble-other-top: #35243A;
+  --sn-chat-bubble-other-bottom: #2F1F34;
+  --sn-chat-footer-bg: #322137;
+  --sn-import-actions-bg: #322137;
+  --sn-swatch-bg: #38263C;
+  --sn-math-editor-bg: #35243A;
+  --sn-password-button-bg: #39273D;
+  --sn-titlebar-bg: #2B1C31;
+  --sn-titlebar-button-bg: #38263C;
+  --sn-boot-bg: #1D0F25;
+
+  /* Controls and secondary ink */
+  --sn-control-ink: #EEEBF3;
+  --sn-control-ink-hover: #F7F6FB;
+  --sn-author-active-top: #DFDCE6;
+  --sn-author-active-bottom: #CECAD5;
+  --sn-meta-ink: #958F9D;
+  --sn-dialog-ink: #C0BBC8;
+  --sn-field-label-ink: #A19BAA;
+  --sn-lightbox-ink: #E9E6EF;
+
+  /* Danger family */
+  --sn-danger-ink: #E27D7B;
+  --sn-danger-ink-deep: #DB7775;
+  --sn-danger-ink-alt: #DF7F7C;
+  --sn-danger-ink-chat: #E08381;
+  --sn-danger-ink-mini: #DE7A78;
+  --sn-danger-border: #924141;
+  --sn-danger-button-top: #B04547;
+  --sn-danger-bg: #401D1C;
+  --sn-danger-icon-bottom: #502827;
+  --sn-danger-on: #FEF0EF;
+
+  /* Consumed from TypeScript */
+  --sn-bg-rgb: 29, 15, 37;
+  --sn-scanline-rgb: 233, 229, 240;
+
+  /* Surface veils. On a light case a veil is near-white and lifts a
+     surface toward the paper. Here it has to lift *away* from a dark
+     case, so each sits above --sn-editor-window (the lightest surface
+     a veil can land on) — otherwise a veil over the sheet would darken
+     it and the raise would read backwards. */
+  --sn-veil-rgb: 76, 58, 76;
+  --sn-veil-paper-rgb: 79, 61, 79;
+  --sn-veil-paper-warm-rgb: 79, 61, 79;
+  --sn-veil-sheet-rgb: 81, 63, 81;
+  --sn-veil-menu-rgb: 74, 57, 75;
+  --sn-veil-warm-rgb: 71, 54, 73;
+  --sn-veil-deep-rgb: 68, 52, 70;
+  --sn-veil-danger-rgb: 89, 48, 47;
+  --sn-veil-warning-rgb: 80, 60, 23;
+
+  /* The player and the emblem swap to their own files here. Raster art cannot
+     follow a token, and a hue-rotate over an illustration reads as a stain, so
+     each was regenerated through the same lightness inversion and hue path as
+     this palette — see recolour_assets.py in the session notes. */
+  --sn-player-ink-rgb: 235, 231, 242;
+  --sn-player-ink-muted: #a79fb0;
+  --sn-player-hello-ink: #e9e3f2;
+  --sn-player-shadow-rgb: 0, 0, 0;
+}
+
+/* Raster art swaps by file. `content` on a replaced element exchanges what an
+   <img> paints without the component needing to know which theme is running —
+   which matters here because UI components are not allowed to read settings
+   (architecture.test.ts keeps that boundary). Only the dark theme pays for the
+   second file; the light themes render the original untouched. */
+:root[data-theme='crt'] .sn-empty-player__image {
+  content: url("/assets/player-crt-cut.png");
+}
+
+:root[data-theme='crt'] .sn-empty-player__hello-final {
+  content: url("/assets/hello-smooth-crt.svg");
+}
+
+:root[data-theme='crt'] .sn-brand-emblem__image {
+  content: url("../../../src-tauri/icons/128x128@2x-crt.png");
+}

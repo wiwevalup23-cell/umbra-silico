@@ -76,8 +76,8 @@ export function StatusPicker({ disabled = false, onChange, value }: StatusPicker
     () => [...propertyStatusOptions, ...mergeCustomStatuses(customStatuses, value)],
     [customStatuses, value],
   )
-  const selectedIndex = Math.max(0, options.findIndex((option) => option.value === value))
   const selectedOption = getPropertyStatusPresentation(value)
+  const selectedIndex = Math.max(0, options.findIndex((option) => option.value === selectedOption.value))
 
   useEffect(() => {
     setActiveIndex(selectedIndex)
@@ -250,7 +250,7 @@ export function StatusPicker({ disabled = false, onChange, value }: StatusPicker
                 <span className="sn-status-picker__label">{t('status.pageStatus')}</span>
                 {options.map((option, index) => (
                   <button
-                    aria-selected={option.value === value}
+                    aria-selected={option.value === selectedOption.value}
                     className="sn-status-picker__option"
                     data-active={index === activeIndex}
                     id={`${listboxId}-${option.value}`}

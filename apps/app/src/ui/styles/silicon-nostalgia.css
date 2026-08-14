@@ -6,6 +6,143 @@
   src: url("/fonts/EBGaramond12-Regular.woff") format("woff");
 }
 
+/* Umbra interface controls -------------------------------------------------
+   A true superellipse frame from the approved handoff. The frame is SVG, not
+   a rounded rectangle approximation, so the sides stay subtly full and the
+   corner curvature remains continuous at every rendered size. */
+.sn-squircle-button,
+.sn-topbar .sn-squircle-button,
+.sn-editor-actions .sn-squircle-button {
+  --sn-squircle-fill: rgba(255, 254, 250, 0.5);
+  --sn-squircle-stroke: rgba(28, 27, 24, 0.3);
+  --sn-squircle-stroke-width: 1.15;
+  position: relative;
+  isolation: isolate;
+  width: 36px !important;
+  height: 36px !important;
+  padding: 0 !important;
+  overflow: visible;
+  border: 0 !important;
+  border-radius: 0 !important;
+  color: var(--sn-ink-soft) !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  transform: none;
+}
+
+.sn-squircle-button[data-size='large'],
+.sn-topbar .sn-squircle-button[data-size='large'] {
+  width: 44px !important;
+  height: 44px !important;
+}
+
+.sn-squircle-button[data-size='small'],
+.sn-editor-actions .sn-squircle-button[data-size='small'] {
+  --sn-squircle-stroke-width: 1.55;
+  width: 30px !important;
+  height: 30px !important;
+}
+
+.sn-squircle-button > .sn-squircle-button__frame {
+  position: absolute;
+  z-index: -1;
+  inset: 0;
+  width: 100% !important;
+  height: 100% !important;
+  overflow: visible;
+  pointer-events: none;
+}
+
+.sn-squircle-button__surface {
+  fill: var(--sn-squircle-fill);
+  stroke: var(--sn-squircle-stroke);
+  stroke-width: var(--sn-squircle-stroke-width);
+  vector-effect: non-scaling-stroke;
+}
+
+.sn-squircle-button__focus {
+  fill: none;
+  stroke: var(--sn-focus);
+  stroke-width: 2;
+  opacity: 0;
+  vector-effect: non-scaling-stroke;
+}
+
+.sn-squircle-button > .sn-squircle-button__icon,
+.sn-topbar .sn-squircle-button > .sn-squircle-button__icon,
+.sn-editor-actions .sn-squircle-button > .sn-squircle-button__icon {
+  position: relative;
+  width: 20px !important;
+  height: 20px !important;
+  pointer-events: none;
+  transition: transform 90ms ease;
+}
+
+.sn-squircle-button[data-size='small'] > .sn-squircle-button__icon,
+.sn-editor-actions .sn-squircle-button[data-size='small'] > .sn-squircle-button__icon {
+  width: 18px !important;
+  height: 18px !important;
+}
+
+.sn-squircle-button:hover:not(:disabled) {
+  --sn-squircle-fill: rgba(28, 27, 24, 0.1);
+  --sn-squircle-stroke: rgba(28, 27, 24, 0.42);
+  color: var(--sn-ink) !important;
+  background: transparent !important;
+}
+
+.sn-squircle-button:active:not(:disabled) {
+  --sn-squircle-fill: rgba(28, 27, 24, 0.17);
+  --sn-squircle-stroke: rgba(28, 27, 24, 0.5);
+  background: transparent !important;
+  transform: none;
+}
+
+.sn-squircle-button:active:not(:disabled) > .sn-squircle-button__icon {
+  transform: translateY(0.5px);
+}
+
+.sn-squircle-button[data-active='true'] {
+  --sn-squircle-fill: rgba(28, 27, 24, 0.13);
+  --sn-squircle-stroke: rgba(28, 27, 24, 0.85);
+  color: var(--sn-ink) !important;
+  background: transparent !important;
+}
+
+.sn-squircle-button[data-variant='primary'] {
+  --sn-squircle-fill: var(--sn-ink);
+  --sn-squircle-stroke: var(--sn-ink);
+  color: var(--sn-paper-bg) !important;
+  background: transparent !important;
+}
+
+.sn-squircle-button[data-variant='primary']:hover:not(:disabled) {
+  --sn-squircle-fill: #34312a;
+  --sn-squircle-stroke: #34312a;
+}
+
+.sn-squircle-button[data-variant='inverted'] {
+  --sn-squircle-fill: rgba(255, 254, 250, 0.1);
+  --sn-squircle-stroke: rgba(255, 254, 250, 0.38);
+  color: var(--sn-paper-bg) !important;
+}
+
+.sn-squircle-button:focus-visible {
+  outline: 0 !important;
+}
+
+.sn-squircle-button:focus-visible .sn-squircle-button__focus {
+  opacity: 1;
+}
+
+.sn-squircle-button:disabled {
+  --sn-squircle-fill: rgba(255, 254, 250, 0.3);
+  --sn-squircle-stroke: rgba(28, 27, 24, 0.18);
+  color: var(--sn-ink) !important;
+  opacity: 0.3;
+  background: transparent !important;
+}
+
 @font-face {
   font-display: swap;
   font-family: "SN EB Garamond";
@@ -84,6 +221,13 @@
   --sn-success: #4f765c;
   --sn-pending: #956521;
   --sn-danger: #9b4036;
+  --umbra-graphite: #3c3a35;
+  --umbra-dust-blue: #5b6f86;
+  --umbra-old-gold: #9c8140;
+  --umbra-muted-green: #5f7457;
+  --umbra-faded-red: #8a5a4a;
+  --umbra-fog-violet: #6f6484;
+  --umbra-grey-beige: #9a9184;
   --sn-accent: var(--sn-selection);
   --sn-accent-strong: var(--sn-selection-strong);
   --sn-accent-soft: var(--sn-selection-soft);
@@ -127,6 +271,95 @@
   --sn-tabbar-height: 64px;
   --sidebar-width: 320px;
   --inspector-width: 292px;
+  /* The paper has one stable geometry on desktop. Workspace backgrounds only
+     paint the desk around it; they never participate in these dimensions. */
+  --sn-editor-desk-inset: clamp(16px, 1.6vw, 24px);
+  --sn-editor-paper-max-width: 1120px;
+  --sn-editor-paper-inline: clamp(48px, 4.5vw, 64px);
+  --sn-editor-title-gutter: 46px;
+  --sn-editor-paper-header-block: clamp(20px, 1.7vw, 24px);
+
+  /* ---------------------------------------------------------------
+     Colours lifted out of rules so a theme can reach them. Each value
+     below is byte-identical to the literal it replaced — this block
+     changes nothing on screen, it only gives the warm theme a surface
+     an alternate theme can override.
+
+     Several creams here are within 2-3 of each other and probably want
+     to be one token; merging them moves pixels, so it is deliberately
+     left as a separate decision.
+     --------------------------------------------------------------- */
+  /* Read from TypeScript, which composes the backdrop layers at runtime.
+     They are channel triples rather than colours so an alpha can be applied
+     at the call site: rgba(var(--sn-bg-rgb), 0.4). Without these the scrim
+     and the scanlines would stay warm under every theme, because a literal
+     in a .ts file is not reachable from a stylesheet. */
+  --sn-bg-rgb: 225, 220, 210; /* mirrors --sn-bg */
+  --sn-scanline-rgb: 28, 27, 24; /* mirrors --sn-ink */
+
+  /* The empty-state player. Its case is raster art, so the theme owns a second
+     file rather than a filter (a hue-rotate over an illustration reads as a
+     stain). These are the parts drawn *over* that art in CSS, and they have to
+     travel with whichever file is showing. */
+  --sn-player-ink-rgb: 0, 0, 0; /* the copy on the player's screen */
+  --sn-player-ink-muted: #777777; /* the hint line under it */
+  --sn-player-hello-ink: #111216; /* the handwritten mark */
+  --sn-player-shadow-rgb: 40, 37, 30; /* the drop shadow under the case */
+
+  /* ---------------------------------------------------------------
+     Surface veils. Each is the RGB triple of an `rgba(..., a)` that a
+     rule paints as a background to raise a surface; the alpha stays at
+     the call site because the alpha is how far that particular surface
+     lifts, while the colour is what a theme has to own.
+
+     Stage 1 missed these: it judged colours by chroma, and near-white
+     has none. But at alpha 0.9 a veil does not tint what is under it,
+     it replaces it — which is invisible on a light case and paints a
+     white patch on a dark one. Values below are byte-identical to the
+     literals they replaced.
+     --------------------------------------------------------------- */
+  --sn-veil-danger-rgb: 255, 246, 242; /* destructive hover */
+  --sn-veil-deep-rgb: 238, 233, 223; /* the lowest raise in the set */
+  --sn-veil-menu-rgb: 246, 243, 234; /* matches --sn-menu-bg, used at 0.98 */
+  --sn-veil-paper-rgb: 255, 254, 250; /* raise tuned to the sheet */
+  --sn-veil-paper-warm-rgb: 255, 254, 249; /* as above, a shade warmer */
+  --sn-veil-rgb: 255, 255, 252; /* the plain raise; 31 of the 57 sites */
+  --sn-veil-sheet-rgb: 255, 253, 248; /* block-handle menu */
+  --sn-veil-warm-rgb: 248, 245, 237; /* a warmer, slightly lower raise */
+  --sn-veil-warning-rgb: 246, 232, 198; /* import warnings */
+  --sn-author-active-bottom: #2c2a25; /* active author chip, gradient foot */
+  --sn-author-active-top: #4a4740; /* active author chip, gradient top */
+  --sn-boot-bg: #f3f1ea; /* pre-hydration background in globals.css */
+  --sn-border-hover: #6f6a5c; /* control border on hover */
+  --sn-chat-bubble-bg: #fbf8ef; /* own chat bubble */
+  --sn-chat-bubble-other-bottom: #e7e1d5; /* incoming bubble, gradient foot + tail */
+  --sn-chat-bubble-other-top: #f0ece2; /* incoming bubble, gradient top */
+  --sn-chat-footer-bg: #f2eee3; /* chat composer footer */
+  --sn-command-bg: #f7f4eb; /* command window body */
+  --sn-control-ink: #3a382f; /* icon-button ink, primary-button gradient top */
+  --sn-control-ink-hover: #34312a; /* primary button, hover */
+  --sn-danger-bg: #f6e5df; /* error status background */
+  --sn-danger-border: #7d2e28; /* danger button border + gradient foot */
+  --sn-danger-button-top: #a94b40; /* danger button gradient top */
+  --sn-danger-icon-bottom: #f0dfd8; /* danger modal icon, gradient foot */
+  --sn-danger-ink: #8f2f26; /* destructive menu items and the modal icon */
+  --sn-danger-ink-alt: #8c332f; /* lock-form and settings errors */
+  --sn-danger-ink-chat: #8c3b2e; /* destructive chat bubble action */
+  --sn-danger-ink-deep: #792f28; /* transfer + import error text */
+  --sn-danger-ink-mini: #7f2a22; /* mini destructive button */
+  --sn-danger-on: #fffaf7; /* text sitting on a danger fill */
+  --sn-dialog-ink: #55534b; /* confirm-dialog and lock-form body copy */
+  --sn-field-label-ink: #6d6a61; /* lock-form field labels */
+  --sn-import-actions-bg: #f2eee4; /* telegram import action bar */
+  --sn-lightbox-ink: #efece3; /* caption + close ink over the dark lightbox */
+  --sn-math-editor-bg: #eee9df; /* math editor sheet */
+  --sn-menu-bg: #f6f3ea; /* every popover + dropdown surface */
+  --sn-meta-ink: #8a877c; /* timestamps, fingerprints, inline code */
+  --sn-password-button-bg: #ebe7dc; /* reveal-password button */
+  --sn-swatch-bg: #f8f5ed; /* pattern-option swatch */
+  --sn-titlebar-bg: #ece8dc; /* chat / lock / command titlebars */
+  --sn-titlebar-button-bg: #e4dfd2; /* lock titlebar button */
+  --sn-warning-ink: #76501d; /* import warnings summary */
 }
 
 body {
@@ -202,7 +435,10 @@ button {
   padding: 10px 14px 10px 18px;
   border: 1px solid var(--sn-border) !important;
   border-radius: var(--sn-radius-lg);
-  background: rgba(248, 245, 237, 0.92) !important;
+  /* The same token the side panels use. This was a frozen literal of the old
+     panel colour, so when the surface ladder moved the panels down the topbar
+     stayed behind and the chrome visibly split into two shades. */
+  background: var(--sn-panel-bg) !important;
   backdrop-filter: none !important;
   box-shadow: var(--sn-shadow-panel) !important;
 }
@@ -315,7 +551,7 @@ button {
   padding: 0;
   border: 1px solid var(--sn-bevel-border);
   border-radius: 8px;
-  color: #3a382f;
+  color: var(--sn-control-ink);
   background: var(--sn-bevel-bg);
   box-shadow: var(--sn-bevel-shadow);
   cursor: pointer;
@@ -328,7 +564,7 @@ button {
 }
 
 .sn-icon-button:hover:not(:disabled) {
-  border-color: #6f6a5c;
+  border-color: var(--sn-border-hover);
   color: var(--sn-ink);
   background: var(--sn-bevel-bg-hover);
 }
@@ -343,7 +579,7 @@ button {
   border-color: rgba(28, 27, 24, 0.18);
   color: rgba(28, 27, 24, 0.3);
   cursor: not-allowed;
-  background: rgba(248, 245, 237, 0.7);
+  background: rgba(var(--sn-veil-warm-rgb), 0.7);
   box-shadow: none;
 }
 
@@ -352,14 +588,14 @@ button {
 .sn-primary-button {
   border-color: var(--sn-ink);
   color: var(--sn-paper-bg);
-  background: linear-gradient(180deg, #3a382f, var(--sn-ink));
+  background: linear-gradient(180deg, var(--sn-control-ink), var(--sn-ink));
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.18), 0 1px 2px rgba(40, 37, 30, 0.28);
 }
 
 .sn-icon-button--primary:hover:not(:disabled),
 .sn-primary-button:hover:not(:disabled) {
-  border-color: #34312a;
-  background: #34312a;
+  border-color: var(--sn-control-ink-hover);
+  background: var(--sn-control-ink-hover);
 }
 
 .sn-primary-button,
@@ -497,7 +733,7 @@ button {
 }
 
 .sn-workspace[data-focus="true"] .sn-editor-shell {
-  max-width: 980px;
+  max-width: var(--sn-editor-paper-max-width);
   margin: 0 auto;
 }
 
@@ -512,7 +748,9 @@ button {
   border: 1px solid var(--sn-border-control);
   border-radius: var(--sn-radius-sm);
   color: var(--sn-muted);
-  background: var(--sn-paper-bg);
+  /* A collapsed panel is still that panel, so it keeps the panel's colour
+     rather than reading as a sheet of paper stood on its edge. */
+  background: var(--sn-panel-bg);
   box-shadow: var(--sn-shadow-control);
   cursor: pointer;
   transition:
@@ -522,7 +760,7 @@ button {
 
 .sn-rail:hover {
   color: var(--sn-ink);
-  background: rgba(255, 255, 252, 0.92);
+  background: var(--sn-surface-hover);
 }
 
 .sn-rail--library {
@@ -614,6 +852,60 @@ button {
   line-height: 1.25;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+/* Native `title` bubbles can outlive the button that spawned them when a
+   panel collapses. This tooltip belongs to the button's own positioning
+   context, so removing the panel removes the bubble in the same frame. */
+.sn-panel-collapse-button {
+  position: relative !important;
+}
+
+.sn-panel-collapse-button::after {
+  content: attr(aria-label);
+  position: absolute !important;
+  z-index: 80;
+  top: calc(100% + 6px) !important;
+  right: 0 !important;
+  width: max-content;
+  max-width: 210px;
+  padding: 5px 8px;
+  border: 1px solid rgba(28, 27, 24, 0.16);
+  border-radius: 6px;
+  color: var(--sn-ink);
+  background: var(--sn-paper-bg);
+  box-shadow: var(--sn-shadow-control);
+  font-family: var(--sn-compact-font);
+  font-size: 11px;
+  line-height: 1.2;
+  white-space: nowrap;
+  opacity: 0 !important;
+  visibility: hidden !important;
+  pointer-events: none;
+  transform: translateY(-2px);
+  transition:
+    opacity 120ms ease,
+    transform 120ms ease,
+    visibility 0s linear 120ms;
+}
+
+.sn-panel-collapse-button:hover::after,
+.sn-panel-collapse-button:focus-visible::after {
+  opacity: 1 !important;
+  visibility: visible !important;
+  transform: translateY(0);
+  transition-delay: 0s;
+}
+
+.sn-workspace[data-left-collapsed="true"]
+  > .sn-library-panel
+  .sn-panel-collapse-button::after,
+.sn-workspace[data-right-collapsed="true"]
+  > .sn-inspector-panel
+  .sn-panel-collapse-button::after {
+  display: none !important;
+  opacity: 0 !important;
+  visibility: hidden !important;
 }
 
 .sn-panel-status {
@@ -756,7 +1048,7 @@ button {
   border-radius: 5px;
   padding: 0 6px;
   color: var(--sn-ink);
-  background: rgba(255, 255, 252, 0.9);
+  background: rgba(var(--sn-veil-rgb), 0.9);
   outline: 0;
 }
 
@@ -799,7 +1091,7 @@ button {
   padding: 6px;
   border: 1px solid var(--sn-border-control);
   border-radius: 8px;
-  background: #f6f3ea;
+  background: var(--sn-menu-bg);
   box-shadow: 0 16px 34px rgba(28, 27, 24, 0.2);
 }
 
@@ -1043,7 +1335,7 @@ button {
   border: 1px solid rgba(90, 38, 31, 0.2);
   border-radius: 7px;
   color: var(--sn-muted);
-  background: rgba(255, 255, 252, 0.78);
+  background: rgba(var(--sn-veil-rgb), 0.78);
   box-shadow: 0 4px 10px rgba(28, 27, 24, 0.08);
   cursor: pointer;
   opacity: 0;
@@ -1081,8 +1373,8 @@ button {
 }
 
 .sn-note-card__actions-trigger:hover {
-  color: #8f2f26;
-  background: rgba(255, 246, 242, 0.92);
+  color: var(--sn-danger-ink);
+  background: rgba(var(--sn-veil-danger-rgb), 0.92);
 }
 
 .sn-note-card__menu {
@@ -1113,7 +1405,7 @@ button {
 }
 
 .sn-note-card__menu .sn-note-card__menu-danger {
-  color: #8f2f26;
+  color: var(--sn-danger-ink);
 }
 
 @media (hover: none), (max-width: 959px) {
@@ -1151,7 +1443,7 @@ button {
   border: 1px solid rgba(28, 27, 24, 0.14);
   border-radius: 8px;
   color: var(--sn-ink);
-  background: rgba(255, 255, 252, 0.58);
+  background: rgba(var(--sn-veil-rgb), 0.58);
   cursor: pointer;
 }
 
@@ -1164,7 +1456,7 @@ button {
 }
 
 .sn-library-footer__button:hover {
-  background: rgba(255, 255, 252, 0.82);
+  background: rgba(var(--sn-veil-rgb), 0.82);
 }
 
 .sn-trash-list {
@@ -1185,7 +1477,7 @@ button {
   padding: 10px;
   border: 1px solid rgba(28, 27, 24, 0.12);
   border-radius: 8px;
-  background: rgba(255, 255, 252, 0.58);
+  background: rgba(var(--sn-veil-rgb), 0.58);
 }
 
 .sn-trash-row__content {
@@ -1228,20 +1520,20 @@ button {
   border: 1px solid rgba(28, 27, 24, 0.18);
   border-radius: 7px;
   color: var(--sn-ink);
-  background: rgba(255, 255, 252, 0.76);
+  background: rgba(var(--sn-veil-rgb), 0.76);
   cursor: pointer;
   font-size: 11px;
   font-weight: 650;
 }
 
 .sn-mini-button:hover {
-  background: rgba(255, 255, 252, 0.95);
+  background: rgba(var(--sn-veil-rgb), 0.95);
 }
 
 .sn-mini-button--danger {
-  color: #7f2a22;
+  color: var(--sn-danger-ink-mini);
   border-color: rgba(127, 42, 34, 0.24);
-  background: rgba(255, 246, 242, 0.72);
+  background: rgba(var(--sn-veil-danger-rgb), 0.72);
 }
 
 .sn-empty-list {
@@ -1254,7 +1546,7 @@ button {
   border-radius: var(--sn-radius-lg);
   color: var(--sn-muted);
   text-align: center;
-  background: rgba(255, 255, 252, 0.46);
+  background: rgba(var(--sn-veil-rgb), 0.46);
 }
 
 .sn-empty-list strong {
@@ -1452,7 +1744,8 @@ button {
 
 .sn-editor-toolbar {
   position: relative;
-  width: calc(100% - 30px) !important;
+  width: 100% !important;
+  box-sizing: border-box;
   display: flex !important;
   /* Narrow editor columns wrap tools onto extra rows instead of clipping them. */
   flex-wrap: wrap;
@@ -1506,8 +1799,11 @@ button {
   padding: 0;
 }
 
+/* Deliberately not a positioning context: the menu anchors to the toolbar as
+   a whole. Hung off this group it followed the button wherever the toolbar
+   wrapped it, and opened leftward off the edge of the panel. */
 .sn-editor-toolbar__group--more {
-  position: relative;
+  position: static;
 }
 
 .sn-editor-toolbar__group--typography {
@@ -1533,7 +1829,7 @@ button {
 .sn-editor-format-field:focus-within {
   border-color: rgba(28, 27, 24, 0.14);
   color: var(--sn-ink);
-  background: rgba(255, 254, 250, 0.64);
+  background: rgba(var(--sn-veil-paper-rgb), 0.64);
 }
 
 .sn-editor-format-field__prefix {
@@ -1613,7 +1909,7 @@ button {
   border: 1px solid var(--sn-border);
   border-radius: var(--sn-radius-md);
   color: var(--sn-ink);
-  background: #f6f3ea;
+  background: var(--sn-menu-bg);
   box-shadow: var(--sn-shadow-soft);
   text-transform: none;
 }
@@ -1656,7 +1952,7 @@ button {
   border: 1px solid rgba(28, 27, 24, 0.13);
   border-radius: var(--sn-radius-sm);
   color: var(--sn-ink-soft);
-  background: rgba(255, 254, 250, 0.58);
+  background: rgba(var(--sn-veil-paper-rgb), 0.58);
   cursor: pointer;
   font-family: var(--sn-compact-font);
   font-size: 9px;
@@ -1751,14 +2047,16 @@ button {
   z-index: 18;
   top: calc(100% + 12px);
   right: 0;
-  width: min(340px, calc(100vw - 56px));
+  width: min(440px, calc(100vw - 56px));
+  max-height: min(72vh, 680px);
+  overflow-y: auto;
   display: grid;
   gap: 10px;
   padding: 12px;
   border: 1px solid var(--sn-border);
   border-radius: var(--sn-radius-md);
   color: var(--sn-ink);
-  background: #f6f3ea;
+  background: var(--sn-menu-bg);
   box-shadow: var(--sn-shadow-soft);
   text-transform: none;
 }
@@ -1772,15 +2070,43 @@ button {
   height: 12px;
   border-top: 1px solid var(--sn-border);
   border-left: 1px solid var(--sn-border);
-  background: #f6f3ea;
+  background: var(--sn-menu-bg);
   transform: rotate(45deg);
 }
 
+.sn-editor-tools-menu--floating {
+  position: fixed !important;
+  z-index: 360 !important;
+  right: auto !important;
+  bottom: auto !important;
+  box-sizing: border-box;
+  overscroll-behavior: contain;
+}
+
+.sn-editor-tools-menu--floating::before {
+  display: none;
+}
+
+/* Says why every command below is greyed out, instead of leaving the reader
+   to guess that the caret has to be inside a table. */
+.sn-editor-tools-menu__empty {
+  margin: 0 0 2px;
+  color: var(--sn-muted);
+  font-size: 12px;
+  line-height: 1.35;
+}
+
+/* Section name above its items, not beside them: the old two-column layout
+   spent a quarter of the menu's width on labels and squeezed the items into
+   a wrapping scatter. */
 .sn-editor-tools-menu__section {
   display: grid;
-  grid-template-columns: 74px minmax(0, 1fr);
-  align-items: center;
-  gap: 10px;
+  gap: 4px;
+}
+
+.sn-editor-tools-menu__section + .sn-editor-tools-menu__section {
+  padding-top: 8px;
+  border-top: 1px solid var(--sn-border-hairline);
 }
 
 .sn-editor-tools-menu__label,
@@ -1800,12 +2126,82 @@ button {
   text-align: center;
 }
 
+/* Two columns: short enough to stay one screenful, wide enough that each
+   label reads as a phrase rather than a truncated stub. */
 .sn-editor-tools-menu__row {
+  min-width: 0;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 2px 4px;
+}
+
+.sn-editor-tools-menu__row--alignment {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.sn-editor-layout-presets {
   min-width: 0;
   display: flex;
   flex-wrap: wrap;
-  align-items: center;
   gap: 5px;
+}
+
+.sn-editor-layout-preset {
+  min-width: 54px;
+  min-height: 30px;
+  display: inline-grid;
+  place-items: center;
+  padding: 0 10px;
+  border: 1px solid rgba(28, 27, 24, 0.16);
+  border-radius: var(--sn-radius-sm);
+  color: var(--sn-ink-soft);
+  background: rgba(var(--sn-veil-paper-rgb), 0.58);
+  cursor: pointer;
+  font-family: var(--sn-compact-font);
+  font-size: 10px;
+}
+
+.sn-editor-layout-preset:hover:not(:disabled),
+.sn-editor-layout-preset:focus-visible,
+.sn-editor-layout-preset[data-active="true"] {
+  border-color: rgba(28, 27, 24, 0.34);
+  color: var(--sn-ink);
+  background: rgba(28, 27, 24, 0.08);
+  outline: 0;
+}
+
+.sn-editor-layout-preset:disabled {
+  opacity: 0.42;
+  cursor: default;
+}
+
+.sn-text-alignment-glyph {
+  width: 16px;
+  display: grid;
+  gap: 2px;
+}
+
+.sn-text-alignment-glyph i {
+  width: 100%;
+  height: 1px;
+  display: block;
+  background: currentColor;
+}
+
+.sn-text-alignment-glyph i:nth-child(2) {
+  width: 11px;
+}
+
+.sn-text-alignment-glyph[data-alignment="center"] i:nth-child(2) {
+  justify-self: center;
+}
+
+.sn-text-alignment-glyph[data-alignment="right"] i:nth-child(2) {
+  justify-self: end;
+}
+
+.sn-text-alignment-glyph[data-alignment="justify"] i:nth-child(2) {
+  width: 100%;
 }
 
 .sn-editor-tools-menu__number-label {
@@ -1820,7 +2216,7 @@ button {
   border: 1px solid rgba(28, 27, 24, 0.2);
   border-radius: var(--sn-radius-sm);
   color: var(--sn-ink);
-  background: rgba(255, 254, 250, 0.88);
+  background: rgba(var(--sn-veil-paper-rgb), 0.88);
   box-shadow: var(--sn-field-shadow);
   font-family: var(--sn-compact-font);
   font-size: 10px;
@@ -1838,7 +2234,7 @@ button {
 .sn-editor-page-settings__field {
   min-width: 0;
   display: grid;
-  grid-template-columns: 52px 74px 22px 48px;
+  grid-template-columns: minmax(72px, 1fr) 74px 28px;
   align-items: center;
   gap: 7px;
 }
@@ -1870,28 +2266,62 @@ button {
 
 .sn-editor-tools-menu__number:disabled {
   color: rgba(31, 32, 36, 0.28);
-  background: rgba(248, 245, 237, 0.45);
+  background: rgba(var(--sn-veil-warm-rgb), 0.45);
 }
 
+/* Mark first, then name, left-aligned down a column. As centred uppercase
+   pills the items were all the same silhouette and had to be read one by one
+   rather than scanned. */
 .sn-editor-menu-button {
-  min-width: 32px;
-  height: 28px;
-  display: inline-flex;
+  min-width: 0;
+  min-height: 28px;
+  display: grid;
+  grid-template-columns: 18px minmax(0, 1fr);
   align-items: center;
-  justify-content: center;
-  gap: 6px;
+  gap: 8px;
   padding: 0 8px;
   border: 1px solid transparent;
   border-radius: var(--sn-radius-sm);
-  color: #5f5f5f;
-  background: rgba(248, 245, 237, 0.48);
+  color: var(--sn-ink-soft);
+  background: transparent;
   cursor: pointer;
-  font-family: var(--sn-compact-font);
-  font-size: 10px;
-  font-weight: 500;
-  letter-spacing: 0.04em;
+  font-family: var(--sn-body-font);
+  font-size: 12px;
+  line-height: 1.2;
+  text-align: left;
+}
+
+.sn-editor-menu-button__icon {
+  display: inline-grid;
+  place-items: center;
+  color: var(--sn-muted);
+}
+
+.sn-editor-menu-button__icon svg {
+  width: 16px;
+  height: 16px;
+}
+
+.sn-editor-menu-button__glyph {
+  font-family: var(--sn-editor-display-font);
+  font-size: 16px;
   line-height: 1;
-  text-transform: uppercase;
+}
+
+.sn-editor-menu-button__label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sn-editor-menu-button:hover:not(:disabled),
+.sn-editor-menu-button:focus-visible {
+  border-color: var(--sn-border-hairline);
+  background: var(--sn-surface-hover);
+}
+
+.sn-editor-menu-button:hover:not(:disabled) .sn-editor-menu-button__icon {
+  color: var(--sn-ink);
 }
 
 .sn-editor-menu-button:hover:not(:disabled) {
@@ -1914,21 +2344,24 @@ button {
 
 /* Notion-like equation editing: formulas stay rendered in the document; this
    compact inspector only appears while inserting or after clicking a formula. */
+/* One line: mark, expression, live preview, actions. It used to be a full
+   panel with a title, an eyebrow, a hint and a button row — half a screen of
+   chrome standing over the document for the sake of a single fraction. */
 .sn-math-editor {
   position: relative;
   z-index: 12;
   width: calc(100% - 48px);
   display: grid;
-  grid-template-columns: minmax(160px, 0.8fr) minmax(220px, 1.2fr);
-  gap: 10px 16px;
+  grid-template-columns: auto minmax(160px, 1fr) minmax(0, auto) auto;
+  gap: 8px;
   align-items: center;
   margin: 6px 24px 12px;
-  padding: 12px 14px;
+  padding: 8px 10px;
   border: 1px solid rgba(28, 27, 24, 0.24);
   border-radius: 9px;
   background:
     linear-gradient(rgba(255, 255, 255, 0.54), rgba(255, 255, 255, 0)),
-    #eee9df;
+    var(--sn-math-editor-bg);
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.84),
     2px 2px 0 rgba(28, 27, 24, 0.11);
@@ -1987,17 +2420,23 @@ button {
   height: 15px;
 }
 
+.sn-math-editor__mark {
+  color: var(--sn-muted);
+  font-family: var(--sn-editor-display-font);
+  font-size: 20px;
+  line-height: 1;
+}
+
 .sn-math-editor__preview {
-  grid-column: 2;
-  grid-row: 1;
-  min-height: 44px;
+  min-height: 32px;
+  max-width: 220px;
   display: grid;
   place-items: center;
   overflow-x: auto;
-  padding: 7px 12px;
+  padding: 4px 10px;
   border: 1px solid rgba(28, 27, 24, 0.1);
   border-radius: 7px;
-  background: rgba(255, 254, 250, 0.72);
+  background: rgba(var(--sn-veil-paper-rgb), 0.72);
   color: var(--sn-ink);
 }
 
@@ -2011,12 +2450,12 @@ button {
 }
 
 .sn-math-editor__field {
-  grid-column: 1 / -1;
+  min-width: 0;
 }
 
 .sn-math-editor__field input {
   width: 100%;
-  height: 38px;
+  height: 32px;
   padding: 0 12px;
   border: 1px solid var(--sn-border-control);
   border-radius: 7px;
@@ -2034,40 +2473,30 @@ button {
   box-shadow: var(--sn-field-shadow), 0 0 0 1px rgba(28, 27, 24, 0.2);
 }
 
-.sn-math-editor__footer {
-  grid-column: 1 / -1;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-}
-
-.sn-math-editor__footer > span {
-  color: var(--sn-muted);
-  font-family: var(--sn-compact-font);
-  font-size: 8px;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-}
-
 .sn-math-editor__actions {
   display: flex;
   gap: 6px;
 }
 
+/* Icon-sized now that the captions moved into tooltips and aria-labels; the
+   three actions used to be word buttons on a row of their own. */
 .sn-math-editor__actions button {
-  min-height: 30px;
-  padding: 0 11px;
+  width: 30px;
+  height: 30px;
+  display: inline-grid;
+  place-items: center;
+  padding: 0;
   border: 1px solid var(--sn-bevel-border);
   border-radius: 6px;
   color: var(--sn-ink-soft);
   background: var(--sn-bevel-bg);
   box-shadow: var(--sn-bevel-shadow);
   cursor: pointer;
-  font-family: var(--sn-compact-font);
-  font-size: 9px;
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
+}
+
+.sn-math-editor__actions button svg {
+  width: 15px;
+  height: 15px;
 }
 
 .sn-math-editor__actions button:disabled {
@@ -2076,9 +2505,9 @@ button {
 }
 
 .sn-math-editor__actions .sn-math-editor__save {
-  color: #fff;
-  border-color: var(--sn-selection-strong);
-  background: linear-gradient(180deg, #466f90, #2e526f);
+  color: var(--sn-paper-bg);
+  border-color: var(--sn-ink);
+  background: linear-gradient(180deg, var(--sn-control-ink), var(--sn-ink));
 }
 
 .sn-math-editor__actions .sn-math-editor__delete {
@@ -2110,7 +2539,7 @@ button {
 
 .sn-editor-paper::-webkit-scrollbar-track {
   border-left: 1px solid rgba(28, 27, 24, 0.08);
-  background-color: rgba(238, 233, 223, 0.72);
+  background-color: rgba(var(--sn-veil-deep-rgb), 0.72);
   background-image: var(--sn-stripe-line);
 }
 
@@ -2139,8 +2568,12 @@ button {
   /* JS sets the variable to the vertical midpoint of the active line;
      the translate keeps the cluster optically centered on it. */
   top: var(--sn-block-handle-top, 48px);
-  /* Anchored from the 76ch reading column (И1): half of it is 38ch. */
-  left: max(6px, calc(50% - 38ch - 44px));
+  /* Right of the reading column, not left of it. Sitting in the left margin
+     put the controls ahead of the line the eye is about to read, which is
+     exactly where nothing should be competing for attention. Anchored off the
+     column's own half-width so it tracks the measure (И1). */
+  left: auto;
+  right: max(6px, calc(50% - 33ch - 44px));
   z-index: 8;
   display: flex;
   align-items: center;
@@ -2165,7 +2598,7 @@ button {
   border: 1px solid rgba(28, 27, 24, 0.16);
   border-radius: 6px;
   color: var(--sn-muted);
-  background: rgba(255, 255, 252, 0.92);
+  background: rgba(var(--sn-veil-rgb), 0.92);
   box-shadow: 0 1px 2px rgba(28, 27, 24, 0.1);
   cursor: pointer;
 }
@@ -2178,7 +2611,7 @@ button {
 .sn-block-handle__button:hover,
 .sn-block-handle__button:focus-visible {
   color: var(--sn-ink);
-  background: rgba(255, 255, 252, 0.96);
+  background: rgba(var(--sn-veil-rgb), 0.96);
 }
 
 .sn-block-handle__button--grip {
@@ -2199,7 +2632,7 @@ button {
   padding: 6px;
   border: 1px solid rgba(28, 27, 24, 0.18);
   border-radius: 8px;
-  background: rgba(255, 253, 248, 0.96);
+  background: rgba(var(--sn-veil-sheet-rgb), 0.96);
   box-shadow:
     0 16px 34px rgba(28, 27, 24, 0.18),
     inset 0 1px 0 rgba(255, 255, 255, 0.82);
@@ -2207,6 +2640,14 @@ button {
 
 .sn-block-handle-menu--wide {
   width: 236px;
+}
+
+.sn-block-handle-menu--floating {
+  position: fixed;
+  z-index: 320;
+  right: auto;
+  max-height: min(70dvh, 560px);
+  overflow-y: auto;
 }
 
 .sn-block-handle-menu button {
@@ -2279,7 +2720,12 @@ button {
   background-color: transparent;
   box-shadow: none;
   font-family: var(--sn-editor-body-font);
-  font-size: 17px;
+  /* 17px was the figure for the old sans. EB Garamond's x-height is 0.405 of
+     its size against that face's 0.520, so the same 17px rendered a fifth
+     smaller and the document read as fine print. 20px restores the apparent
+     size the invariant was really protecting; `ch` scales with it, so the
+     measure in characters comes along unchanged. */
+  font-size: 20px;
   font-weight: 400;
   line-height: 1.6;
   outline: 0;
@@ -2339,27 +2785,40 @@ button {
   font-size: 0.86em;
 }
 
+/* Copy comes from the dictionary through a custom property the editor sets.
+   It used to be frozen in English right here, so a Russian workspace opened
+   every empty note on an English line. */
 .sn-tiptap-prosemirror > p:only-child:has(> br.ProseMirror-trailingBreak)::before {
-  content: "Start writing…";
+  content: var(--sn-editor-placeholder, "");
   float: left;
   height: 0;
   color: var(--sn-muted-2);
   pointer-events: none;
 }
 
+/* A full line of space. At 0.62em the gap was under half a line, so
+   paragraphs read as loose leading rather than as separate paragraphs. */
 .sn-tiptap-prosemirror p {
   margin: 0 0 1em;
+}
+
+.sn-tiptap-prosemirror li > p {
+  margin-bottom: 0.16em;
+}
+
+.sn-tiptap-prosemirror li + li {
+  margin-top: 0.12em;
 }
 
 .sn-tiptap-prosemirror p[data-block-margin="tight"],
 .sn-tiptap-prosemirror h1[data-block-margin="tight"],
 .sn-tiptap-prosemirror h2[data-block-margin="tight"],
 .sn-tiptap-prosemirror h3[data-block-margin="tight"] {
-  margin-bottom: 0.42em;
+  margin-bottom: 0.3em;
 }
 
 .sn-tiptap-prosemirror p[data-block-margin="wide"] {
-  margin-bottom: 1.65em;
+  margin-bottom: 1.3em;
 }
 
 .sn-tiptap-prosemirror h1[data-block-margin="wide"],
@@ -2565,7 +3024,7 @@ button {
   padding: 10px 12px;
   border: 1px solid rgba(28, 27, 24, 0.14);
   border-radius: 8px;
-  background: rgba(255, 255, 252, 0.56);
+  background: rgba(var(--sn-veil-rgb), 0.56);
 }
 
 .sn-tiptap-prosemirror div[data-type="details"] > button {
@@ -2577,7 +3036,7 @@ button {
   border: 1px solid rgba(28, 27, 24, 0.18);
   border-radius: 6px;
   color: var(--sn-ink);
-  background: rgba(255, 255, 252, 0.72);
+  background: rgba(var(--sn-veil-rgb), 0.72);
   cursor: pointer;
   vertical-align: top;
 }
@@ -2618,6 +3077,7 @@ button {
 
 .sn-tiptap-prosemirror ul,
 .sn-tiptap-prosemirror ol {
+  margin-block: 0.35em 0.72em;
   padding-left: 1.4em;
 }
 
@@ -2636,7 +3096,7 @@ button {
   border: 1px solid var(--sn-border-strong);
   border-collapse: separate;
   border-spacing: 0;
-  background: rgba(255, 254, 250, 0.92);
+  background: rgba(var(--sn-veil-paper-rgb), 0.92);
   box-shadow: 2px 2px 0 rgba(28, 27, 24, 0.16);
   table-layout: fixed;
 }
@@ -2653,7 +3113,7 @@ button {
 
 .sn-tiptap-prosemirror th {
   color: var(--sn-ink);
-  background-color: rgba(238, 233, 223, 0.78);
+  background-color: rgba(var(--sn-veil-deep-rgb), 0.78);
   background-image: none;
   font-family: var(--sn-compact-font);
   font-size: 11px;
@@ -2721,7 +3181,7 @@ button {
   border-radius: var(--sn-radius-lg);
   color: var(--sn-muted);
   text-align: center;
-  background: rgba(255, 255, 252, 0.66);
+  background: rgba(var(--sn-veil-rgb), 0.66);
 }
 
 .sn-locked-paper h3 {
@@ -2751,8 +3211,8 @@ button {
   display: block;
   border-radius: 12px;
   filter:
-    drop-shadow(0 22px 40px rgba(40, 37, 30, 0.28))
-    drop-shadow(0 3px 8px rgba(40, 37, 30, 0.18));
+    drop-shadow(0 22px 40px rgba(var(--sn-player-shadow-rgb), 0.28))
+    drop-shadow(0 3px 8px rgba(var(--sn-player-shadow-rgb), 0.18));
   user-select: none;
 }
 
@@ -2795,7 +3255,7 @@ button {
   display: grid;
   place-items: center;
   margin-bottom: clamp(12px, 2.15cqw, 22px);
-  color: #111216;
+  color: var(--sn-player-hello-ink);
 }
 
 .sn-empty-player__hello-guide,
@@ -2835,7 +3295,7 @@ button {
 }
 
 .sn-empty-player__screen-copy strong {
-  color: rgba(0, 0, 0, 0.78);
+  color: rgba(var(--sn-player-ink-rgb), 0.78);
   font-family: var(--sn-serif-font);
   font-size: clamp(36px, 6.6cqw, 60px);
   font-weight: var(--sn-garamond-weight);
@@ -2848,7 +3308,7 @@ button {
 }
 
 .sn-empty-player__screen-copy span {
-  color: rgba(0, 0, 0, 0.58);
+  color: rgba(var(--sn-player-ink-rgb), 0.58);
   font-family: var(--sn-serif-font);
   font-size: clamp(14px, 2.2cqw, 19px);
   font-weight: 400;
@@ -3057,7 +3517,7 @@ button {
   border: 1px solid var(--sn-border);
   border-radius: var(--sn-radius-sm);
   color: var(--sn-ink-soft);
-  background: rgba(255, 254, 250, 0.66);
+  background: rgba(var(--sn-veil-paper-rgb), 0.66);
   font-size: 12px;
 }
 
@@ -3071,7 +3531,7 @@ button {
   border-radius: var(--sn-radius-lg);
   color: var(--sn-muted);
   text-align: center;
-  background: rgba(255, 255, 252, 0.44);
+  background: rgba(var(--sn-veil-rgb), 0.44);
 }
 
 .sn-inspector-empty--compact {
@@ -3108,7 +3568,7 @@ button {
   border-radius: var(--sn-radius-sm);
   color: var(--sn-ink-soft);
   text-align: left;
-  background: rgba(255, 255, 252, 0.6);
+  background: rgba(var(--sn-veil-rgb), 0.6);
   cursor: pointer;
 }
 
@@ -3164,11 +3624,11 @@ button {
 }
 
 .sn-modal--lock .sn-modal__surface {
-  background: #f6f3ea;
+  background: var(--sn-menu-bg);
 }
 
 .sn-modal--retro .sn-modal__surface {
-  background: #f6f3ea;
+  background: var(--sn-menu-bg);
 }
 
 .sn-lock-titlebar {
@@ -3179,7 +3639,7 @@ button {
   gap: 16px;
   padding: 0 14px;
   border-bottom: 1px solid rgba(28, 27, 24, 0.24);
-  background: linear-gradient(180deg, #ffffff, #ece8dc);
+  background: linear-gradient(180deg, #ffffff, var(--sn-titlebar-bg));
 }
 
 .sn-lock-titlebar > span {
@@ -3205,7 +3665,7 @@ button {
   padding: 0;
   border: 1px solid rgba(28, 27, 24, 0.55);
   border-radius: 6px;
-  background: linear-gradient(180deg, #ffffff, #e4dfd2);
+  background: linear-gradient(180deg, #ffffff, var(--sn-titlebar-button-bg));
   box-shadow: inset 0 1px 0 #ffffff;
   cursor: pointer;
 }
@@ -3260,8 +3720,8 @@ button {
 }
 
 .sn-modal-icon--danger {
-  color: #8f2f26;
-  background: linear-gradient(180deg, #fffaf7, #f0dfd8);
+  color: var(--sn-danger-ink);
+  background: linear-gradient(180deg, var(--sn-danger-on), var(--sn-danger-icon-bottom));
 }
 
 .sn-kicker {
@@ -3318,13 +3778,13 @@ button {
 .sn-lock-form__help,
 .sn-lock-form__error {
   margin: 0;
-  color: #55534b;
+  color: var(--sn-dialog-ink);
   font-size: 15px;
   line-height: 1.35;
 }
 
 .sn-lock-form__error {
-  color: #8c332f;
+  color: var(--sn-danger-ink-alt);
 }
 
 .sn-lock-form label,
@@ -3339,7 +3799,7 @@ button {
 
 .sn-modal--lock .sn-lock-form label {
   justify-content: flex-start;
-  color: #6d6a61;
+  color: var(--sn-field-label-ink);
   font-family: var(--sn-compact-font);
   font-size: 10px;
   font-weight: 500;
@@ -3384,7 +3844,7 @@ button {
   border: 1px solid rgba(28, 27, 24, 0.26);
   border-radius: 5px;
   color: var(--sn-ink-soft);
-  background: linear-gradient(180deg, #ffffff, #ebe7dc);
+  background: linear-gradient(180deg, #ffffff, var(--sn-password-button-bg));
   cursor: pointer;
 }
 
@@ -3395,7 +3855,7 @@ button {
 
 .sn-note-fingerprint {
   overflow: hidden;
-  color: #8a877c;
+  color: var(--sn-meta-ink);
   font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
   font-size: 10px;
   letter-spacing: 0.06em;
@@ -3426,16 +3886,16 @@ button {
 .sn-modal-actions button[type="submit"] {
   border-color: var(--sn-ink);
   color: var(--sn-paper-bg);
-  background: linear-gradient(180deg, #3a382f, var(--sn-ink));
+  background: linear-gradient(180deg, var(--sn-control-ink), var(--sn-ink));
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.18);
   outline: 2px solid var(--sn-ink);
   outline-offset: 2px;
 }
 
 .sn-modal-actions .sn-danger-button {
-  border-color: #7d2e28;
-  color: #fffaf7;
-  background: linear-gradient(180deg, #a94b40, #7d2e28);
+  border-color: var(--sn-danger-border);
+  color: var(--sn-danger-on);
+  background: linear-gradient(180deg, var(--sn-danger-button-top), var(--sn-danger-border));
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.25);
 }
 
@@ -3458,7 +3918,7 @@ button {
 
 .sn-confirm-dialog p {
   margin: 0;
-  color: #55534b;
+  color: var(--sn-dialog-ink);
   font-size: 14px;
   line-height: 1.45;
 }
@@ -3549,7 +4009,7 @@ button {
   padding: 6px;
   border: 1px solid var(--sn-border);
   border-radius: 8px;
-  background: rgba(255, 255, 252, 0.48);
+  background: rgba(var(--sn-veil-rgb), 0.48);
 }
 
 .sn-move-folder-list button {
@@ -3680,7 +4140,7 @@ button {
   border-radius: var(--sn-radius-sm);
   color: var(--sn-ink-soft);
   text-align: center;
-  background: rgba(255, 255, 252, 0.52);
+  background: rgba(var(--sn-veil-rgb), 0.52);
   cursor: pointer;
   transition:
     border-color 140ms ease,
@@ -3702,7 +4162,7 @@ button {
   min-height: 34px;
   border: 1px solid rgba(35, 36, 40, 0.09);
   border-radius: var(--sn-radius-sm);
-  background-color: #f8f5ed;
+  background-color: var(--sn-swatch-bg);
   background-image: var(--sn-background-preview, none);
   background-repeat: repeat;
   background-size: var(--sn-background-preview-size, auto);
@@ -3746,7 +4206,7 @@ button {
   overflow: hidden;
   border: 1px solid var(--sn-border);
   border-radius: var(--sn-radius-sm);
-  background: rgba(255, 255, 252, 0.52);
+  background: rgba(var(--sn-veil-rgb), 0.52);
   cursor: pointer;
   transition:
     border-color 140ms ease,
@@ -3846,7 +4306,7 @@ button {
 
 .sn-settings-error {
   margin: 0;
-  color: #8c332f;
+  color: var(--sn-danger-ink-alt);
   font-size: 12px;
   line-height: 1.35;
 }
@@ -3966,7 +4426,7 @@ button {
     max-height: min(62dvh, 520px);
     overflow-y: auto;
     padding: 8px;
-    background: #f6f3ea;
+    background: var(--sn-menu-bg);
   }
 
   .sn-block-handle-menu button {
@@ -4507,7 +4967,7 @@ button {
 
 .sn-image-lightbox__caption {
   margin: 0;
-  color: #efece3;
+  color: var(--sn-lightbox-ink);
   font-family: var(--sn-body-font);
   font-size: 14px;
   text-align: center;
@@ -4525,7 +4985,7 @@ button {
   border: 1px solid rgba(255, 255, 255, 0.35);
   border-radius: 50%;
   background: rgba(28, 27, 24, 0.6);
-  color: #efece3;
+  color: var(--sn-lightbox-ink);
   cursor: pointer;
 }
 
@@ -4717,7 +5177,7 @@ button {
 }
 
 .sn-empty-player__screen-copy span {
-  color: #777777 !important;
+  color: var(--sn-player-ink-muted) !important;
   /* 2.45cqw of the 575px desktop player ≈ 14px — identical look at full width,
      shrinks with the player instead of clipping in narrow editor columns. */
   font-size: clamp(9px, 2.45cqw, 14px) !important;
@@ -4815,6 +5275,13 @@ button {
   overflow-y: auto !important;
 }
 
+@media (min-width: 960px) {
+  .sn-editor-panel {
+    box-sizing: border-box !important;
+    padding: var(--sn-editor-desk-inset) !important;
+  }
+}
+
 .sn-editor-shell {
   height: auto !important;
   min-height: 100% !important;
@@ -4829,6 +5296,7 @@ button {
   overflow: visible !important;
 }
 
+/* All topbar actions use the same square hit target. */
 .sn-editor-actions .sn-icon-button {
   width: 38px !important;
   height: 38px !important;
@@ -4927,7 +5395,7 @@ button {
   border: 1px solid var(--sn-border-control);
   border-radius: 12px;
   color: var(--sn-ink);
-  background: #f7f4eb;
+  background: var(--sn-command-bg);
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.86),
     0 26px 70px rgba(32, 30, 25, 0.38);
@@ -4941,7 +5409,7 @@ button {
   gap: 16px;
   padding: 13px 16px 13px 20px;
   border-bottom: 1px solid var(--sn-border-hairline);
-  background: linear-gradient(180deg, #fffef9, #ece8dc);
+  background: linear-gradient(180deg, #fffef9, var(--sn-titlebar-bg));
 }
 
 .sn-command-window__header h2 {
@@ -4985,7 +5453,7 @@ button {
   border: 1px solid var(--sn-border);
   border-radius: 5px;
   color: var(--sn-muted);
-  background: rgba(255, 255, 252, 0.72);
+  background: rgba(var(--sn-veil-rgb), 0.72);
   box-shadow: 0 1px 0 rgba(28, 27, 24, 0.14);
   font-size: 10px;
 }
@@ -5035,7 +5503,7 @@ button {
   border-color: var(--sn-border);
   outline: 0;
   color: var(--sn-ink);
-  background: rgba(255, 255, 252, 0.86);
+  background: rgba(var(--sn-veil-rgb), 0.86);
   box-shadow: 0 2px 8px rgba(40, 37, 30, 0.08);
 }
 
@@ -5098,7 +5566,7 @@ button {
   align-items: start;
   padding: 14px;
   border-color: var(--sn-border);
-  background: rgba(255, 255, 252, 0.58);
+  background: rgba(var(--sn-veil-rgb), 0.58);
 }
 
 .sn-template-card__icon {
@@ -5138,7 +5606,7 @@ button {
 .sn-empty-actions .sn-empty-actions__primary {
   border-color: var(--sn-ink);
   color: var(--sn-paper-bg);
-  background: linear-gradient(180deg, #3a382f, var(--sn-ink));
+  background: linear-gradient(180deg, var(--sn-control-ink), var(--sn-ink));
 }
 
 .sn-properties {
@@ -5176,7 +5644,7 @@ button {
   border: 1px solid var(--sn-border);
   border-radius: 7px;
   outline: 0;
-  background: rgba(255, 255, 252, 0.78);
+  background: rgba(var(--sn-veil-rgb), 0.78);
   box-shadow: var(--sn-field-shadow);
 }
 
@@ -5231,7 +5699,9 @@ button {
 
 .sn-tag-entry {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 64px;
+  /* The button column is sized by its own label. A fixed 64px fitted the
+     English "Add" and clipped the Russian "Добавить" by 14px. */
+  grid-template-columns: minmax(0, 1fr) auto;
   gap: 8px;
 }
 
@@ -5252,7 +5722,7 @@ button {
   border-radius: 7px;
   color: var(--sn-ink-soft);
   text-align: left;
-  background: rgba(255, 255, 252, 0.86);
+  background: rgba(var(--sn-veil-rgb), 0.86);
   box-shadow: var(--sn-field-shadow);
   cursor: pointer;
 }
@@ -5305,6 +5775,33 @@ button {
   color: var(--sn-success);
 }
 
+.sn-property-status-icon[data-tone="incoming"],
+.sn-property-status-icon[data-tone="review"] {
+  color: var(--umbra-dust-blue);
+}
+
+.sn-property-status-icon[data-tone="draft"] {
+  color: var(--umbra-graphite);
+}
+
+.sn-property-status-icon[data-tone="in_progress"] {
+  color: var(--umbra-old-gold);
+}
+
+.sn-property-status-icon[data-tone="deferred"],
+.sn-property-status-icon[data-tone="waiting"] {
+  color: var(--umbra-fog-violet);
+}
+
+.sn-property-status-icon[data-tone="completed"] {
+  color: var(--umbra-muted-green);
+}
+
+.sn-property-status-icon[data-tone="none"],
+.sn-property-status-icon[data-tone="archived"] {
+  color: var(--umbra-grey-beige);
+}
+
 .sn-status-picker__popover {
   position: absolute;
   z-index: 80;
@@ -5316,8 +5813,10 @@ button {
   padding: 10px;
   border: 1px solid var(--sn-border-control);
   border-radius: 8px;
-  background: #f6f3ea;
+  background: var(--sn-menu-bg);
   box-shadow: 0 18px 36px rgba(28, 27, 24, 0.22);
+  max-height: min(430px, calc(100dvh - 370px));
+  overflow-y: auto;
 }
 
 .sn-status-picker__label {
@@ -5372,7 +5871,7 @@ button {
   border-radius: 5px;
   color: var(--sn-ink-soft);
   text-align: left;
-  background: rgba(255, 255, 252, 0.46);
+  background: rgba(var(--sn-veil-rgb), 0.46);
   cursor: pointer;
   font-family: var(--sn-compact-font);
   font-size: 11px;
@@ -5415,7 +5914,7 @@ button {
   border: 1px solid var(--sn-border-control);
   border-radius: 5px;
   color: var(--sn-ink);
-  background: rgba(255, 255, 252, 0.86);
+  background: rgba(var(--sn-veil-rgb), 0.86);
   box-shadow: var(--sn-field-shadow);
   font-family: var(--sn-compact-font);
   font-size: 13px;
@@ -5452,7 +5951,7 @@ button {
   border: 1px solid var(--sn-border);
   border-radius: 4px;
   color: var(--sn-ink-soft);
-  background: rgba(255, 255, 252, 0.58);
+  background: rgba(var(--sn-veil-rgb), 0.58);
   cursor: pointer;
   font-family: var(--sn-compact-font);
   font-size: 19px;
@@ -5500,11 +5999,13 @@ button {
 
 .sn-tag-entry button {
   min-width: 54px;
+  padding: 0 12px;
   border: 1px solid var(--sn-bevel-border);
   border-radius: 7px;
   background: var(--sn-bevel-bg);
   box-shadow: var(--sn-bevel-shadow);
   cursor: pointer;
+  white-space: nowrap;
 }
 
 .sn-tag-entry button:disabled {
@@ -5538,7 +6039,7 @@ button {
   border: 1px solid rgba(28, 27, 24, 0.14);
   border-radius: 999px;
   color: var(--sn-muted);
-  background: rgba(255, 255, 252, 0.52);
+  background: rgba(var(--sn-veil-rgb), 0.52);
   font-size: 10px;
   line-height: 1.2;
   text-overflow: ellipsis;
@@ -5565,7 +6066,7 @@ button {
   padding: 18px;
   border: 1px solid var(--sn-border);
   border-radius: 12px;
-  background: rgba(248, 245, 237, 0.94);
+  background: rgba(var(--sn-veil-warm-rgb), 0.94);
   box-shadow: var(--sn-shadow-panel);
 }
 
@@ -5696,7 +6197,7 @@ button {
     max-height: min(62dvh, 520px);
     overflow-y: auto;
     padding: 14px;
-    background: #f6f3ea;
+    background: var(--sn-menu-bg);
   }
 
   .sn-editor-tools-menu::before {
@@ -5855,7 +6356,7 @@ button {
   border: 1px solid var(--sn-border);
   border-radius: 999px;
   color: var(--sn-ink-soft);
-  background: rgba(255, 255, 252, 0.62);
+  background: rgba(var(--sn-veil-rgb), 0.62);
   font-size: 11.5px;
   font-weight: 600;
   line-height: 1.2;
@@ -5904,57 +6405,415 @@ button {
     var(--sn-bevel-bg);
 }
 
+/* Status & marker production family --------------------------------------- */
+.sn-markers-section {
+  display: grid;
+  gap: 8px;
+  padding-top: 16px;
+  border-top: 1px solid var(--sn-border-hairline);
+}
+
+.sn-markers-section .sn-property-empty {
+  margin: -2px 0 2px;
+}
+
+.sn-marker-picker {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.sn-marker-picker button {
+  min-width: 0;
+  min-height: 40px;
+  display: grid;
+  grid-template-columns: 22px minmax(0, 1fr);
+  align-items: center;
+  gap: 7px;
+  padding: 5px 7px;
+  border: 1px solid var(--sn-border);
+  border-radius: 5px;
+  color: var(--sn-muted);
+  background: rgba(var(--sn-veil-rgb), 0.42);
+  cursor: pointer;
+  text-align: left;
+}
+
+.sn-marker-picker button:hover,
+.sn-marker-picker button:focus-visible {
+  border-color: var(--sn-border-control);
+  color: var(--sn-ink);
+  background: rgba(var(--sn-veil-paper-rgb), 0.84);
+}
+
+.sn-marker-picker button[aria-pressed="true"] {
+  border-color: currentColor;
+  background: rgba(var(--sn-veil-paper-rgb), 0.92);
+  box-shadow: inset 3px 0 0 currentColor;
+}
+
+.sn-marker-picker button svg {
+  width: 20px;
+  height: 20px;
+}
+
+.sn-marker-picker button > span {
+  min-width: 0;
+  overflow: hidden;
+  font-family: var(--sn-body-font);
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1.15;
+  text-overflow: ellipsis;
+}
+
+.sn-marker-picker button[aria-pressed="true"][data-tone="marker.important"],
+.sn-marker-picker button[aria-pressed="true"][data-tone="marker.conflict"],
+.sn-marker-picker button[aria-pressed="true"][data-tone="marker.dead_end"] {
+  color: var(--umbra-faded-red);
+}
+
+.sn-marker-picker button[aria-pressed="true"][data-tone="marker.favorite"],
+.sn-marker-picker button[aria-pressed="true"][data-tone="marker.source"] {
+  color: var(--umbra-old-gold);
+}
+
+.sn-marker-picker button[aria-pressed="true"][data-tone="marker.question"] {
+  color: var(--umbra-dust-blue);
+}
+
+.sn-marker-picker button[aria-pressed="true"][data-tone="marker.idea"] {
+  color: var(--umbra-fog-violet);
+}
+
+.sn-marker-picker button[aria-pressed="true"][data-tone="marker.observation"] {
+  color: var(--umbra-muted-green);
+}
+
+.sn-marker-picker button[aria-pressed="true"][data-tone="marker.return"],
+.sn-marker-picker button[aria-pressed="true"][data-tone="marker.fragile"] {
+  color: var(--umbra-grey-beige);
+}
+
+.sn-marker-picker button[aria-pressed="true"][data-tone="marker.linked"],
+.sn-marker-picker button[aria-pressed="true"][data-tone="marker.pinned"],
+.sn-marker-picker button[aria-pressed="true"][data-tone="marker.private"] {
+  color: var(--umbra-graphite);
+}
+
+.sn-note-card__markers {
+  min-height: 22px;
+  display: inline-flex;
+  align-items: center;
+  gap: 1px;
+  padding: 1px 4px;
+  border-left: 1px solid var(--sn-border);
+}
+
+.sn-note-card__markers > span {
+  width: 19px;
+  height: 19px;
+  display: inline-grid;
+  place-items: center;
+  color: var(--sn-ink-soft);
+}
+
+.sn-note-card__markers svg {
+  width: 16px;
+  height: 16px;
+}
+
+.sn-note-card__markers small {
+  padding-inline: 3px;
+  color: var(--sn-muted);
+  font-family: var(--sn-compact-font);
+  font-size: 9px;
+}
+
+.sn-note-card__markers [data-tone="marker.important"],
+.sn-note-card__markers [data-tone="marker.conflict"],
+.sn-note-card__markers [data-tone="marker.dead_end"] {
+  color: var(--umbra-faded-red);
+}
+
+.sn-note-card__markers [data-tone="marker.favorite"],
+.sn-note-card__markers [data-tone="marker.source"] {
+  color: var(--umbra-old-gold);
+}
+
+.sn-note-card__markers [data-tone="marker.question"] {
+  color: var(--umbra-dust-blue);
+}
+
+.sn-note-card__markers [data-tone="marker.idea"] {
+  color: var(--umbra-fog-violet);
+}
+
+.sn-note-card__markers [data-tone="marker.observation"] {
+  color: var(--umbra-muted-green);
+}
+
 /* ==========================================================================
    Release polish — explicit priority over legacy responsive layers
    ========================================================================== */
 
-/* The scroll surface is the patterned editor panel. The paper itself grows
-   with its content, leaving the panel visible below it at the document end. */
+/* The editor panel is the desk: it owns the selected texture and the one
+   vertical scrollbar. The paper remains a physical object, but fills the
+   useful centre of the desk instead of being forced into a print-page ratio. */
 .sn-editor-panel {
+  container-name: editor-desk;
+  container-type: inline-size;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
   height: 100% !important;
   overflow-y: auto !important;
 }
 
+.sn-editor-shell:not(.sn-editor-shell--empty) {
+  width: 100% !important;
+  height: 100% !important;
+  min-height: 100% !important;
+  align-items: center !important;
+}
+
 .sn-editor-paper-sheet {
+  width: 100% !important;
+  max-width: var(--sn-editor-paper-max-width) !important;
+  box-sizing: border-box !important;
   flex: 0 0 auto !important;
-  min-height: calc(100% - 40px) !important;
+  min-height: 100% !important;
   overflow: visible !important;
-  margin: 20px !important;
+  margin: 0 auto !important;
+  padding: 0 !important;
 }
 
 .sn-editor-paper {
-  flex: 0 0 auto !important;
+  width: 100% !important;
+  box-sizing: border-box !important;
+  flex: 1 0 auto !important;
   height: auto !important;
   overflow: visible !important;
+  padding: 0 var(--sn-editor-paper-inline) !important;
+  border: 0 !important;
+  box-shadow: none !important;
 }
 
-/* Keep the editor close to its toolbar and give reading a quiet, even axis. */
+/* Header and body share --sn-editor-paper-inline. The leading header inset is
+   smaller by exactly the icon-plus-gap gutter, so the icon hangs in the paper
+   margin while the title begins on the body axis without a negative margin. */
+.sn-editor-paper-sheet > .sn-editor-topbar {
+  width: 100% !important;
+  box-sizing: border-box !important;
+  padding:
+    var(--sn-editor-paper-header-block)
+    var(--sn-editor-paper-inline)
+    14px
+    calc(var(--sn-editor-paper-inline) - var(--sn-editor-title-gutter)) !important;
+}
+
+/* The sheet heading is a compact editorial row, not a second application
+   toolbar. On a wide desk its three semantic zones have explicit positions;
+   this keeps metadata from drifting between the title and the controls. */
+@container editor-desk (min-width: 860px) {
+  .sn-editor-title-row {
+    display: grid !important;
+    grid-template-columns: minmax(260px, 1fr) auto auto;
+    grid-template-areas: "title status actions";
+    align-items: center !important;
+    gap: 14px 18px !important;
+  }
+
+  .sn-editor-title-group {
+    grid-area: title;
+    min-width: 0 !important;
+  }
+
+  .sn-editor-status-badges {
+    grid-area: status;
+  }
+
+  .sn-editor-actions {
+    grid-area: actions;
+    margin-left: 0 !important;
+  }
+}
+
+.sn-editor-document-title {
+  font-size: clamp(34px, 2.25vw, 38px) !important;
+  line-height: 1 !important;
+}
+
+.sn-editor-icon {
+  width: 32px !important;
+  height: 32px !important;
+}
+
+/* The toolbar is a real full-width row in the paper flow. It no longer escapes
+   a padded parent through paired positive width and negative margin values. */
 .sn-editor-toolbar {
-  padding-bottom: 16px !important;
+  width: 100% !important;
+  box-sizing: border-box !important;
+  display: flex !important;
+  flex-wrap: nowrap !important;
+  align-items: center !important;
+  margin: 0 !important;
+  min-height: 46px !important;
+  padding: 8px var(--sn-editor-paper-inline) !important;
+  overflow-x: auto !important;
+  overflow-y: hidden !important;
   border-bottom: 1px solid rgba(28, 27, 24, 0.1) !important;
+  scrollbar-width: none;
+}
+
+.sn-editor-toolbar::before,
+.sn-editor-toolbar::after {
+  right: 0 !important;
+  left: 0 !important;
+}
+
+.sn-page-layout-frame,
+.sn-page-layout-frame > .sn-editor-reading-column,
+.sn-editor-reading-column > .sn-editor-content {
+  min-width: 0;
+}
+
+.sn-page-layout-frame {
+  justify-content: flex-start !important;
+  margin-left: 0 !important;
+  margin-right: auto !important;
+  padding-left: 0 !important;
+}
+
+.sn-editor-reading-column {
+  position: relative !important;
+  width: min(100%, var(--sn-page-measure, 66ch), 66ch) !important;
+  max-width: 66ch !important;
+  margin-left: 0 !important;
+  margin-right: auto !important;
+  padding-left: 0 !important;
+}
+
+.sn-editor-reading-column > .sn-editor-content {
+  width: min(100%, var(--sn-page-measure, 66ch), 66ch) !important;
+  display: flex !important;
+  justify-content: flex-start !important;
+  margin-left: 0 !important;
+  margin-right: auto !important;
+  padding-left: 0 !important;
 }
 
 .sn-tiptap-prosemirror {
   min-height: 520px !important;
-  /* The `ch` cap is the И1 measure; `100% - 60px` keeps the left axis shared
-     with the title. Before this the override dropped the cap entirely, so the
-     column grew with the panel and Latin prose ran to 85 characters a line. */
-  width: min(calc(100% - 60px), 66ch) !important;
+  /* The user setting may make a line shorter, but never longer than the
+     typographic 66ch ceiling. The column starts at the paper's left padding;
+     spare room remains visibly on its right, like a composed paper page. */
+  width: min(100%, var(--sn-page-measure, 66ch), 66ch) !important;
   max-width: none !important;
   box-sizing: border-box !important;
-  /* 30px outer offset + 40px text padding retains the title's 70px axis,
-     with the same quiet 70px edge on the right. */
-  margin: 0 30px !important;
-  margin-top: 24px !important;
-  padding: 0 40px !important;
+  margin-left: 0 !important;
+  margin-right: auto !important;
+  padding:
+    var(--sn-page-header-offset, 48px)
+    0
+    var(--sn-page-footer-offset, 96px) !important;
+  padding-left: 0 !important;
+  line-height: var(--sn-block-line-height, 1.6);
+  text-align: left;
 }
 
-/* Restore the title's original position; the body comes to this axis. */
 .sn-editor-title-group {
   margin-left: 0 !important;
 }
 
+/* Compact desktop has too little horizontal room for title, status and three
+   actions on one row. Give the wrap an explicit order instead of letting flex
+   drop the action cluster under the icon at an arbitrary x-position. */
+@container editor-desk (min-width: 440px) and (max-width: 859px) {
+  .sn-editor-title-row {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas:
+      "title actions"
+      "status status";
+    gap: 6px 12px !important;
+  }
+
+  .sn-editor-title-group {
+    grid-area: title;
+    min-width: 0 !important;
+  }
+
+  .sn-editor-status-badges {
+    grid-area: status;
+    min-width: 0;
+    padding-left: var(--sn-editor-title-gutter) !important;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+
+  .sn-editor-actions {
+    grid-area: actions;
+    margin-left: 0 !important;
+  }
+}
+
+/* Sheet actions sit on white paper, where the machined bevel of the app chrome
+   reads as a beige smudge. They keep their shape but lose the fill.
+
+   The bevel is a linear-gradient, so `background-color: transparent` alone
+   leaves it untouched — `background-image` is the one that has to go. Ink and
+   rule are the warm greys of the palette rather than neutral black: pure black
+   over this paper is exactly the dirty cast being removed here. */
+.sn-editor-actions .sn-icon-button,
+.sn-editor-actions .sn-pdf-export-button {
+  width: 36px !important;
+  height: 36px !important;
+  background-color: transparent !important;
+  background-image: none !important;
+  border: 1px solid rgba(28, 27, 24, 0.12) !important;
+  color: var(--sn-ink) !important;
+  box-shadow: none !important;
+}
+
+.sn-editor-actions .sn-icon-button:hover:not(:disabled),
+.sn-editor-actions .sn-pdf-export-button:hover:not(:disabled) {
+  background-color: rgba(28, 27, 24, 0.05) !important;
+  border-color: rgba(28, 27, 24, 0.22) !important;
+}
+
+/* The type controls were already transparent; what looked like a form control
+   was the browser's own select chrome. Dropping it takes the arrow too, so the
+   field draws its own. */
+.sn-editor-format-field {
+  position: relative !important;
+}
+
+.sn-editor-format-field select {
+  appearance: none !important;
+  -webkit-appearance: none !important;
+  padding-right: 16px !important;
+}
+
+.sn-editor-format-field::after {
+  content: '';
+  position: absolute;
+  right: 4px;
+  top: 50%;
+  width: 6px;
+  height: 6px;
+  border-right: 1.5px solid var(--sn-muted);
+  border-bottom: 1.5px solid var(--sn-muted);
+  transform: translateY(-70%) rotate(45deg);
+  pointer-events: none;
+}
+
 .sn-block-handle {
+  position: absolute !important;
+  right: -50px !important;
+  left: auto !important;
+  margin-left: 0 !important;
+  z-index: 20;
   transform: translateY(-50%) !important;
   opacity: 0.68 !important;
 }
@@ -5985,6 +6844,12 @@ button {
   padding-top: 0 !important;
 }
 
+/* Tiptap wraps every task's text in a div and then a paragraph. The generic
+   document paragraph margin otherwise adds a full blank line to every item. */
+.sn-tiptap-prosemirror ul[data-type="taskList"] li > div > p {
+  margin: 0 !important;
+}
+
 .sn-tiptap-prosemirror ul[data-type="taskList"] input[type="checkbox"] {
   width: 15px !important;
   height: 15px !important;
@@ -5992,7 +6857,7 @@ button {
   appearance: none;
   border: 1px solid rgba(28, 27, 24, 0.42);
   border-radius: 4px;
-  background: rgba(255, 255, 252, 0.82);
+  background: rgba(var(--sn-veil-rgb), 0.82);
   box-shadow: 0 1px 1px rgba(28, 27, 24, 0.08) inset;
   cursor: pointer;
 }
@@ -6089,10 +6954,12 @@ button {
   box-shadow: var(--sn-bevel-shadow) !important;
 }
 
-/* A blank document fills the panel while retaining the same 20px frame on
-   every side; long documents can still grow beyond this minimum. */
+/* The shell supplies the containing height used by the paper's symmetric desk
+   inset. Long documents still grow because the sheet only has a min-height. */
 .sn-editor-shell:not(.sn-editor-shell--empty) {
   height: 100% !important;
+  min-height: 100% !important;
+  flex: 0 0 auto !important;
 }
 
 /* A warm tint connects selected navigation and the active note. */
@@ -6436,15 +7303,14 @@ button {
 
 /* PDF export ------------------------------------------------------------- */
 
+/* PDF is icon-only, matching save and lock. Its accessible name remains on
+   the button, so the compact square loses no meaning. */
 .sn-pdf-export-button {
-  width: auto;
-  min-width: var(--sn-control);
-  gap: 5px;
-  padding: 0 9px;
-  font-family: var(--sn-compact-font);
-  font-size: 10px;
-  font-weight: 600;
-  letter-spacing: 0.06em;
+  width: 38px !important;
+  min-width: 38px;
+  height: 38px !important;
+  place-items: center;
+  padding: 0 !important;
 }
 
 .sn-print-note-title {
@@ -6496,7 +7362,9 @@ button {
   .sn-editor-paper-sheet,
   .sn-editor-paper,
   .sn-page-layout-frame,
-  .sn-page-layout-frame > .sn-editor-content {
+  .sn-editor-reading-column,
+  .sn-page-layout-frame > .sn-editor-content,
+  .sn-editor-reading-column > .sn-editor-content {
     width: 100% !important;
     height: auto !important;
     min-height: 0 !important;
@@ -6566,4 +7434,126 @@ button {
     color: inherit !important;
     text-decoration: underline;
   }
+}
+
+/* Keep the handoff's SVG geometry authoritative over the older global button
+   calibration above. These rules intentionally live last: the legacy class
+   remains on SquircleButton for layout/test compatibility. */
+.sn-icon-button.sn-squircle-button,
+.sn-topbar .sn-icon-button.sn-squircle-button,
+.sn-panel-heading__actions .sn-icon-button.sn-squircle-button,
+.sn-editor-actions .sn-icon-button.sn-squircle-button {
+  width: 36px !important;
+  min-width: 36px !important;
+  height: 36px !important;
+  min-height: 36px !important;
+  padding: 0 !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background-color: transparent !important;
+  background-image: none !important;
+  box-shadow: none !important;
+}
+
+.sn-icon-button.sn-squircle-button[data-size='large'],
+.sn-topbar .sn-icon-button.sn-squircle-button[data-size='large'] {
+  width: 44px !important;
+  min-width: 44px !important;
+  height: 44px !important;
+  min-height: 44px !important;
+}
+
+.sn-icon-button.sn-squircle-button[data-size='small'],
+.sn-editor-actions .sn-icon-button.sn-squircle-button[data-size='small'] {
+  width: 30px !important;
+  min-width: 30px !important;
+  height: 30px !important;
+  min-height: 30px !important;
+}
+
+.sn-icon-button.sn-squircle-button > .sn-squircle-button__frame {
+  width: 100% !important;
+  height: 100% !important;
+}
+
+.sn-icon-button.sn-squircle-button > .sn-squircle-button__icon {
+  width: 20px !important;
+  height: 20px !important;
+}
+
+.sn-icon-button.sn-squircle-button[data-size='small'] > .sn-squircle-button__icon {
+  width: 18px !important;
+  height: 18px !important;
+}
+
+.sn-icon-button.sn-squircle-button:focus-visible {
+  outline: 0 !important;
+}
+
+.sn-icon-button.sn-squircle-button[data-active='true'] {
+  --sn-squircle-fill: rgba(28, 27, 24, 0.13);
+  --sn-squircle-stroke: rgba(28, 27, 24, 0.85);
+}
+
+.sn-icon-button.sn-squircle-button[data-active='true']:hover:not(:disabled) {
+  --sn-squircle-fill: rgba(28, 27, 24, 0.17);
+  --sn-squircle-stroke: var(--sn-ink);
+}
+
+/* Theme picker. Mirrors the pattern picker's geometry so the appearance tab
+   reads as one control surface rather than two. */
+.sn-theme-picker {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.sn-theme-option {
+  min-width: 0;
+  display: grid;
+  gap: 6px;
+  padding: 7px;
+  border: 1px solid var(--sn-border);
+  border-radius: var(--sn-radius-sm);
+  color: var(--sn-ink-soft);
+  text-align: center;
+  background: rgba(var(--sn-veil-rgb), 0.52);
+  cursor: pointer;
+  transition:
+    border-color 140ms ease,
+    box-shadow 140ms ease,
+    transform 120ms ease;
+}
+
+.sn-theme-option:hover {
+  border-color: var(--sn-border-strong);
+  transform: translateY(-1px);
+}
+
+.sn-theme-option[aria-checked="true"] {
+  border-color: var(--sn-ink);
+  box-shadow: var(--sn-shadow-control);
+}
+
+/* The swatch carries its own data-theme, so these three var() reads resolve
+   against that theme's block rather than the running one. */
+.sn-theme-option__swatch {
+  min-height: 34px;
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  overflow: hidden;
+  border: 1px solid var(--sn-border-strong);
+  border-radius: 3px;
+}
+
+.sn-theme-option__case {
+  background: var(--sn-bg);
+}
+
+.sn-theme-option__sheet {
+  background: var(--sn-paper-bg);
+}
+
+.sn-theme-option__accent {
+  background: var(--sn-selection);
 }

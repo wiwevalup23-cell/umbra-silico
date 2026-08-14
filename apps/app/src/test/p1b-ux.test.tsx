@@ -246,6 +246,7 @@ describe('P1-B navigation and folder workflows', () => {
     expect(css).toContain('font-family: "SN Cormorant Garamond"')
     expect(css).toContain('CormorantGaramond-Variable.woff2')
     expect(css).toContain('--sn-garamond-weight: 300')
+    // Export, save and lock are all icon-only actions with equal geometry.
     expect(css).toContain('.sn-editor-actions .sn-icon-button {')
     expect(css).toContain('.sn-editor-actions .sn-icon-button svg {')
   })

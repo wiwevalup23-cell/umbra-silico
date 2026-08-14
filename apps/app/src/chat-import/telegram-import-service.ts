@@ -198,7 +198,7 @@ export async function importTelegramChat(
   const noteId = await dependencies.noteRepository.createNote({
     document: preliminaryDocument,
     parentFolderId,
-    properties: { kind: 'chat', status: 'none', tags: ['telegram'] },
+    properties: { kind: 'chat', markers: [], status: 'none', tags: ['telegram'] },
     title: exportFolder.title,
   })
 

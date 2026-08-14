@@ -4,7 +4,10 @@ import type { MessageKey, Translator } from '@/shared/i18n'
 import { useTranslation } from '@/ui/i18n/use-translation'
 import { UiIcon } from '@/ui/icons/ui/UiIcon'
 import { StatusGlyph } from '@/ui/icons/status/StatusGlyph'
-import { getPropertyStatusPresentation } from '@/ui/note-property-presentation'
+import {
+  getPropertyStatusPresentation,
+  propertyMarkerOptions,
+} from '@/ui/note-property-presentation'
 
 type NoteCardProps = {
   active?: boolean
@@ -103,6 +106,8 @@ export function NoteCard({
     : pageStatus.label ?? ''
   const shouldShowPageStatus = !note.isLocked && pageStatus.value !== 'none'
   const visibleTags = note.isLocked ? [] : note.tags?.slice(0, 2) ?? []
+  const visibleMarkers = note.isLocked ? [] : note.propertyMarkers?.slice(0, 4) ?? []
+  const hiddenMarkerCount = Math.max(0, (note.propertyMarkers?.length ?? 0) - visibleMarkers.length)
   const hiddenTagCount = Math.max(0, (note.tags?.length ?? 0) - visibleTags.length)
 
   useEffect(() => {
@@ -179,7 +184,7 @@ export function NoteCard({
         {shouldShowPreview ? (
           <span className="sn-note-card__preview">{preview}</span>
         ) : null}
-        {shouldShowPageStatus || visibleTags.length > 0 ? (
+        {shouldShowPageStatus || visibleMarkers.length > 0 || visibleTags.length > 0 ? (
           <span className="sn-note-card__properties">
             {shouldShowPageStatus ? (
               <span
@@ -191,6 +196,21 @@ export function NoteCard({
                   <StatusGlyph symbol={pageStatus.icon} />
                 </span>
                 {pageStatusLabel}
+              </span>
+            ) : null}
+            {visibleMarkers.length > 0 ? (
+              <span className="sn-note-card__markers" aria-label={t('marker.section')}>
+                {visibleMarkers.map((marker) => {
+                  const option = propertyMarkerOptions.find((candidate) => candidate.value === marker)
+                  if (!option) return null
+                  const label = t(option.labelKey)
+                  return (
+                    <span data-tone={`marker.${marker}`} key={marker} title={label}>
+                      <StatusGlyph symbol={option.icon} />
+                    </span>
+                  )
+                })}
+                {hiddenMarkerCount > 0 ? <small>+{hiddenMarkerCount}</small> : null}
               </span>
             ) : null}
             {visibleTags.length > 0 ? (

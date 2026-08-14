@@ -57,7 +57,7 @@ describe('note search', () => {
   it('still matches titles and tags', async () => {
     await repository.createNote({
       title: 'Trip planning',
-      properties: { kind: 'standard', status: 'none', tags: ['Reisen'] },
+      properties: { kind: 'standard', markers: [], status: 'none', tags: ['Reisen'] },
     })
     await repository.createNote({ title: 'Groceries' })
 

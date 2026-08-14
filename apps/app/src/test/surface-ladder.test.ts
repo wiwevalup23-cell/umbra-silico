@@ -84,11 +84,11 @@ describe('surface ladder', () => {
     expect(alphaOf(token('--sn-surface'))).toBeGreaterThanOrEqual(0.9)
   })
 
-  it('gives the sheet an edge that survives a pale background image', () => {
-    const paper = css.match(/\.sn-editor-paper \{[\s\S]*?\n\}/)?.[0] ?? ''
+  it('gives the outer sheet an edge without drawing an inner bottom line', () => {
+    const sheet = css.match(/\.sn-editor-paper-sheet \{[\s\S]*?\n\}/)?.[0] ?? ''
 
-    expect(paper).toContain('border: 1px solid var(--sn-border)')
-    // Hard offset, no blur: the native dialect, and it reads on a light case.
-    expect(paper).toMatch(/box-shadow:\s*1px 1px 0/)
+    expect(sheet).toContain('border: 1px solid var(--sn-border)')
+    expect(sheet).toContain('box-shadow: var(--sn-shadow-soft)')
+    expect(css).toMatch(/\.sn-editor-paper \{[\s\S]*?border: 0 !important;/)
   })
 })

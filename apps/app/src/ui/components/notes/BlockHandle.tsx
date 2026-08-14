@@ -1,10 +1,12 @@
 import type { Editor } from '@tiptap/core'
 import {
   useEffect,
+  useLayoutEffect,
   useRef,
   useState,
   type CSSProperties,
 } from 'react'
+import { createPortal } from 'react-dom'
 import {
   deleteCurrentBlock,
   duplicateCurrentBlock,
@@ -52,9 +54,11 @@ const turnTargets: Array<{ label: string; target: TurnIntoTarget }> = [
 
 export function BlockHandle({ editor, onInsertImage = null }: BlockHandleProps) {
   const { t } = useTranslation()
+  const menuRef = useRef<HTMLDivElement>(null)
   const rootRef = useRef<HTMLDivElement>(null)
   const draggedSourceRef = useRef<number | null>(null)
   const [activeMenu, setActiveMenu] = useState<HandleMenu | null>(null)
+  const [menuPosition, setMenuPosition] = useState({ left: 0, top: 0 })
   const [top, setTop] = useState<number | null>(null)
 
   useEffect(() => {
@@ -111,7 +115,12 @@ export function BlockHandle({ editor, onInsertImage = null }: BlockHandleProps) 
     }
 
     function handlePointerDown(event: PointerEvent) {
-      if (!rootRef.current?.contains(event.target as Node)) {
+      const target = event.target as Node
+
+      if (
+        !rootRef.current?.contains(target) &&
+        !menuRef.current?.contains(target)
+      ) {
         setActiveMenu(null)
       }
     }
@@ -128,6 +137,49 @@ export function BlockHandle({ editor, onInsertImage = null }: BlockHandleProps) 
     return () => {
       document.removeEventListener('pointerdown', handlePointerDown)
       document.removeEventListener('keydown', handleKeyDown)
+    }
+  }, [activeMenu])
+
+  useLayoutEffect(() => {
+    if (!activeMenu) {
+      return
+    }
+
+    function refreshMenuPosition() {
+      const root = rootRef.current
+      const menu = menuRef.current
+
+      if (!root || !menu) {
+        return
+      }
+
+      const viewportInset = 12
+      const rootRect = root.getBoundingClientRect()
+      const menuRect = menu.getBoundingClientRect()
+      const left = Math.min(
+        window.innerWidth - menuRect.width - viewportInset,
+        Math.max(viewportInset, rootRect.right - menuRect.width),
+      )
+      const spaceBelow = window.innerHeight - rootRect.bottom - viewportInset
+      const top =
+        spaceBelow >= menuRect.height + 8
+          ? rootRect.bottom + 8
+          : Math.max(viewportInset, rootRect.top - menuRect.height - 8)
+
+      setMenuPosition((current) =>
+        current.left === Math.round(left) && current.top === Math.round(top)
+          ? current
+          : { left: Math.round(left), top: Math.round(top) },
+      )
+    }
+
+    refreshMenuPosition()
+    window.addEventListener('resize', refreshMenuPosition)
+    window.addEventListener('scroll', refreshMenuPosition, true)
+
+    return () => {
+      window.removeEventListener('resize', refreshMenuPosition)
+      window.removeEventListener('scroll', refreshMenuPosition, true)
     }
   }, [activeMenu])
 
@@ -205,112 +257,132 @@ export function BlockHandle({ editor, onInsertImage = null }: BlockHandleProps) 
     setActiveMenu(null)
   }
 
+  const floatingMenu = activeMenu
+    ? createPortal(
+        <div
+          className={`sn-block-handle-menu sn-block-handle-menu--floating${
+            activeMenu === 'actions' ? ' sn-block-handle-menu--wide' : ''
+          }`}
+          ref={menuRef}
+          role="menu"
+          style={{ left: menuPosition.left, top: menuPosition.top }}
+        >
+          {activeMenu === 'insert' ? (
+            <>
+              {insertTargets.map((item) => (
+                <button
+                  key={item.target}
+                  onClick={() =>
+                    runAction(() => insertBlockBelow(editor, item.target))
+                  }
+                  type="button"
+                >
+                  {item.label}
+                </button>
+              ))}
+              {onInsertImage ? (
+                <button
+                  key="image"
+                  onClick={() => runAction(() => onInsertImage())}
+                  type="button"
+                >
+                  Image
+                </button>
+              ) : null}
+            </>
+          ) : (
+            <>
+              <div className="sn-block-handle-menu__grid">
+                <button
+                  onClick={() => runAction(() => duplicateCurrentBlock(editor))}
+                  type="button"
+                >
+                  <UiIcon name="copy" />
+                  Duplicate
+                </button>
+                <button
+                  onClick={() => runAction(() => deleteCurrentBlock(editor))}
+                  type="button"
+                >
+                  <UiIcon name="trash" />
+                  Delete
+                </button>
+                <button
+                  onClick={() => runAction(() => moveCurrentBlock(editor, 'up'))}
+                  type="button"
+                >
+                  <UiIcon name="arrowUp" />
+                  {t('block.moveUp')}
+                </button>
+                <button
+                  onClick={() => runAction(() => moveCurrentBlock(editor, 'down'))}
+                  type="button"
+                >
+                  <UiIcon name="arrowDown" />
+                  {t('block.moveDown')}
+                </button>
+              </div>
+              <span className="sn-block-handle-menu__label">{t('block.turnInto')}</span>
+              <div className="sn-block-handle-menu__turn-grid">
+                {turnTargets.map((item) => (
+                  <button
+                    key={item.target}
+                    onClick={() => runAction(() => turnInto(editor, item.target))}
+                    type="button"
+                  >
+                    {item.label}
+                  </button>
+                ))}
+              </div>
+            </>
+          )}
+        </div>,
+        document.body,
+      )
+    : null
+
   return (
-    <div
-      className="sn-block-handle"
-      ref={rootRef}
-      style={{ '--sn-block-handle-top': `${top ?? 48}px` } as CSSProperties}
-    >
-      <button
-        aria-label={t('block.insert')}
-        className="sn-block-handle__button sn-block-handle__button--insert"
-        onClick={() => setActiveMenu((menu) => (menu === 'insert' ? null : 'insert'))}
-        title={t('block.insert')}
-        type="button"
+    <>
+      <div
+        className="sn-block-handle"
+        ref={rootRef}
+        style={{ '--sn-block-handle-top': `${top ?? 48}px` } as CSSProperties}
       >
-        <UiIcon name="plus" />
-      </button>
-      <button
-        aria-label={t('block.actions')}
-        className="sn-block-handle__button sn-block-handle__button--grip"
-        draggable
-        onClick={() => setActiveMenu((menu) => (menu === 'actions' ? null : 'actions'))}
-        onDragEnd={() => {
-          draggedSourceRef.current = null
-        }}
-        onDragStart={(event) => {
-          const range = getCurrentTopLevelBlockRange(editor)
+        <button
+          aria-label={t('block.insert')}
+          className="sn-block-handle__button sn-block-handle__button--insert"
+          onClick={() => setActiveMenu((menu) => (menu === 'insert' ? null : 'insert'))}
+          title={t('block.insert')}
+          type="button"
+        >
+          <UiIcon name="plus" />
+        </button>
+        <button
+          aria-label={t('block.actions')}
+          className="sn-block-handle__button sn-block-handle__button--grip"
+          draggable
+          onClick={() => setActiveMenu((menu) => (menu === 'actions' ? null : 'actions'))}
+          onDragEnd={() => {
+            draggedSourceRef.current = null
+          }}
+          onDragStart={(event) => {
+            const range = getCurrentTopLevelBlockRange(editor)
 
-          if (!range) {
-            return
-          }
+            if (!range) {
+              return
+            }
 
-          draggedSourceRef.current = range.from
-          event.dataTransfer.effectAllowed = 'move'
-          event.dataTransfer.setData('text/plain', String(range.from))
-        }}
-        title={t('block.actions')}
-        type="button"
-      >
-        <UiIcon name="gripVertical" />
-      </button>
-
-      {activeMenu === 'insert' ? (
-        <div className="sn-block-handle-menu" role="menu">
-          {insertTargets.map((item) => (
-            <button
-              key={item.target}
-              onClick={() => runAction(() => insertBlockBelow(editor, item.target))}
-              type="button"
-            >
-              {item.label}
-            </button>
-          ))}
-          {onInsertImage ? (
-            <button
-              key="image"
-              onClick={() => runAction(() => onInsertImage())}
-              type="button"
-            >
-              Image
-            </button>
-          ) : null}
-        </div>
-      ) : null}
-
-      {activeMenu === 'actions' ? (
-        <div className="sn-block-handle-menu sn-block-handle-menu--wide" role="menu">
-          <div className="sn-block-handle-menu__grid">
-            <button
-              onClick={() => runAction(() => duplicateCurrentBlock(editor))}
-              type="button"
-            >
-              <UiIcon name="copy" />
-              Duplicate
-            </button>
-            <button
-              onClick={() => runAction(() => deleteCurrentBlock(editor))}
-              type="button"
-            >
-              <UiIcon name="trash" />
-              Delete
-            </button>
-            <button onClick={() => runAction(() => moveCurrentBlock(editor, 'up'))} type="button">
-              <UiIcon name="arrowUp" />
-              {t('block.moveUp')}
-            </button>
-            <button
-              onClick={() => runAction(() => moveCurrentBlock(editor, 'down'))}
-              type="button"
-            >
-              <UiIcon name="arrowDown" />
-              {t('block.moveDown')}
-            </button>
-          </div>
-          <span className="sn-block-handle-menu__label">{t('block.turnInto')}</span>
-          <div className="sn-block-handle-menu__turn-grid">
-            {turnTargets.map((item) => (
-              <button
-                key={item.target}
-                onClick={() => runAction(() => turnInto(editor, item.target))}
-                type="button"
-              >
-                {item.label}
-              </button>
-            ))}
-          </div>
-        </div>
-      ) : null}
-    </div>
+            draggedSourceRef.current = range.from
+            event.dataTransfer.effectAllowed = 'move'
+            event.dataTransfer.setData('text/plain', String(range.from))
+          }}
+          title={t('block.actions')}
+          type="button"
+        >
+          <UiIcon name="gripVertical" />
+        </button>
+      </div>
+      {floatingMenu}
+    </>
   )
 }

@@ -7,6 +7,7 @@ import {
   type BackgroundPattern,
 } from '@/shared/backgrounds'
 import { detectLocale, isLocale, type Locale } from '@/shared/i18n'
+import { applyTheme, DEFAULT_THEME, isThemeName, type ThemeName } from '@/shared/themes'
 import {
   loadCustomBackground,
   useCustomBackgroundUrl,
@@ -14,6 +15,7 @@ import {
 
 type AppSettings = {
   locale: Locale
+  theme: ThemeName
   backgroundImage: string | null
   backgroundPattern: BackgroundPattern
   backgroundOpacity: number
@@ -24,6 +26,7 @@ type AppSettings = {
 const DEFAULT_SETTINGS: AppSettings = {
   // Guessed from the browser on first run, then whatever the user picked.
   locale: detectLocale(),
+  theme: DEFAULT_THEME,
   backgroundImage: null,
   backgroundPattern: 'grid',
   backgroundOpacity: 55,
@@ -34,9 +37,11 @@ const DEFAULT_SETTINGS: AppSettings = {
 const MIN_BACKGROUND_OPACITY = 0
 const MAX_BACKGROUND_OPACITY = 100
 
-// Matches --sn-bg (#e1dcd2), so the scrim fades the panel toward its own
-// base color instead of toward black/white.
-const BACKGROUND_BASE_RGB = '225, 220, 210'
+// The scrim fades the panel toward its own base colour rather than toward
+// black/white. This used to be a hard-coded copy of --sn-bg; a theme could not
+// reach it, so an alternate palette would have faded toward the warm beige.
+const BACKGROUND_BASE_RGB = 'var(--sn-bg-rgb)'
+const SCANLINE_RGB = 'var(--sn-scanline-rgb)'
 
 const SETTINGS_KEY = 'umbra-silico-settings'
 const MIN_SIDEBAR_WIDTH = 250
@@ -53,6 +58,9 @@ function normalizeSettings(value: Partial<AppSettings>): AppSettings {
     ...DEFAULT_SETTINGS,
     ...value,
     locale: isLocale(value.locale) ? value.locale : DEFAULT_SETTINGS.locale,
+    // An unknown theme falls back to Platinum rather than leaving the document
+    // with a data-theme nothing answers, which would render half-styled.
+    theme: isThemeName(value.theme) ? value.theme : DEFAULT_SETTINGS.theme,
     backgroundImage:
       typeof value.backgroundImage === 'string' && allowedBackgroundImages.has(value.backgroundImage)
         ? value.backgroundImage
@@ -133,6 +141,13 @@ export function useSettings() {
     }
   }, [wantsCustomBackground])
 
+  // The theme is an attribute rather than a set of inline variables: the values
+  // belong in themes.css, where they can be reviewed as a palette, and writing
+  // them onto the element would put them out of reach of the stylesheet.
+  useEffect(() => {
+    applyTheme(document.documentElement, settings.theme)
+  }, [settings.theme])
+
   // Apply settings to CSS variables on :root
   useEffect(() => {
     const root = document.documentElement
@@ -153,7 +168,7 @@ export function useSettings() {
     if (settings.backgroundPattern === 'scanlines') {
       root.style.setProperty(
         '--sn-background-pattern-y',
-        `linear-gradient(rgba(28, 27, 24, ${0.16 * opacity}) 1px, transparent 1px)`,
+        `linear-gradient(rgba(${SCANLINE_RGB}, ${0.16 * opacity}) 1px, transparent 1px)`,
       )
       root.style.setProperty('--sn-background-pattern-x', 'none')
       root.style.setProperty('--sn-background-pattern-size', '100% 3px')

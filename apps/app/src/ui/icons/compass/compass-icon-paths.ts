@@ -44,7 +44,7 @@ export type CompassFormatIconName =
 // 16px formatting toolbar row ("ПАНЕЛЬ ФОРМАТИРОВАНИЯ").
 export const compassFormatIcons: Record<CompassFormatIconName, CompassIconPath> = {
   bold: {
-    d: 'M6.5 3.5V17.5M6.5 3.5H10.8A3.4 3.4 0 0 1 10.8 10.3H6.5M6.5 10.3H11.8A3.6 3.6 0 0 1 11.8 17.5H6.5',
+    d: 'M7.5 5V15M6.1 5H8.9M6.1 15H8.9M7.5 5.3H10.4A2.25 2.25 0 0 1 10.4 9.8H7.5M7.5 9.8H10.9A2.45 2.45 0 0 1 10.9 14.7H7.5',
     f: '',
   },
   italic: { d: 'M9 3.5H15M5 16.5H11M12 3.5L8 16.5', f: '' },
@@ -54,7 +54,7 @@ export const compassFormatIcons: Record<CompassFormatIconName, CompassIconPath> 
   },
   code: { d: 'M7 5.5L3.5 10L7 14.5M13 5.5L16.5 10L13 14.5', f: '' },
   quote: {
-    d: `${circle(5.9, 11.8, 2.2)}M3.7 11.8C3.7 8.7 4.6 6.5 6.6 4.9${circle(13.5, 11.8, 2.2)}M11.3 11.8C11.3 8.7 12.2 6.5 14.2 4.9`,
+    d: 'M6.1 8.2C4.5 8.2 3.6 7.3 3.6 6.1C3.6 4.9 4.5 4 5.7 4M6.1 8.2C6.1 5.9 7 4.6 8.5 4M11.4 6.1H16.4M3.6 11.4H16.4M3.6 14.8H12.4',
     f: '',
   },
   heading1: { d: 'M3 4.5V15.5M3 10H8.5M8.5 4.5V15.5M13.5 6.8L15.9 4.5V15.5', f: '' },
@@ -81,7 +81,7 @@ export const compassFormatIcons: Record<CompassFormatIconName, CompassIconPath> 
     d: `M3 4.5H17V15.5H3ZM3 13.5L7.5 9L11 12.5L13 10.5L17 14.5${circle(14, 7.5, 1.7)}`,
     f: dot(14, 7.5, 0.6),
   },
-  table: { d: 'M3.5 4.5H16.5V15.5H3.5ZM3.5 8.5H16.5M10 8.5V15.5', f: '' },
+  table: { d: 'M3 4.4H17V15.6H3ZM7.67 4.4V15.6M12.33 4.4V15.6M3 8.13H17M3 11.87H17', f: '' },
   undo: { d: 'M6.2 4.8L3 8L6.2 11.2M3 8H11.4A4.6 4.6 0 0 1 11.4 17.2H7.5', f: '' },
   redo: { d: 'M13.8 4.8L17 8L13.8 11.2M17 8H8.6A4.6 4.6 0 0 0 8.6 17.2H12.5', f: '' },
 }

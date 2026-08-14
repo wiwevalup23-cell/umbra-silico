@@ -16,11 +16,14 @@ import {
   type CustomBackgroundErrorCode,
 } from '@/shared/backgrounds'
 import { localeLabels, locales, type Locale } from '@/shared/i18n'
+import { themeOptions, type ThemeName } from '@/shared/themes'
 import { useTranslation } from '@/ui/i18n/use-translation'
 import { UiIcon } from '@/ui/icons/ui/UiIcon'
+import { SquircleButton } from '@/ui/components/silicon/SquircleButton'
 
 type SettingsValue = {
   locale: Locale
+  theme: ThemeName
   backgroundImage: string | null
   backgroundPattern: BackgroundPattern
   backgroundOpacity: number
@@ -43,11 +46,12 @@ type SettingsTab = 'appearance' | 'language' | 'data'
 const PATTERN_PREVIEWS: Record<BackgroundPattern, CSSProperties> = {
   grid: {
     '--sn-background-preview':
-      'linear-gradient(rgba(28, 27, 24, 0.32) 1px, transparent 1px), linear-gradient(90deg, rgba(28, 27, 24, 0.22) 1px, transparent 1px)',
+      'linear-gradient(rgba(var(--sn-scanline-rgb), 0.32) 1px, transparent 1px), linear-gradient(90deg, rgba(var(--sn-scanline-rgb), 0.22) 1px, transparent 1px)',
     '--sn-background-preview-size': '8px 8px, 8px 8px',
   } as CSSProperties,
   scanlines: {
-    '--sn-background-preview': 'linear-gradient(rgba(28, 27, 24, 0.4) 1px, transparent 1px)',
+    '--sn-background-preview':
+      'linear-gradient(rgba(var(--sn-scanline-rgb), 0.4) 1px, transparent 1px)',
     '--sn-background-preview-size': '100% 3px',
   } as CSSProperties,
   none: {
@@ -150,15 +154,12 @@ export function SettingsModal({
             <UiIcon name="settings" />
             {t('settings.title')}
           </h2>
-          <button
+          <SquircleButton
             aria-label={t('settings.close')}
-            className="sn-icon-button"
+            icon="close"
             onClick={onClose}
             title={t('action.close')}
-            type="button"
-          >
-            <UiIcon name="close" />
-          </button>
+          />
         </header>
 
         <div
@@ -184,6 +185,39 @@ export function SettingsModal({
         <div className="sn-settings-modal__body">
           {activeTab === 'appearance' ? (
             <>
+              <section className="sn-settings-section">
+                <div className="sn-settings-section__label" id="sn-theme-label">
+                  {t('settings.theme')}
+                </div>
+                <p className="sn-settings-section__hint">{t('settings.themeHint')}</p>
+                <div aria-labelledby="sn-theme-label" className="sn-theme-picker" role="radiogroup">
+                  {themeOptions.map((option) => (
+                    <button
+                      aria-checked={settings.theme === option.value}
+                      className="sn-theme-option"
+                      key={option.value}
+                      onClick={() => updateSetting('theme', option.value)}
+                      role="radio"
+                      type="button"
+                    >
+                      {/* Scoping the swatch to the theme makes it read its own
+                          palette out of themes.css, so it cannot describe a
+                          colour the theme does not actually use. */}
+                      <span
+                        aria-hidden="true"
+                        className="sn-theme-option__swatch"
+                        data-theme={option.value}
+                      >
+                        <span className="sn-theme-option__case" />
+                        <span className="sn-theme-option__sheet" />
+                        <span className="sn-theme-option__accent" />
+                      </span>
+                      <span>{option.label}</span>
+                    </button>
+                  ))}
+                </div>
+              </section>
+
               <section className="sn-settings-section">
                 <div className="sn-settings-section__label" id="sn-background-pattern-label">
                   {t('settings.pattern')}

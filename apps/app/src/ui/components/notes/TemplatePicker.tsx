@@ -2,6 +2,7 @@ import { useRef } from 'react'
 import type { NoteTemplateId, NoteTemplateSummary } from '@/shared/note-templates'
 import { RetroDialogShell } from '@/ui/components/silicon'
 import { UiIcon } from '@/ui/icons/ui/UiIcon'
+import { SquircleButton } from '@/ui/components/silicon/SquircleButton'
 import { useTranslation } from '@/ui/i18n/use-translation'
 
 const templateIcons = {
@@ -43,14 +44,11 @@ export function TemplatePicker({
             <span className="sn-command-window__eyebrow">New page</span>
             <h2 id="template-picker-title">{t('templates.title')}</h2>
           </div>
-          <button
+          <SquircleButton
             aria-label={t('templates.close')}
-            className="sn-icon-button"
+            icon="close"
             onClick={onClose}
-            type="button"
-          >
-            <UiIcon name="close" />
-          </button>
+          />
         </header>
 
         <div className="sn-template-grid">

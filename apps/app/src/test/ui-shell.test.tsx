@@ -82,6 +82,7 @@ describe('Umbra Silico UI shell', () => {
         onClose={vi.fn()}
         settings={{
           locale: 'en' as const,
+          theme: 'platinum' as const,
           backgroundImage: null,
           backgroundOpacity: 100,
           backgroundPattern: 'grid',
@@ -129,6 +130,7 @@ describe('Umbra Silico UI shell', () => {
 
   it('renders note navigation from props and delegates note actions', () => {
     const onCreateNote = vi.fn()
+    const onCollapse = vi.fn()
     const onOpenLockedNote = vi.fn()
     const onSelectNote = vi.fn()
     const notes: NoteListItem[] = [
@@ -156,6 +158,7 @@ describe('Umbra Silico UI shell', () => {
       <NoteList
         activeNoteId={plainNoteId}
         notes={notes}
+        onCollapse={onCollapse}
         onCreateNote={onCreateNote}
         onOpenLockedNote={onOpenLockedNote}
         onSelectNote={onSelectNote}
@@ -175,13 +178,19 @@ describe('Umbra Silico UI shell', () => {
     expect(rendered.container.textContent).toContain('Plain note')
     expect(onSelectNote).toHaveBeenCalledWith(plainNoteId)
     expect(onOpenLockedNote).toHaveBeenCalledWith(lockedNoteId)
+    const collapseButton = rendered.container.querySelector<HTMLButtonElement>(
+      'button[aria-label="Collapse notes panel"]',
+    )
+    expect(collapseButton?.classList.contains('sn-panel-collapse-button')).toBe(true)
+    expect(collapseButton?.hasAttribute('title')).toBe(false)
+    act(() => collapseButton?.click())
+    expect(onCollapse).toHaveBeenCalledOnce()
   })
 
-  it('renders the editor shell from note props and delegates lock requests', async () => {
+  it('renders the editor shell from note props without a duplicate lock action', async () => {
     const onChangeDocument = vi.fn(async () => undefined)
     const onChangeTitle = vi.fn(async () => undefined)
     const onCreateNote = vi.fn()
-    const onRequestLock = vi.fn()
     const note = {
       ...createDraftLocalNote({
         document: {
@@ -211,21 +220,11 @@ describe('Umbra Silico UI shell', () => {
         onChangeDocument={onChangeDocument}
         onChangeTitle={onChangeTitle}
         onCreateNote={onCreateNote}
-        onRequestLock={onRequestLock}
         pendingOperations={2}
         syncStatus="idle"
       />,
     )
     cleanupTasks.push(rendered.cleanup)
-
-    const lockButton = rendered.container.querySelector<HTMLButtonElement>(
-      'button[aria-label="Lock note"]',
-    )
-
-    await act(async () => {
-      lockButton?.click()
-      await Promise.resolve()
-    })
 
     expect(
       rendered.container.querySelector<HTMLInputElement>(
@@ -236,16 +235,47 @@ describe('Umbra Silico UI shell', () => {
       'A polished glass note.',
     )
     expect(
+      rendered.container.querySelector<HTMLElement>('[data-text-align="left"]')
+        ?.style.textAlign,
+    ).toBe('left')
+    expect(
+      rendered.container.querySelector<HTMLElement>('[data-block-line-height="1.6"]')
+        ?.style.lineHeight,
+    ).toBe('1.6')
+    const paper = rendered.container.querySelector<HTMLElement>(
+      '.sn-editor-paper-sheet',
+    )
+    expect(paper?.style.getPropertyValue('--sn-page-measure')).toBe('66ch')
+    // Foot deeper than head: equal margins read as a page sagging, because the
+    // optical centre sits above the geometric one.
+    expect(paper?.style.getPropertyValue('--sn-page-header-offset')).toBe('48px')
+    expect(paper?.style.getPropertyValue('--sn-page-footer-offset')).toBe('96px')
+    expect(
       rendered.container.querySelector('button[aria-label="Heading 1"]'),
     ).not.toBeNull()
-    expect(onRequestLock).toHaveBeenCalledWith(plainNoteId)
+    expect(
+      rendered.container.querySelector('button[aria-label="Lock note"]'),
+    ).toBeNull()
+
+    act(() => {
+      rendered.container
+        .querySelector<HTMLButtonElement>('button[aria-label="Insert block"]')
+        ?.click()
+    })
+
+    const floatingMenu = document.body.querySelector<HTMLElement>(
+      '.sn-block-handle-menu--floating',
+    )
+    expect(floatingMenu?.parentElement).toBe(document.body)
+    expect(floatingMenu?.textContent).toContain('Paragraph')
   })
 
-  it('renders table and block layout controls for rich documents', () => {
-    const onChangeDocument = vi.fn(async () => undefined)
+  it('renders and persists table, text, and page layout controls', async () => {
+    const onChangeDocument = vi.fn<
+      ComponentProps<typeof EditorShell>['onChangeDocument']
+    >(async () => undefined)
     const onChangeTitle = vi.fn(async () => undefined)
     const onCreateNote = vi.fn()
-    const onRequestLock = vi.fn()
     const document = parseNoteDocument({
       schemaVersion: 1,
       editor: 'tiptap',
@@ -254,13 +284,16 @@ describe('Umbra Silico UI shell', () => {
         attrs: {
           pageFooterOffset: 56,
           pageHeaderOffset: 72,
+          pageMeasure: 58,
         },
         content: [
           {
             type: 'paragraph',
             attrs: {
               blockIndent: 2,
+              blockLineHeight: 1.15,
               blockMargin: 'wide',
+              textAlign: 'justify',
             },
             content: [{ type: 'text', text: 'Indented table note.' }],
           },
@@ -336,7 +369,6 @@ describe('Umbra Silico UI shell', () => {
         onChangeDocument={onChangeDocument}
         onChangeTitle={onChangeTitle}
         onCreateNote={onCreateNote}
-        onRequestLock={onRequestLock}
         pendingOperations={2}
         syncStatus="idle"
       />,
@@ -347,24 +379,108 @@ describe('Umbra Silico UI shell', () => {
     expect(rendered.container.querySelector('table')).not.toBeNull()
     expect(rendered.container.querySelector('[data-block-indent="2"]')).not.toBeNull()
     expect(
+      rendered.container.querySelector<HTMLElement>('[data-block-line-height="1.15"]')
+        ?.style.lineHeight,
+    ).toBe('1.15')
+    expect(
+      rendered.container.querySelector<HTMLElement>('[data-text-align="justify"]')
+        ?.style.textAlign,
+    ).toBe('justify')
+    expect(
       rendered.container
-        .querySelector<HTMLElement>('.sn-editor-paper--editable')
+        .querySelector<HTMLElement>('.sn-editor-paper-sheet')
         ?.style.getPropertyValue('--sn-page-header-offset'),
     ).toBe('72px')
+    expect(
+      rendered.container
+        .querySelector<HTMLElement>('.sn-editor-paper-sheet')
+        ?.style.getPropertyValue('--sn-page-measure'),
+    ).toBe('58ch')
     expect(rendered.container.textContent).not.toContain('M+')
     expect(rendered.container.textContent).not.toContain('R+')
 
+    // Blocks and tables get a panel each: one drawer holding every aspect meant
+    // reading past the block commands to reach a table one.
     act(() => {
       rendered.container
-        .querySelector<HTMLButtonElement>('button[aria-label="More editor tools"]')
+        .querySelector<HTMLButtonElement>('button[aria-label="Blocks"]')
         ?.click()
     })
 
-    expect(rendered.container.textContent).toContain('Insert table')
-    expect(rendered.container.textContent).toContain('Add row')
-    expect(rendered.container.textContent).toContain('Numbered list')
-    expect(rendered.container.textContent).not.toContain('M+')
-    expect(rendered.container.textContent).not.toContain('72px')
+    // Menu items render the dictionary string they announce, so the two cannot
+    // drift apart — this used to show a hardcoded "Numbered list" beside an
+    // aria-label reading "Ordered list".
+    expect(globalThis.document.body.textContent).toContain('Ordered list')
+    expect(globalThis.document.body.textContent).toContain('Callout')
+    expect(globalThis.document.body.textContent).toContain('Insert table')
+    expect(globalThis.document.body.textContent).toContain('Line spacing')
+    expect(globalThis.document.body.textContent).toContain('Page margins')
+
+    act(() => {
+      globalThis.document.body
+        .querySelector<HTMLButtonElement>('button[aria-label="Align left"]')
+        ?.click()
+
+      Array.from(
+        globalThis.document.body.querySelectorAll<HTMLButtonElement>(
+          '.sn-editor-layout-preset',
+        ),
+      )
+        .find((button) => button.textContent?.trim() === '2')
+        ?.click()
+    })
+
+    const sideMarginInput = globalThis.document.body.querySelector<HTMLInputElement>(
+      'input[aria-label="Line length"]',
+    )
+
+    act(() => {
+      if (!sideMarginInput) {
+        throw new Error('Expected a line-length input.')
+      }
+
+      setInputValue(sideMarginInput, '40')
+      sideMarginInput.dispatchEvent(new FocusEvent('focusout', { bubbles: true }))
+    })
+
+    await act(async () => {
+      rendered.container
+        .querySelector<HTMLButtonElement>('button[aria-label="Save note"]')
+        ?.click()
+      await Promise.resolve()
+    })
+
+    const savedLayoutDocument = onChangeDocument.mock.calls.at(-1)?.[1]
+    const savedParagraph = savedLayoutDocument?.content.content?.find(
+      (node) => node.type === 'paragraph',
+    )
+
+    expect(savedLayoutDocument?.content.attrs?.pageMeasure).toBe(40)
+    expect(
+      savedParagraph && 'attrs' in savedParagraph
+        ? savedParagraph.attrs?.blockLineHeight
+        : undefined,
+    ).toBe(2)
+    expect(
+      savedParagraph && 'attrs' in savedParagraph
+        ? savedParagraph.attrs?.textAlign
+        : undefined,
+    ).toBe('left')
+
+    act(() => {
+      rendered.container
+        .querySelector<HTMLButtonElement>('button[aria-label="Table"]')
+        ?.click()
+    })
+
+    // A table you cannot take a row out of is a trap, so removal sits beside
+    // insertion rather than being missing entirely.
+    expect(globalThis.document.body.textContent).toContain('Row above')
+    expect(globalThis.document.body.textContent).toContain('Delete row')
+    expect(globalThis.document.body.textContent).toContain('Delete column')
+    expect(globalThis.document.body.textContent).toContain('Merge cells')
+    expect(globalThis.document.body.textContent).not.toContain('M+')
+    expect(globalThis.document.body.textContent).not.toContain('72px')
   })
 
   it('exports the rendered note through the PDF print layout', () => {
@@ -388,7 +504,6 @@ describe('Umbra Silico UI shell', () => {
         onChangeDocument={vi.fn(async () => undefined)}
         onChangeTitle={vi.fn(async () => undefined)}
         onCreateNote={vi.fn()}
-        onRequestLock={vi.fn()}
         pendingOperations={0}
         syncStatus="idle"
       />,
@@ -398,6 +513,11 @@ describe('Umbra Silico UI shell', () => {
     expect(rendered.container.querySelector('.sn-print-note-title')?.textContent).toBe(
       'Quarterly / Plan',
     )
+    expect(
+      rendered.container.querySelector<HTMLButtonElement>(
+        'button[aria-label="Export note as PDF"]',
+      )?.textContent,
+    ).toBe('')
 
     act(() => {
       rendered.container
@@ -429,7 +549,6 @@ describe('Umbra Silico UI shell', () => {
         onChangeDocument={onChangeDocument}
         onChangeTitle={vi.fn(async () => undefined)}
         onCreateNote={vi.fn()}
-        onRequestLock={vi.fn()}
         pendingOperations={0}
         syncStatus="idle"
       />,
@@ -438,11 +557,11 @@ describe('Umbra Silico UI shell', () => {
 
     act(() => {
       rendered.container
-        .querySelector<HTMLButtonElement>('button[aria-label="More editor tools"]')
+        .querySelector<HTMLButtonElement>('button[aria-label="Blocks"]')
         ?.click()
     })
 
-    const insertTableButton = rendered.container.querySelector<HTMLButtonElement>(
+    const insertTableButton = globalThis.document.body.querySelector<HTMLButtonElement>(
       'button[aria-label="Insert table"]',
     )
 
@@ -475,7 +594,6 @@ describe('Umbra Silico UI shell', () => {
     const onChangeDocument = vi.fn(async () => undefined)
     const onChangeTitle = vi.fn(async () => undefined)
     const onCreateNote = vi.fn()
-    const onRequestLock = vi.fn()
     const note = {
       ...createDraftLocalNote({
         deviceId,
@@ -493,7 +611,6 @@ describe('Umbra Silico UI shell', () => {
         onChangeDocument={onChangeDocument}
         onChangeTitle={onChangeTitle}
         onCreateNote={onCreateNote}
-        onRequestLock={onRequestLock}
         pendingOperations={2}
         syncStatus="idle"
       />,
@@ -549,7 +666,6 @@ describe('Umbra Silico UI shell', () => {
         onChangeDocument={vi.fn(async () => undefined)}
         onChangeTitle={vi.fn(async () => undefined)}
         onCreateNote={vi.fn()}
-        onRequestLock={vi.fn()}
         pendingOperations={0}
         syncStatus="idle"
       />,
@@ -620,7 +736,6 @@ describe('Umbra Silico UI shell', () => {
         onChangeDocument={onChangeDocument}
         onChangeTitle={onChangeTitle}
         onCreateNote={vi.fn()}
-        onRequestLock={vi.fn()}
         pendingOperations={0}
         syncStatus="idle"
       />,
@@ -661,7 +776,6 @@ describe('Umbra Silico UI shell', () => {
     const onChangeDocument = vi.fn(async () => undefined)
     const onChangeTitle = vi.fn(async () => undefined)
     const onCreateNote = vi.fn()
-    const onRequestLock = vi.fn()
 
     const rendered = renderUi(
       <EditorShell
@@ -669,7 +783,6 @@ describe('Umbra Silico UI shell', () => {
         onChangeDocument={onChangeDocument}
         onChangeTitle={onChangeTitle}
         onCreateNote={onCreateNote}
-        onRequestLock={onRequestLock}
         pendingOperations={2}
         syncStatus="idle"
       />,
@@ -730,7 +843,6 @@ describe('Umbra Silico UI shell', () => {
         onChangeDocument={vi.fn(async () => undefined)}
         onChangeTitle={vi.fn(async () => undefined)}
         onCreateNote={vi.fn()}
-        onRequestLock={vi.fn()}
         pendingOperations={0}
         syncStatus="idle"
       />,

@@ -8,6 +8,7 @@ import { NoteList } from '@/ui/components/notes/NoteList'
 import { TrashView } from '@/ui/components/notes/TrashView'
 import { WorkspaceInspector } from '@/ui/components/notes/WorkspaceInspector'
 import { MobileTabBar } from '@/ui/components/silicon/MobileTabBar'
+import { SquircleButton } from '@/ui/components/silicon/SquircleButton'
 import { UiIcon } from '@/ui/icons/ui/UiIcon'
 import type { CreateNoteInput, FolderTreeNode, NoteId } from '@/shared/contracts'
 import { createNoteFromTemplate, type NoteTemplateId } from '@/shared/note-templates'
@@ -297,71 +298,60 @@ function AppWorkspace() {
           </button>
 
           <div className="sn-topbar-actions">
-            <button
+            <SquircleButton
               aria-label={t('shell.commandMenu')}
-              className="sn-icon-button"
+              legacyIcon="search"
               onClick={() => openOverlay({ kind: 'quickSwitcher' })}
+              size="large"
               title={t('shell.commandMenuHint')}
-              type="button"
-            >
-              <UiIcon name="search" />
-            </button>
-            <button
+            />
+            <SquircleButton
               aria-label={t('shell.createNote')}
-              className="sn-icon-button sn-icon-button--primary"
               disabled={isCreatingNote}
+              legacyIcon="plus"
               onClick={() => handleCreateNote()}
+              size="large"
               title={t('shell.createNote')}
-              type="button"
-            >
-              <UiIcon name="plus" />
-            </button>
-            <button
+              variant="primary"
+            />
+            <SquircleButton
               aria-label={t('shell.lockSelectedNote')}
-              className="sn-icon-button"
               disabled={!notesViewModel.activeNoteId}
+              legacyIcon="lock"
               onClick={() => {
                 if (notesViewModel.activeNoteId) {
                   notesViewModel.openLockModal(notesViewModel.activeNoteId)
                 }
               }}
+              size="large"
               title={t('shell.lockSelectedNote')}
-              type="button"
-            >
-              <UiIcon name="lock" />
-            </button>
+            />
             {syncViewModel.hasRemote ? (
-              <button
+              <SquircleButton
                 aria-label={t('shell.refreshSync')}
-                className="sn-icon-button"
+                legacyIcon="refresh"
                 onClick={() => {
                   void syncViewModel.refreshPendingOperations()
                 }}
+                size="large"
                 title={t('shell.refreshSync')}
-                type="button"
-              >
-                <UiIcon name="refresh" />
-              </button>
+              />
             ) : null}
-            <button
+            <SquircleButton
+              active={layout.isFocusLayout}
               aria-label={t('shell.toggleFocus')}
-              className="sn-icon-button"
-              data-active={layout.isFocusLayout}
+              legacyIcon="focus"
               onClick={layout.toggleFocus}
+              size="large"
               title={t('shell.toggleFocus')}
-              type="button"
-            >
-              <UiIcon name="focus" />
-            </button>
-            <button
+            />
+            <SquircleButton
               aria-label={t('shell.settings')}
-              className="sn-icon-button"
+              legacyIcon="settings"
               onClick={() => openOverlay({ kind: 'settings' })}
+              size="large"
               title={t('shell.settings')}
-              type="button"
-            >
-              <UiIcon name="settings" />
-            </button>
+            />
           </div>
         </header>
 
@@ -498,7 +488,6 @@ function AppWorkspace() {
                 onCreateNote={handleCreateNote}
                 isCreatingNote={isCreatingNote}
                 onImportImage={noteImagesViewModel.importImage}
-                onRequestLock={notesViewModel.openLockModal}
                 pendingOperations={visiblePendingOperations}
                 syncStatus={syncViewModel.status}
               />

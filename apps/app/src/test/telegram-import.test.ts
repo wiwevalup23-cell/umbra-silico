@@ -212,7 +212,7 @@ describe('Telegram import service', () => {
       expect.objectContaining({
         parentFolderId,
         title: 'Kitchen Friend',
-        properties: { kind: 'chat', status: 'none', tags: ['telegram'] },
+        properties: { kind: 'chat', markers: [], status: 'none', tags: ['telegram'] },
       }),
     )
     expect(imageRepository.importImage).toHaveBeenCalledTimes(1)

@@ -7,6 +7,7 @@ import type {
 } from '@/shared/contracts'
 import { RetroDialogShell } from '@/ui/components/silicon'
 import { UiIcon } from '@/ui/icons/ui/UiIcon'
+import { SquircleButton } from '@/ui/components/silicon/SquircleButton'
 import type { Translator } from '@/shared/i18n'
 import { useTranslation } from '@/ui/i18n/use-translation'
 
@@ -117,15 +118,12 @@ export function TelegramImportDialog({
             <span className="sn-command-window__eyebrow">Telegram Desktop</span>
             <h2 id="telegram-import-title">{t('telegram.heading')}</h2>
           </div>
-          <button
+          <SquircleButton
             aria-label={t('telegram.close')}
-            className="sn-icon-button"
             disabled={isImporting}
+            icon="close"
             onClick={onClose}
-            type="button"
-          >
-            <UiIcon name="close" />
-          </button>
+          />
         </header>
 
         <input

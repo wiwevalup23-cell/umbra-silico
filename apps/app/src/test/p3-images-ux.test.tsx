@@ -81,7 +81,6 @@ async function renderEditor(options: RenderOptions = {}) {
         onChangeTitle={vi.fn(async () => undefined)}
         onCreateNote={vi.fn()}
         onImportImage={options.onImportImage ?? null}
-        onRequestLock={vi.fn()}
         pendingOperations={0}
         syncStatus="idle"
       />,

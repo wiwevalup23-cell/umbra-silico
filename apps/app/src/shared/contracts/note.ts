@@ -36,8 +36,22 @@ export const noteSyncStatusValues = [
 export const noteSyncStatusSchema = z.enum(noteSyncStatusValues)
 export type NoteSyncStatus = z.infer<typeof noteSyncStatusSchema>
 
-export const notePropertyStatusValues = ['none', 'idea', 'active', 'done'] as const
+export const notePropertyStatusValues = [
+  'none',
+  'incoming',
+  'draft',
+  'in_progress',
+  'deferred',
+  'waiting',
+  'review',
+  'completed',
+  'archived',
+] as const
 export type BuiltInNotePropertyStatus = (typeof notePropertyStatusValues)[number]
+
+// These values existed before the status/marker system was split. They remain
+// readable so local notes and synced payloads upgrade without data loss.
+const legacyNotePropertyStatusValues = ['idea', 'active', 'done'] as const
 
 // Custom statuses encode their icon and label in the value itself. This keeps a
 // status readable on another device even before its local picker preferences
@@ -45,10 +59,29 @@ export type BuiltInNotePropertyStatus = (typeof notePropertyStatusValues)[number
 export const customNotePropertyStatusPrefix = 'custom:'
 export const notePropertyStatusSchema = z.string().min(1).max(96).refine(
   (value) => notePropertyStatusValues.includes(value as BuiltInNotePropertyStatus)
+    || legacyNotePropertyStatusValues.includes(value as (typeof legacyNotePropertyStatusValues)[number])
     || value.startsWith(customNotePropertyStatusPrefix),
   { message: 'Expected a built-in or custom note property status.' },
 )
 export type NotePropertyStatus = z.infer<typeof notePropertyStatusSchema>
+
+export const notePropertyMarkerValues = [
+  'important',
+  'favorite',
+  'return',
+  'question',
+  'idea',
+  'observation',
+  'source',
+  'linked',
+  'pinned',
+  'private',
+  'conflict',
+  'fragile',
+  'dead_end',
+] as const
+export const notePropertyMarkerSchema = z.enum(notePropertyMarkerValues)
+export type NotePropertyMarker = z.infer<typeof notePropertyMarkerSchema>
 
 // `kind` picks the presentation surface for a note: a standard page opens the
 // block editor, a chat opens the message feed. It lives in properties so it
@@ -61,6 +94,7 @@ export const noteTagSchema = z.string().trim().min(1).max(32)
 export const notePropertiesSchema = z.object({
   kind: noteKindSchema.default('standard'),
   status: notePropertyStatusSchema.default('none'),
+  markers: z.array(notePropertyMarkerSchema).max(notePropertyMarkerValues.length).default([]),
   tags: z.array(noteTagSchema).max(12).transform(normalizeNoteTags).default([]),
 })
 
@@ -68,6 +102,7 @@ export type NoteProperties = z.infer<typeof notePropertiesSchema>
 
 export const emptyNoteProperties: NoteProperties = {
   kind: 'standard',
+  markers: [],
   status: 'none',
   tags: [],
 }
@@ -105,6 +140,7 @@ export const noteListItemSchema = z.object({
   syncStatus: noteSyncStatusSchema,
   kind: noteKindSchema.optional(),
   propertyStatus: notePropertyStatusSchema.optional(),
+  propertyMarkers: z.array(notePropertyMarkerSchema).optional(),
   tags: z.array(noteTagSchema).optional(),
 })
 
@@ -256,6 +292,7 @@ export function toPlaintextListItem(note: PlaintextLocalNote): NoteListItem {
     updatedAt: note.updatedAt,
     syncStatus: note.syncStatus,
     kind: note.properties?.kind,
+    propertyMarkers: note.properties?.markers,
     propertyStatus: note.properties?.status,
     tags: note.properties?.tags,
   }

@@ -10,7 +10,9 @@ import {
 } from '@/shared/contracts'
 import { useTranslation } from '@/ui/i18n/use-translation'
 import { UiIcon } from '@/ui/icons/ui/UiIcon'
+import { SquircleButton } from '@/ui/components/silicon/SquircleButton'
 import { NoteImageGallery } from './NoteImageGallery'
+import { MarkerPicker } from './MarkerPicker'
 import { StatusPicker } from './StatusPicker'
 
 type WorkspaceInspectorProps = {
@@ -144,26 +146,20 @@ export function WorkspaceInspector({
         {onCollapse || onOpenSettings ? (
           <div className="sn-panel-heading__actions">
             {onOpenSettings ? (
-              <button
+              <SquircleButton
                 aria-label={t('inspector.openSettings')}
-                className="sn-icon-button"
+                icon="settings"
                 onClick={onOpenSettings}
                 title={t('shell.settings')}
-                type="button"
-              >
-                <UiIcon name="settings" />
-              </button>
+              />
             ) : null}
             {onCollapse ? (
-              <button
+              <SquircleButton
                 aria-label={t('inspector.collapse')}
-                className="sn-icon-button"
+                className="sn-panel-collapse-button"
+                legacyIcon="chevronRight"
                 onClick={onCollapse}
-                title={t('inspector.collapse')}
-                type="button"
-              >
-                <UiIcon name="chevronRight" />
-              </button>
+              />
             ) : null}
           </div>
         ) : null}
@@ -237,6 +233,21 @@ export function WorkspaceInspector({
                   value={properties.status}
                 />
               </div>
+
+              <section className="sn-markers-section" aria-label={t('marker.section')}>
+                <div className="sn-property-heading">
+                  <h3><UiIcon name="status" /> {t('marker.section')}</h3>
+                  <span>{properties.markers.length}/13</span>
+                </div>
+                <p className="sn-property-empty">{t('marker.hint')}</p>
+                <MarkerPicker
+                  onChange={(markers) => void saveProperties({
+                    ...properties,
+                    markers,
+                  })}
+                  value={properties.markers}
+                />
+              </section>
 
               <section className="sn-tags-section" aria-label={t('inspector.pageTags')}>
                 <div className="sn-property-heading">

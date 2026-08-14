@@ -52,7 +52,8 @@ describe('focused product UX', () => {
     isLocked: false,
     parentFolderId: null,
     preview: 'A compact research page',
-    propertyStatus: 'idea',
+    propertyMarkers: ['idea'],
+    propertyStatus: 'draft',
     syncStatus: 'synced',
     tags: ['Research'],
     title: 'Field notes',
@@ -122,7 +123,7 @@ describe('focused product UX', () => {
       userId: userIdSchema.parse('focused_user'),
       deviceId: deviceIdSchema.parse('focused_device'),
       now,
-      properties: { kind: 'standard', status: 'idea', tags: ['Research'] },
+      properties: { kind: 'standard', markers: ['idea'], status: 'draft', tags: ['Research'] },
     })
     const rendered = renderUi(
       <WorkspaceInspector
@@ -143,14 +144,15 @@ describe('focused product UX', () => {
     })
     const doneOption = Array.from(rendered.container.querySelectorAll<HTMLButtonElement>(
       '[role="option"]',
-    )).find((option) => option.textContent?.includes('Done'))
+    )).find((option) => option.textContent?.includes('Completed'))
     await act(async () => {
       doneOption?.click()
       await Promise.resolve()
     })
     expect(onChangeProperties).toHaveBeenCalledWith(noteId, {
       kind: 'standard',
-      status: 'done',
+      markers: ['idea'],
+      status: 'completed',
       tags: ['Research'],
     })
 
@@ -164,7 +166,8 @@ describe('focused product UX', () => {
     })
     expect(onChangeProperties).toHaveBeenCalledWith(noteId, {
       kind: 'standard',
-      status: 'done',
+      markers: ['idea'],
+      status: 'completed',
       tags: ['Research', 'Local'],
     })
   })

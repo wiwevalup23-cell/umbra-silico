@@ -3,6 +3,7 @@ import { createChatDocument } from '@/shared/contracts/chat'
 import {
   createNoteInputSchema,
   type CreateNoteInput,
+  type NotePropertyMarker,
   type NotePropertyStatus,
 } from '@/shared/contracts/note'
 import type { DocumentNode, NoteDocument } from '@/shared/contracts/document'
@@ -14,6 +15,7 @@ export type NoteTemplateSummary = {
   descriptionKey: MessageKey
   id: NoteTemplateId
   labelKey: MessageKey
+  markers: NotePropertyMarker[]
   status: NotePropertyStatus
   tags: string[]
 }
@@ -23,6 +25,7 @@ export const noteTemplates: NoteTemplateSummary[] = [
     id: 'blank',
     labelKey: 'template.blank',
     descriptionKey: 'template.blankHint',
+    markers: [],
     status: 'none',
     tags: [],
   },
@@ -30,6 +33,7 @@ export const noteTemplates: NoteTemplateSummary[] = [
     id: 'chat',
     labelKey: 'template.chat',
     descriptionKey: 'template.chatHint',
+    markers: [],
     status: 'none',
     tags: [],
   },
@@ -37,21 +41,24 @@ export const noteTemplates: NoteTemplateSummary[] = [
     id: 'daily',
     labelKey: 'template.daily',
     descriptionKey: 'template.dailyHint',
-    status: 'active',
+    markers: [],
+    status: 'in_progress',
     tags: ['daily'],
   },
   {
     id: 'meeting',
     labelKey: 'template.meeting',
     descriptionKey: 'template.meetingHint',
-    status: 'active',
+    markers: [],
+    status: 'in_progress',
     tags: ['meeting'],
   },
   {
     id: 'project',
     labelKey: 'template.project',
     descriptionKey: 'template.projectHint',
-    status: 'idea',
+    markers: ['idea'],
+    status: 'draft',
     tags: ['project'],
   },
 ]
@@ -108,6 +115,7 @@ export function createNoteFromTemplate(
   }
 
   const properties = {
+    markers: summary.markers,
     status: summary.status,
     tags: summary.tags,
     ...(templateId === 'chat' ? { kind: 'chat' as const } : {}),

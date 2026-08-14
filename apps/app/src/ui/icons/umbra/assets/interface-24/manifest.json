@@ -1,0 +1,30 @@
+{
+  "family": "Umbra Silico interface-24",
+  "viewBox": "0 0 24 24",
+  "strokeWidth": 1.6,
+  "strokeLinecap": "round",
+  "strokeLinejoin": "round",
+  "icons": [
+    "search",
+    "new-document",
+    "settings",
+    "lock",
+    "unlock",
+    "focus",
+    "exit-focus",
+    "download",
+    "save",
+    "panel-left",
+    "panel-right",
+    "more",
+    "close",
+    "trash",
+    "folder",
+    "folder-plus",
+    "properties",
+    "photos",
+    "info",
+    "status",
+    "tag"
+  ]
+}

@@ -42,6 +42,7 @@ afterEach(async () => {
 
 const settings = {
   locale: 'en' as const,
+  theme: 'platinum' as const,
   backgroundImage: null,
   backgroundOpacity: 55,
   backgroundPattern: 'grid' as const,

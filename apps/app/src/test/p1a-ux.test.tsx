@@ -70,7 +70,7 @@ describe('P1-A visual and interaction contract', () => {
 
     const listbox = rendered.container.querySelector<HTMLElement>('[role="listbox"]')
     expect(listbox).not.toBeNull()
-    expect(listbox?.getAttribute('aria-activedescendant')).toContain('idea')
+    expect(listbox?.getAttribute('aria-activedescendant')).toContain('incoming')
 
     act(() => {
       listbox?.dispatchEvent(new KeyboardEvent('keydown', {
@@ -84,10 +84,10 @@ describe('P1-A visual and interaction contract', () => {
         key: 'Enter',
       }))
     })
-    expect(onChange).toHaveBeenCalledWith('active')
+    expect(onChange).toHaveBeenCalledWith('draft')
   })
 
-  it('creates a named status with a selected retro symbol', () => {
+  it('creates a named status with a selected production symbol', () => {
     const onChange = vi.fn()
     const rendered = renderUi(
       <StatusPicker onChange={onChange} value="none" />,
@@ -105,16 +105,16 @@ describe('P1-A visual and interaction contract', () => {
     )
     act(() => {
       setInputValue(input!, 'Waiting on signal')
-      rendered.container.querySelector<HTMLButtonElement>('button[aria-label="Important"]')?.click()
+      rendered.container.querySelector<HTMLButtonElement>('button[aria-label="Under review"]')?.click()
     })
-    expect(rendered.container.querySelector('button[aria-label="Important"] svg')).not.toBeNull()
+    expect(rendered.container.querySelector('button[aria-label="Under review"] svg')).not.toBeNull()
     act(() => {
       rendered.container.querySelector('form')?.dispatchEvent(
         new Event('submit', { bubbles: true, cancelable: true }),
       )
     })
 
-    expect(onChange).toHaveBeenCalledWith('custom:important:Waiting%20on%20signal')
+    expect(onChange).toHaveBeenCalledWith('custom:status.review:Waiting%20on%20signal')
     expect(notePropertiesSchema.safeParse({
       status: onChange.mock.calls[0]?.[0],
       tags: [],
@@ -248,20 +248,31 @@ describe('P1-A visual and interaction contract', () => {
 
     expect(css).toContain('overflow-y: auto !important;')
     expect(css).toContain('overflow: visible !important;')
-    expect(css).toContain('margin: 20px !important;')
-    expect(css).toContain('min-height: calc(100% - 40px) !important;')
+    expect(css).toContain('max-width: var(--sn-editor-paper-max-width) !important;')
+    expect(css).toContain('padding: var(--sn-editor-desk-inset) !important;')
+    expect(css).toContain('margin: 0 auto !important;')
+    expect(css).toContain('flex-wrap: nowrap !important;')
+    expect(css).toContain('overflow-x: auto !important;')
+    expect(css).not.toContain('aspect-ratio: 210 / 297;')
     expect(css).toContain('min-height: 520px !important;')
-    expect(css).toContain('margin-top: 24px !important;')
-    // Phase 2: the release override used to drop И1's measure cap outright
-    // (plain `calc(100% - 60px)`), so the reading column grew with the panel.
-    // It now keeps the shared left axis *and* caps the line length.
-    expect(css).toContain('width: min(calc(100% - 60px), 66ch) !important;')
+    // The sheet is a bounded paper object; the text column remains a distinct
+    // left-aligned typographic measure inside it.
+    expect(css).toContain('width: 100% !important;')
     expect(css).toContain('max-width: none !important;')
-    expect(css).toContain('margin: 0 30px !important;')
-    expect(css).toContain('padding: 0 40px !important;')
-    // Phase 1.7: the block handle lives in the left margin (И1's 76ch column),
-    // not pinned to the right via !important — that override was the bug.
-    expect(css).toContain('left: max(6px, calc(50% - 38ch - 44px));')
+    expect(css).toContain('margin: 0 !important;')
+    expect(css).toContain('var(--sn-editor-paper-inline)')
+    expect(css).toContain('var(--sn-page-measure, 66ch)')
+    expect(css).toContain('text-align: left;')
+    expect(css).not.toContain('width: calc(100% + 128px) !important;')
+    expect(css).not.toContain('margin-left: -46px !important;')
+    // The handle menu is portalled above the workspace so the editor's scroll
+    // clipping and the inspector overlay cannot cut it off.
+    expect(css).toContain('.sn-block-handle-menu--floating {')
+    expect(css).toContain('z-index: 320;')
+    expect(css).toContain('.sn-editor-reading-column {')
+    expect(css).toContain('max-width: 66ch !important;')
+    expect(css).toContain('right: -50px !important;')
+    expect(css).toContain('border: 0 !important;')
     expect(css).not.toContain('right: 12px !important;')
     expect(css).toContain('input[type="checkbox"]:checked')
     expect(css).toContain('details > :not(summary)')
