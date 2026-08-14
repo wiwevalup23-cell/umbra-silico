@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { createDebouncedAutosave } from '@/ui/editor'
+import { createDebouncedAutosave } from '@/ui/editor/debounced-autosave'
 
 afterEach(() => {
   vi.useRealTimers()

@@ -238,7 +238,7 @@ describe('P1-A visual and interaction contract', () => {
       'utf8',
     )
     const blockHandle = readFileSync(
-      `${process.cwd()}/src/ui/components/notes/BlockHandle.tsx`,
+      `${process.cwd()}/src/ui/editor/BlockHandle.tsx`,
       'utf8',
     )
     const logo = readFileSync(

@@ -9,7 +9,7 @@ import {
 } from 'react'
 import { createPortal } from 'react-dom'
 import { imageIdSchema, type ImageId } from '@/shared/contracts'
-import { ImageSourceContext } from '@/ui/editor/image-source-context'
+import { ImageSourceContext } from '@/ui/document'
 import { UiIcon } from '@/ui/icons/ui/UiIcon'
 import {
   normalizeImageAlign,

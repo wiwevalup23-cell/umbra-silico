@@ -3,7 +3,7 @@ import { Mathematics } from '@tiptap/extension-mathematics'
 import StarterKit from '@tiptap/starter-kit'
 import { afterEach, describe, expect, it } from 'vitest'
 import { parseNoteDocument, type DocumentNode } from '@/shared/contracts'
-import { NoteTextStyleExtensions } from '@/ui/editor'
+import { NoteTextStyleExtensions } from '@/ui/document/rich-text'
 
 const editors: Editor[] = []
 

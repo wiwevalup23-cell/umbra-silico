@@ -10,7 +10,7 @@ import {
   ImageBlock,
   normalizeImageAlign,
   normalizeImageWidthPct,
-} from '@/ui/editor'
+} from '@/ui/editor/extensions'
 
 const editors: Editor[] = []
 

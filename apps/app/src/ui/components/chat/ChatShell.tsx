@@ -15,7 +15,7 @@ import type {
   NoteId,
   PlaintextLocalNote,
 } from '@/shared/contracts'
-import { ImageSourceContext } from '@/ui/editor/image-source-context'
+import { ImageSourceContext } from '@/ui/document'
 import { UiIcon } from '@/ui/icons/ui/UiIcon'
 import { ChatComposer } from '@/ui/components/chat/ChatComposer'
 import { ChatMessageBubble } from '@/ui/components/chat/ChatMessageBubble'

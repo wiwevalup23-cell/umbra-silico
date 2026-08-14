@@ -4,7 +4,7 @@ import { EditorContent, useEditor } from '@tiptap/react'
 import StarterKit from '@tiptap/starter-kit'
 import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { documentNodeSchema, type ChatMessageContent } from '@/shared/contracts'
-import { NoteTextStyleExtensions } from '@/ui/editor/rich-text'
+import { NoteTextStyleExtensions } from '@/ui/document'
 import { UiIcon } from '@/ui/icons/ui/UiIcon'
 import { useTranslation } from '@/ui/i18n/use-translation'
 

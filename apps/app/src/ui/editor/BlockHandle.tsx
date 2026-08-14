@@ -16,8 +16,8 @@ import {
   moveBlockToPosition,
   moveCurrentBlock,
   type InsertBlockTarget,
-} from '@/ui/editor'
-import { turnInto, type TurnIntoTarget } from '@/ui/editor/turn-into'
+} from './block-actions'
+import { turnInto, type TurnIntoTarget } from './turn-into'
 import { useTranslation } from '@/ui/i18n/use-translation'
 import { UiIcon } from '@/ui/icons/ui/UiIcon'
 

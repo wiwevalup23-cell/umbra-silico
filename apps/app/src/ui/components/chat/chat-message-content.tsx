@@ -18,8 +18,11 @@ import {
   type TextMark,
   type TextNode,
 } from '@/shared/contracts'
-import { ImageSourceContext } from '@/ui/editor/image-source-context'
-import { editorFontOptions, editorTextSizeOptions } from '@/ui/editor/rich-text'
+import {
+  editorFontOptions,
+  editorTextSizeOptions,
+  ImageSourceContext,
+} from '@/ui/document'
 import { UiIcon } from '@/ui/icons/ui/UiIcon'
 
 // Static renderer for message bubbles. The feed deliberately renders plain

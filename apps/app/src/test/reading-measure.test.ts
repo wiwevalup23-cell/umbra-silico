@@ -4,8 +4,12 @@ import { readFileSync } from 'node:fs'
 import { describe, expect, it } from 'vitest'
 
 const css = readFileSync(`${process.cwd()}/src/ui/styles/silicon-nostalgia.css`, 'utf8')
-const editorShell = readFileSync(
-  `${process.cwd()}/src/ui/components/notes/EditorShell.tsx`,
+const pageLayout = readFileSync(
+  `${process.cwd()}/src/ui/editor/extensions/page-layout.ts`,
+  'utf8',
+)
+const editorToolbar = readFileSync(
+  `${process.cwd()}/src/ui/editor/toolbar/EditorToolbar.tsx`,
   'utf8',
 )
 const printAt = css.indexOf('@media print')
@@ -163,8 +167,8 @@ describe('reading measure (И1)', () => {
   })
 
   it('leaves a page whose margins grow downward, the way a page is set', () => {
-    const header = Number(editorShell.match(/defaultPageHeaderOffset = (\d+)/)?.[1])
-    const footer = Number(editorShell.match(/defaultPageFooterOffset = (\d+)/)?.[1])
+    const header = Number(pageLayout.match(/defaultPageHeaderOffset = (\d+)/)?.[1])
+    const footer = Number(pageLayout.match(/defaultPageFooterOffset = (\d+)/)?.[1])
 
     expect(header).toBeGreaterThan(0)
     // Equal top and bottom reads as sagging: the optical centre of a page sits
@@ -173,7 +177,7 @@ describe('reading measure (И1)', () => {
   })
 
   it('offers a line-height ladder with no unusable rung and no duplicate step', () => {
-    const ladder = editorShell
+    const ladder = editorToolbar
       .match(/\{\[([\d., ]+)\]\.map\(\(lineHeight\)/)?.[1]
       .split(',')
       .map((value) => Number(value.trim()))

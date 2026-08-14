@@ -53,6 +53,72 @@ describe('phase 5 UI shell boundaries', () => {
   })
 })
 
+describe('editor module isolation', () => {
+  // Production sources only: the editor's own unit tests legitimately reach
+  // for `block-actions` and the extensions directly.
+  const productionFiles = import.meta.glob<string>(
+    ['/src/app/**/*.{ts,tsx}', '/src/ui/**/*.{ts,tsx}', '/src/viewmodel/**/*.{ts,tsx}'],
+    { eager: true, import: 'default', query: '?raw' },
+  )
+
+  function importSources(source: string): string[] {
+    return [...source.matchAll(/from '([^']+)'|import\('([^']+)'\)/g)].map(
+      (match) => match[1] ?? match[2],
+    )
+  }
+
+  it('is reachable only through its barrel', () => {
+    const deepImports = Object.entries(productionFiles)
+      .filter(([file]) => !file.startsWith('/src/ui/editor/'))
+      .flatMap(([file, source]) =>
+        importSources(source)
+          .filter((specifier) => specifier.startsWith('@/ui/editor/'))
+          .map((specifier) => `${file}: ${specifier}`),
+      )
+
+    expect(deepImports).toEqual([])
+  })
+
+  it('is a leaf that only the app composes', () => {
+    // Chat renders the same document and used to import the editor for two
+    // constants, which put TipTap in the message feed's chunk. Those constants
+    // live in `@/ui/document` now, and this keeps them there.
+    const importers = Object.entries(productionFiles)
+      .filter(([file]) => !file.startsWith('/src/ui/editor/'))
+      .filter(([, source]) =>
+        importSources(source).some((specifier) => specifier.startsWith('@/ui/editor')),
+      )
+      .map(([file]) => file)
+
+    expect(importers).toEqual(['/src/app/App.tsx'])
+  })
+
+  it('keeps the document kernel independent of both surfaces', () => {
+    const files = import.meta.glob<string>('/src/ui/document/**/*.{ts,tsx}', {
+      eager: true,
+      import: 'default',
+      query: '?raw',
+    })
+
+    expect(
+      findImportViolations(files, ['@/ui/editor', '@/ui/components', '@/app']),
+    ).toEqual([])
+  })
+
+  it('leaves no editor machinery behind in the notes components', () => {
+    const files = import.meta.glob<string>('/src/ui/components/notes/**/*.{ts,tsx}', {
+      eager: true,
+      import: 'default',
+      query: '?raw',
+    })
+
+    // The note library is a list of rows; the block editor, its extensions and
+    // its formula rendering all left this folder. (The chat composer keeps its
+    // own TipTap instance, which is why the check is scoped to notes.)
+    expect(findImportViolations(files, ['@tiptap', 'katex'])).toEqual([])
+  })
+})
+
 describe('cross-layer boundary discipline', () => {
   it('keeps ViewModel free of data, crypto, platform and infra internals', () => {
     const files = import.meta.glob<string>('/src/viewmodel/**/*.{ts,tsx}', {

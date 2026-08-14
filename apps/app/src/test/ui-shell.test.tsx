@@ -15,7 +15,8 @@ import {
   userIdSchema,
   type NoteListItem,
 } from '@/shared/contracts'
-import { EditorShell, NoteList } from '@/ui/components/notes'
+import { EmptyWorkspaceState, NoteList } from '@/ui/components/notes'
+import { EditorShell } from '@/ui/editor'
 import { SettingsModal } from '@/ui/components/silicon/SettingsModal'
 
 ;(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true
@@ -190,7 +191,6 @@ describe('Umbra Silico UI shell', () => {
   it('renders the editor shell from note props without a duplicate lock action', async () => {
     const onChangeDocument = vi.fn(async () => undefined)
     const onChangeTitle = vi.fn(async () => undefined)
-    const onCreateNote = vi.fn()
     const note = {
       ...createDraftLocalNote({
         document: {
@@ -219,9 +219,6 @@ describe('Umbra Silico UI shell', () => {
         note={note}
         onChangeDocument={onChangeDocument}
         onChangeTitle={onChangeTitle}
-        onCreateNote={onCreateNote}
-        pendingOperations={2}
-        syncStatus="idle"
       />,
     )
     cleanupTasks.push(rendered.cleanup)
@@ -275,7 +272,6 @@ describe('Umbra Silico UI shell', () => {
       ComponentProps<typeof EditorShell>['onChangeDocument']
     >(async () => undefined)
     const onChangeTitle = vi.fn(async () => undefined)
-    const onCreateNote = vi.fn()
     const document = parseNoteDocument({
       schemaVersion: 1,
       editor: 'tiptap',
@@ -368,9 +364,6 @@ describe('Umbra Silico UI shell', () => {
         note={note}
         onChangeDocument={onChangeDocument}
         onChangeTitle={onChangeTitle}
-        onCreateNote={onCreateNote}
-        pendingOperations={2}
-        syncStatus="idle"
       />,
     )
     cleanupTasks.push(rendered.cleanup)
@@ -503,9 +496,6 @@ describe('Umbra Silico UI shell', () => {
         note={note}
         onChangeDocument={vi.fn(async () => undefined)}
         onChangeTitle={vi.fn(async () => undefined)}
-        onCreateNote={vi.fn()}
-        pendingOperations={0}
-        syncStatus="idle"
       />,
     )
     cleanupTasks.push(rendered.cleanup)
@@ -548,9 +538,6 @@ describe('Umbra Silico UI shell', () => {
         note={note}
         onChangeDocument={onChangeDocument}
         onChangeTitle={vi.fn(async () => undefined)}
-        onCreateNote={vi.fn()}
-        pendingOperations={0}
-        syncStatus="idle"
       />,
     )
     cleanupTasks.push(rendered.cleanup)
@@ -593,7 +580,6 @@ describe('Umbra Silico UI shell', () => {
 
     const onChangeDocument = vi.fn(async () => undefined)
     const onChangeTitle = vi.fn(async () => undefined)
-    const onCreateNote = vi.fn()
     const note = {
       ...createDraftLocalNote({
         deviceId,
@@ -610,9 +596,6 @@ describe('Umbra Silico UI shell', () => {
         note={note}
         onChangeDocument={onChangeDocument}
         onChangeTitle={onChangeTitle}
-        onCreateNote={onCreateNote}
-        pendingOperations={2}
-        syncStatus="idle"
       />,
     )
     cleanupTasks.push(rendered.cleanup)
@@ -665,9 +648,6 @@ describe('Umbra Silico UI shell', () => {
         note={note}
         onChangeDocument={vi.fn(async () => undefined)}
         onChangeTitle={vi.fn(async () => undefined)}
-        onCreateNote={vi.fn()}
-        pendingOperations={0}
-        syncStatus="idle"
       />,
     )
     cleanupTasks.push(rendered.cleanup)
@@ -735,9 +715,6 @@ describe('Umbra Silico UI shell', () => {
         note={note}
         onChangeDocument={onChangeDocument}
         onChangeTitle={onChangeTitle}
-        onCreateNote={vi.fn()}
-        pendingOperations={0}
-        syncStatus="idle"
       />,
     )
     cleanupTasks.push(rendered.cleanup)
@@ -773,15 +750,10 @@ describe('Umbra Silico UI shell', () => {
   })
 
   it('renders the empty-state player and delegates play to note creation', () => {
-    const onChangeDocument = vi.fn(async () => undefined)
-    const onChangeTitle = vi.fn(async () => undefined)
     const onCreateNote = vi.fn()
 
     const rendered = renderUi(
-      <EditorShell
-        note={null}
-        onChangeDocument={onChangeDocument}
-        onChangeTitle={onChangeTitle}
+      <EmptyWorkspaceState
         onCreateNote={onCreateNote}
         pendingOperations={2}
         syncStatus="idle"
@@ -837,11 +809,8 @@ describe('Umbra Silico UI shell', () => {
 
   it('locks empty-state creation controls while a note is being prepared', () => {
     const rendered = renderUi(
-      <EditorShell
+      <EmptyWorkspaceState
         isCreatingNote
-        note={null}
-        onChangeDocument={vi.fn(async () => undefined)}
-        onChangeTitle={vi.fn(async () => undefined)}
         onCreateNote={vi.fn()}
         pendingOperations={0}
         syncStatus="idle"

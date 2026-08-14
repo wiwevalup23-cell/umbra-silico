@@ -1,7 +1,7 @@
 import type { Editor, JSONContent } from '@tiptap/core'
 import type { Node as ProseMirrorNode } from '@tiptap/pm/model'
 import { Selection } from '@tiptap/pm/state'
-import type { TurnIntoTarget } from '@/ui/editor/turn-into'
+import type { TurnIntoTarget } from './turn-into'
 
 export type BlockMoveDirection = 'down' | 'up'
 export type BlockDropPlacement = 'after' | 'before'

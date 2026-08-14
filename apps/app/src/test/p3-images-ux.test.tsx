@@ -9,7 +9,7 @@ import {
   userIdSchema,
   type ImageSourceResolver,
 } from '@/shared/contracts'
-import { EditorShell, type EditorShellApi } from '@/ui/components/notes/EditorShell'
+import { EditorShell, type EditorShellApi } from '@/ui/editor'
 
 ;(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true
 
@@ -79,10 +79,7 @@ async function renderEditor(options: RenderOptions = {}) {
         note={note}
         onChangeDocument={vi.fn(async () => undefined)}
         onChangeTitle={vi.fn(async () => undefined)}
-        onCreateNote={vi.fn()}
         onImportImage={options.onImportImage ?? null}
-        pendingOperations={0}
-        syncStatus="idle"
       />,
     )
     await Promise.resolve()

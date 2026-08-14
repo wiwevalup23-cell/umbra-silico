@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import type { NoteDocument } from '@/shared/contracts/document'
 import { migrateRetiredDocumentFonts, retiredDocumentFonts } from '@/shared/document-fonts'
-import { editorFontOptions } from '@/ui/editor/rich-text'
+import { editorFontOptions } from '@/ui/document/rich-text'
 
 function noteDocument(content: NoteDocument['content']['content']): NoteDocument {
   return { schemaVersion: 1, editor: 'tiptap', content: { type: 'doc', content } }

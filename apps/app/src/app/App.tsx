@@ -1,8 +1,10 @@
 import { lazy, Suspense, useCallback, useEffect, useRef, useState } from 'react'
 import brandEmblemUrl from '../../src-tauri/icons/128x128@2x.png'
 import { AppProviders } from '@/app/providers'
-import type { EditorShellApi } from '@/ui/components/notes/EditorShell'
+import type { EditorShellApi } from '@/ui/editor'
+import { EmptyWorkspaceState } from '@/ui/components/notes/EmptyWorkspaceState'
 import { FolderTree } from '@/ui/components/notes/FolderTree'
+import { LockedNoteNotice } from '@/ui/components/notes/LockedNoteNotice'
 import { noteDragType } from '@/ui/components/notes/note-drag'
 import { NoteList } from '@/ui/components/notes/NoteList'
 import { TrashView } from '@/ui/components/notes/TrashView'
@@ -34,7 +36,7 @@ import {
 // The editor drags TipTap, ProseMirror and KaTeX behind it, so it loads on
 // demand and the library renders on first paint instead of waiting for it.
 const EditorShell = lazy(async () => ({
-  default: (await import('@/ui/components/notes/EditorShell')).EditorShell,
+  default: (await import('@/ui/editor')).EditorShell,
 }))
 const ChatShell = lazy(async () => ({
   default: (await import('@/ui/components/chat')).ChatShell,
@@ -450,7 +452,21 @@ function AppWorkspace() {
 
           <section className="sn-editor-panel" aria-label={t('shell.editor')}>
             <Suspense fallback={<div className="sn-editor-loading" aria-hidden="true" />}>
-            {activeNote && !activeNote.isLocked && chatViewModel.isChatNote ? (
+            {!activeNote ? (
+              <EmptyWorkspaceState
+                isCreatingNote={isCreatingNote}
+                onBrowseTemplates={() => openOverlay({ kind: 'templates' })}
+                onCreateNote={handleCreateNote}
+                pendingOperations={visiblePendingOperations}
+                syncStatus={syncViewModel.status}
+              />
+            ) : activeNote.isLocked ? (
+              <LockedNoteNotice
+                hasRemote={syncViewModel.hasRemote}
+                pendingOperations={visiblePendingOperations}
+                syncStatus={activeNote.syncStatus}
+              />
+            ) : chatViewModel.isChatNote ? (
               <ChatShell
                 hasRemote={syncViewModel.hasRemote}
                 imageResolver={noteImagesViewModel.resolver}
@@ -479,17 +495,11 @@ function AppWorkspace() {
             ) : (
               <EditorShell
                 editorApiRef={editorApiRef}
-                hasRemote={syncViewModel.hasRemote}
                 imageResolver={noteImagesViewModel.resolver}
                 note={activeNote}
                 onChangeDocument={activeNoteViewModel.updateDocument}
-                onBrowseTemplates={() => openOverlay({ kind: 'templates' })}
                 onChangeTitle={activeNoteViewModel.updateTitle}
-                onCreateNote={handleCreateNote}
-                isCreatingNote={isCreatingNote}
                 onImportImage={noteImagesViewModel.importImage}
-                pendingOperations={visiblePendingOperations}
-                syncStatus={syncViewModel.status}
               />
             )}
             </Suspense>

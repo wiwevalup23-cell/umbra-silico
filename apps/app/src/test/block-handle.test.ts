@@ -2,14 +2,16 @@ import { Editor, type JSONContent } from '@tiptap/core'
 import StarterKit from '@tiptap/starter-kit'
 import { afterEach, describe, expect, it } from 'vitest'
 import {
-  Callout,
   deleteCurrentBlock,
   duplicateCurrentBlock,
   moveBlockToPosition,
   moveCurrentBlock,
+} from '@/ui/editor/block-actions'
+import {
+  Callout,
   TaskListExtensions,
   ToggleExtensions,
-} from '@/ui/editor'
+} from '@/ui/editor/extensions'
 import { parseNoteDocument } from '@/shared/contracts'
 
 const editors: Editor[] = []
