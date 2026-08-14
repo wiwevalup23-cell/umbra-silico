@@ -1,4 +1,5 @@
 import type { Editor } from '@tiptap/core'
+import { redoDepth, undoDepth } from '@tiptap/pm/history'
 import { useEditorState } from '@tiptap/react'
 import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties } from 'react'
 import { createPortal } from 'react-dom'
@@ -58,39 +59,58 @@ export function EditorToolbar({
   const [toolsMenuStyle, setToolsMenuStyle] = useState<CSSProperties | null>(null)
   const state = useEditorState({
     editor,
-    selector: ({ editor: currentEditor }) => ({
-      blockLayout: currentEditor
-        ? getSelectedBlockLayout(currentEditor.state)
-        : defaultBlockLayout,
-      canAddTableColumn: currentEditor?.can().addColumnAfter() ?? false,
-      canAddTableRow: currentEditor?.can().addRowAfter() ?? false,
-      canDeleteTable: currentEditor?.can().deleteTable() ?? false,
-      canDeleteTableColumn: currentEditor?.can().deleteColumn() ?? false,
-      canDeleteTableRow: currentEditor?.can().deleteRow() ?? false,
-      canMergeCells: currentEditor?.can().mergeCells() ?? false,
-      canSplitCell: currentEditor?.can().splitCell() ?? false,
-      pageLayout: currentEditor ? getPageLayout(currentEditor.state) : defaultPageLayout,
-      canRedo: currentEditor?.can().redo() ?? false,
-      canUndo: currentEditor?.can().undo() ?? false,
-      fontFamily: (currentEditor?.getAttributes('textStyle').fontFamily as string | undefined) ?? '',
-      fontSize: (currentEditor?.getAttributes('textStyle').fontSize as string | undefined) ?? '',
-      highlightColor:
-        (currentEditor?.getAttributes('highlight').color as string | undefined) ?? '',
-      isBlockquote: currentEditor?.isActive('blockquote') ?? false,
-      isBold: currentEditor?.isActive('bold') ?? false,
-      isBulletList: currentEditor?.isActive('bulletList') ?? false,
-      isCallout: currentEditor?.isActive('callout') ?? false,
-      isCode: currentEditor?.isActive('code') ?? false,
-      isCodeBlock: currentEditor?.isActive('codeBlock') ?? false,
-      isDetails: currentEditor?.isActive('details') ?? false,
-      isHeading1: currentEditor?.isActive('heading', { level: 1 }) ?? false,
-      isHeading2: currentEditor?.isActive('heading', { level: 2 }) ?? false,
-      isItalic: currentEditor?.isActive('italic') ?? false,
-      isOrderedList: currentEditor?.isActive('orderedList') ?? false,
-      isStrike: currentEditor?.isActive('strike') ?? false,
-      isTable: currentEditor?.isActive('table') ?? false,
-      isTaskList: currentEditor?.isActive('taskList') ?? false,
-    }),
+    // Runs on every transaction, caret moves included. `isActive` is a cheap
+    // read of the selection; `can()` is not — it builds a chainable state and
+    // dry-runs the whole command. So the nine `can()` calls here cost about
+    // 0.6 ms per transaction while all sixteen `isActive` calls together cost
+    // 0.006 ms, and the sixteen are not what is worth avoiding.
+    selector: ({ editor: currentEditor }) => {
+      // The seven answers below are read in one place only — the table panel —
+      // so while it is shut they are computed for nobody. Gating on the panel
+      // rather than on `isActive('table')` is also the only gate that cannot
+      // change an answer: a selection dragged from the paragraph above into a
+      // table reports `isActive('table') === false` while the commands
+      // themselves still apply, so that cheaper-looking gate would have
+      // greyed out buttons that today work.
+      const canProbeTable = currentEditor && openPanel === 'table'
+
+      return {
+        blockLayout: currentEditor
+          ? getSelectedBlockLayout(currentEditor.state)
+          : defaultBlockLayout,
+        canAddTableColumn: canProbeTable ? currentEditor.can().addColumnAfter() : false,
+        canAddTableRow: canProbeTable ? currentEditor.can().addRowAfter() : false,
+        canDeleteTable: canProbeTable ? currentEditor.can().deleteTable() : false,
+        canDeleteTableColumn: canProbeTable ? currentEditor.can().deleteColumn() : false,
+        canDeleteTableRow: canProbeTable ? currentEditor.can().deleteRow() : false,
+        canMergeCells: canProbeTable ? currentEditor.can().mergeCells() : false,
+        canSplitCell: canProbeTable ? currentEditor.can().splitCell() : false,
+        pageLayout: currentEditor ? getPageLayout(currentEditor.state) : defaultPageLayout,
+        // `undo` refuses exactly when the history has no events to give back,
+        // which is the number these read — without dry-running the command to
+        // find it out.
+        canRedo: currentEditor ? redoDepth(currentEditor.state) > 0 : false,
+        canUndo: currentEditor ? undoDepth(currentEditor.state) > 0 : false,
+        fontFamily: (currentEditor?.getAttributes('textStyle').fontFamily as string | undefined) ?? '',
+        fontSize: (currentEditor?.getAttributes('textStyle').fontSize as string | undefined) ?? '',
+        highlightColor:
+          (currentEditor?.getAttributes('highlight').color as string | undefined) ?? '',
+        isBlockquote: currentEditor?.isActive('blockquote') ?? false,
+        isBold: currentEditor?.isActive('bold') ?? false,
+        isBulletList: currentEditor?.isActive('bulletList') ?? false,
+        isCallout: currentEditor?.isActive('callout') ?? false,
+        isCode: currentEditor?.isActive('code') ?? false,
+        isCodeBlock: currentEditor?.isActive('codeBlock') ?? false,
+        isDetails: currentEditor?.isActive('details') ?? false,
+        isHeading1: currentEditor?.isActive('heading', { level: 1 }) ?? false,
+        isHeading2: currentEditor?.isActive('heading', { level: 2 }) ?? false,
+        isItalic: currentEditor?.isActive('italic') ?? false,
+        isOrderedList: currentEditor?.isActive('orderedList') ?? false,
+        isStrike: currentEditor?.isActive('strike') ?? false,
+        isTable: currentEditor?.isActive('table') ?? false,
+        isTaskList: currentEditor?.isActive('taskList') ?? false,
+      }
+    },
   })
   const toolbarState = state ?? {
     blockLayout: defaultBlockLayout,
