@@ -297,30 +297,30 @@ describe('cross-layer boundary discipline', () => {
 })
 
 describe('phase 10 Automation Gateway boundaries', () => {
-  it('keeps Automation Gateway isolated from UI, sync, Supabase and direct local DB adapters', () => {
-    const gatewayFiles = import.meta.glob<string>('/src/automation/automation-gateway.ts', {
+  it('keeps the automation layer clear of UI, sync, Supabase and the local store', () => {
+    // The whole folder, not just the gateway. Globbing one file is how
+    // `event-bus.ts` came to be typed against `Pick<LocalNotesStore, …>` for
+    // as long as it was: the rule everyone believed applied to the layer only
+    // ever ran against its neighbour. What the bus actually needs is named in
+    // `AutomationEventStore`, which the local store satisfies structurally.
+    const automationFiles = import.meta.glob<string>('/src/automation/**/*.ts', {
       eager: true,
       import: 'default',
       query: '?raw',
     })
-    const forbiddenImports = [
-      '@/ui',
-      '@/viewmodel',
-      '@/sync',
-      '@/local-store',
-      'supabase',
-      'dexie',
-      'sqlite',
-      '@tauri-apps',
-    ]
 
-    const violations = Object.entries(gatewayFiles).flatMap(([file, source]) =>
-      forbiddenImports
-        .filter((forbiddenImport) => source.includes(forbiddenImport))
-        .map((forbiddenImport) => `${file}: ${forbiddenImport}`),
-    )
-
-    expect(violations).toEqual([])
+    expect(
+      findImportViolations(automationFiles, [
+        '@/ui',
+        '@/viewmodel',
+        '@/sync',
+        '@/local-store',
+        'supabase',
+        'dexie',
+        'sqlite',
+        '@tauri-apps',
+      ]),
+    ).toEqual([])
   })
 
   it('does not implement a local HTTP server in the MVP automation layer', () => {

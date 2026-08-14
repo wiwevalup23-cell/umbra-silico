@@ -1,6 +1,5 @@
 import type {
-  AutomationEventId,
-  AutomationEventRecord,
+  AutomationEventStore,
   LocalCryptoProfile,
   LocalFolder,
   LocalNote,
@@ -15,7 +14,12 @@ export type NoteOpSummary = {
   createdAt: string
 }
 
-export interface LocalNotesStore {
+/**
+ * Extending the automation port rather than restating its three methods keeps
+ * the two from drifting: the event bus is typed against `AutomationEventStore`
+ * and never learns that a local store exists.
+ */
+export interface LocalNotesStore extends AutomationEventStore {
   /** Whole notes including deleted ones; used for backups, not for lists. */
   listAllNotes(): Promise<LocalNote[]>
   listNotes(): Promise<NoteListItem[]>
@@ -49,12 +53,6 @@ export interface LocalNotesStore {
   deleteOps(opIds: readonly string[]): Promise<void>
   markOpSynced(opId: string): Promise<void>
   markOpFailed(opId: string, error: string): Promise<void>
-  appendAutomationEvent(event: AutomationEventRecord): Promise<void>
-  listAutomationEvents(limit: number): Promise<AutomationEventRecord[]>
-  markAutomationEventDelivered(
-    eventId: AutomationEventId,
-    deliveredAt: string,
-  ): Promise<void>
   getCryptoProfile(userId: string): Promise<LocalCryptoProfile | null>
   setCryptoProfile(profile: LocalCryptoProfile): Promise<void>
   getSyncState(key: string): Promise<string | null>

@@ -223,19 +223,7 @@ export default [
             {
               from: { type: 'automation' },
               allow: {
-                // KNOWN DEVIATION: event-bus.ts types itself against
-                // `@/local-store/contracts`, which the automation layer is not
-                // supposed to know at all — automation-gateway.ts is held to
-                // that rule by `architecture.test.ts`, event-bus.ts escapes it
-                // only because the test globs a single file.
-                to: {
-                  type: [
-                    'automation',
-                    'local-store-contracts',
-                    'repository-contracts',
-                    'shared',
-                  ],
-                },
+                to: { type: ['automation', 'repository-contracts', 'shared'] },
               },
             },
             {

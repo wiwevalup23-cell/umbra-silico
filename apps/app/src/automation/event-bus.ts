@@ -1,9 +1,9 @@
-import type { LocalNotesStore } from '@/local-store/contracts'
 import {
   automationEventIdSchema,
   parseAutomationEvent,
   type AutomationEvent,
   type AutomationEventRecord,
+  type AutomationEventStore,
   type AutomationHandler,
   type UserId,
 } from '@/shared/contracts'
@@ -18,10 +18,7 @@ export type AutomationEventBus = {
 export type AutomationEventBusDependencies = {
   clock?: () => string
   idFactory?: () => string
-  localStore?: Pick<
-    LocalNotesStore,
-    'appendAutomationEvent' | 'listAutomationEvents' | 'markAutomationEventDelivered'
-  >
+  localStore?: AutomationEventStore
   userId?: UserId
 }
 

@@ -66,6 +66,27 @@ export type AutomationLocalApiContract = {
 
 export type AutomationHandler = (event: AutomationEvent) => void | Promise<void>
 
+/**
+ * Where automation events are kept.
+ *
+ * The event bus needs somewhere to append and read its own records, and
+ * nothing else about storage. Naming that here rather than reaching for the
+ * local store's interface is what keeps the automation layer from knowing that
+ * a local store exists at all — it was typed against
+ * `Pick<LocalNotesStore, …>` before, which read as a narrowing but was still
+ * a dependency, and one the architecture test forbade for the file next door.
+ *
+ * The local store satisfies this structurally; nothing has to declare it.
+ */
+export type AutomationEventStore = {
+  appendAutomationEvent(event: AutomationEventRecord): Promise<void>
+  listAutomationEvents(limit: number): Promise<AutomationEventRecord[]>
+  markAutomationEventDelivered(
+    eventId: AutomationEventId,
+    deliveredAt: string,
+  ): Promise<void>
+}
+
 export function parseAutomationEvent(value: unknown): AutomationEvent {
   return automationEventSchema.parse(value)
 }
