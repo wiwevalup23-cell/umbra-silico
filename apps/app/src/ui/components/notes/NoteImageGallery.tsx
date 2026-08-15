@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import type { ImageSourceResolver, NoteImageListItem } from '@/shared/contracts'
+import { ImageSourceContext, useImageSource } from '@/ui/document'
 import { UiIcon } from '@/ui/icons/ui/UiIcon'
 import { useTranslation } from '@/ui/i18n/use-translation'
 
@@ -11,19 +12,15 @@ type NoteImageGalleryProps = {
 
 type GalleryThumbProps = {
   image: NoteImageListItem
-  resolver: ImageSourceResolver | null
   onSelect: (imageId: string) => void
 }
 
-function GalleryThumb({ image, resolver, onSelect }: GalleryThumbProps) {
+function GalleryThumb({ image, onSelect }: GalleryThumbProps) {
   const { t } = useTranslation()
   const buttonRef = useRef<HTMLButtonElement>(null)
   const [isVisible, setVisible] = useState(
     () => typeof IntersectionObserver === 'undefined',
   )
-  const [url, setUrl] = useState<string | null>(null)
-  const [hasError, setError] = useState(false)
-
   useEffect(() => {
     const button = buttonRef.current
 
@@ -41,32 +38,9 @@ function GalleryThumb({ image, resolver, onSelect }: GalleryThumbProps) {
     return () => observer.disconnect()
   }, [isVisible])
 
-  useEffect(() => {
-    if (!isVisible || !resolver) {
-      return
-    }
-
-    let alive = true
-    const imageId = image.id
-
-    resolver
-      .request(imageId, 'thumb')
-      .then((nextUrl) => {
-        if (alive) {
-          setUrl(nextUrl)
-        }
-      })
-      .catch(() => {
-        if (alive) {
-          setError(true)
-        }
-      })
-
-    return () => {
-      alive = false
-      resolver.release(imageId, 'thumb')
-    }
-  }, [image.id, isVisible, resolver])
+  // Held back until the thumbnail scrolls into view, so a long gallery does
+  // not decode every image at once.
+  const thumb = useImageSource(isVisible ? image.id : null, 'thumb')
 
   return (
     <button
@@ -77,12 +51,12 @@ function GalleryThumb({ image, resolver, onSelect }: GalleryThumbProps) {
       title={t('gallery.showInNote')}
       type="button"
     >
-      {url ? (
-        <img alt="" loading="lazy" src={url} />
+      {thumb.status === 'ready' ? (
+        <img alt="" loading="lazy" src={thumb.url} />
       ) : (
         <span
           className={
-            hasError
+            thumb.status === 'error'
               ? 'sn-note-gallery__thumb-error'
               : 'sn-note-gallery__thumb-loading'
           }
@@ -111,17 +85,17 @@ export function NoteImageGallery({
   }
 
   return (
-    <div aria-label="Note photos" className="sn-note-gallery">
-      <div className="sn-note-gallery__grid">
-        {images.map((image) => (
-          <GalleryThumb
-            image={image}
-            key={image.id}
-            onSelect={onSelectImage}
-            resolver={resolver}
-          />
-        ))}
+    // The gallery is handed the resolver as a prop while the editor and the
+    // chat feed read it from context; providing it here lets every thumbnail
+    // use the same hook, and the pairing of request and release with it.
+    <ImageSourceContext.Provider value={resolver}>
+      <div aria-label="Note photos" className="sn-note-gallery">
+        <div className="sn-note-gallery__grid">
+          {images.map((image) => (
+            <GalleryThumb image={image} key={image.id} onSelect={onSelectImage} />
+          ))}
+        </div>
       </div>
-    </div>
+    </ImageSourceContext.Provider>
   )
 }

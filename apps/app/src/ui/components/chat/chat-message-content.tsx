@@ -1,6 +1,5 @@
 import {
   Fragment,
-  useContext,
   useEffect,
   useRef,
   useState,
@@ -14,15 +13,14 @@ import {
   imageIdSchema,
   type ChatMessageContent,
   type DocumentNode,
-  type ImageId,
   type TextMark,
   type TextNode,
 } from '@/shared/contracts'
 import {
-  ImageSourceContext,
   readDocumentFontFamily,
   readDocumentFontSize,
   readHighlightColor,
+  useImageSource,
 } from '@/ui/document'
 import { UiIcon } from '@/ui/icons/ui/UiIcon'
 
@@ -214,50 +212,10 @@ export function ChatMessageContentView({ content }: { content: ChatMessageConten
   )
 }
 
-type ResolveState =
-  | { status: 'loading' }
-  | { status: 'ready'; url: string }
-  | { status: 'error' }
-
-function useChatImageUrl(imageId: ImageId | null): ResolveState {
-  const resolver = useContext(ImageSourceContext)
-  const [state, setState] = useState<ResolveState>({ status: 'loading' })
-
-  useEffect(() => {
-    if (!imageId || !resolver) {
-      setState({ status: 'error' })
-      return
-    }
-
-    let alive = true
-    setState({ status: 'loading' })
-
-    resolver
-      .request(imageId, 'display')
-      .then((url) => {
-        if (alive) {
-          setState({ status: 'ready', url })
-        }
-      })
-      .catch(() => {
-        if (alive) {
-          setState({ status: 'error' })
-        }
-      })
-
-    return () => {
-      alive = false
-      resolver.release(imageId, 'display')
-    }
-  }, [imageId, resolver])
-
-  return state
-}
-
 function ChatImageBlock({ node }: { node: DocumentNode }) {
   const parsedImageId = imageIdSchema.safeParse(node.attrs?.imageId)
   const imageId = parsedImageId.success ? parsedImageId.data : null
-  const resolveState = useChatImageUrl(imageId)
+  const resolveState = useImageSource(imageId, 'display')
   const [isLightboxOpen, setLightboxOpen] = useState(false)
   const naturalWidth = typeof node.attrs?.naturalWidth === 'number' ? node.attrs.naturalWidth : null
   const naturalHeight =

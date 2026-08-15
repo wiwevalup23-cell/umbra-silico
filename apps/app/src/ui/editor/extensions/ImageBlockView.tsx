@@ -1,6 +1,5 @@
 import { NodeViewWrapper, type NodeViewProps } from '@tiptap/react'
 import {
-  useContext,
   useEffect,
   useRef,
   useState,
@@ -8,10 +7,10 @@ import {
   type PointerEvent as ReactPointerEvent,
 } from 'react'
 import { createPortal } from 'react-dom'
-import { imageIdSchema, type ImageId } from '@/shared/contracts'
+import { imageIdSchema } from '@/shared/contracts'
 import type { MessageKey } from '@/shared/i18n'
 import { useTranslation } from '@/ui/i18n/use-translation'
-import { ImageSourceContext } from '@/ui/document'
+import { useImageSource } from '@/ui/document'
 import { UiIcon } from '@/ui/icons/ui/UiIcon'
 import {
   normalizeImageAlign,
@@ -20,54 +19,12 @@ import {
   type ImageBlockAttrs,
 } from './image-block'
 
-type ResolveState =
-  | { status: 'loading' }
-  | { status: 'ready'; url: string }
-  | { status: 'error' }
-
 const alignOptions: Array<{ align: ImageAlign; labelKey: MessageKey }> = [
   { align: 'left', labelKey: 'image.alignLeft' },
   { align: 'center', labelKey: 'image.alignCenter' },
   { align: 'right', labelKey: 'image.alignRight' },
   { align: 'full', labelKey: 'image.alignFull' },
 ]
-
-function useImageObjectUrl(imageId: ImageId | null): ResolveState {
-  const resolver = useContext(ImageSourceContext)
-  const [state, setState] = useState<ResolveState>({ status: 'loading' })
-
-  useEffect(() => {
-    if (!imageId || !resolver) {
-      setState({ status: 'error' })
-      return
-    }
-
-    let alive = true
-    setState({ status: 'loading' })
-
-    // The editor always renders the display tier; the repository falls back
-    // to the original when no display rendition exists (small images, GIFs).
-    resolver
-      .request(imageId, 'display')
-      .then((url) => {
-        if (alive) {
-          setState({ status: 'ready', url })
-        }
-      })
-      .catch(() => {
-        if (alive) {
-          setState({ status: 'error' })
-        }
-      })
-
-    return () => {
-      alive = false
-      resolver.release(imageId, 'display')
-    }
-  }, [imageId, resolver])
-
-  return state
-}
 
 type ImageLightboxProps = {
   alt: string
@@ -129,7 +86,9 @@ export function ImageBlockView({
   const attrs = node.attrs as ImageBlockAttrs
   const parsedImageId = imageIdSchema.safeParse(attrs.imageId)
   const imageId = parsedImageId.success ? parsedImageId.data : null
-  const resolveState = useImageObjectUrl(imageId)
+  // The editor always renders the display tier; the repository falls back to
+  // the original when no display rendition exists (small images, GIFs).
+  const resolveState = useImageSource(imageId, 'display')
   const align = normalizeImageAlign(attrs.align)
   const widthPct = normalizeImageWidthPct(attrs.widthPct)
   const [captionDraft, setCaptionDraft] = useState(attrs.caption)

@@ -23,3 +23,4 @@ export {
 // The scrub itself belongs to the format, not to either surface: the
 // repository runs the same one on documents that never reach a component.
 export { sanitizeDocumentTextStyles } from '@/shared/document-styles'
+export { useImageSource, type ImageSourceState } from './use-image-source'
