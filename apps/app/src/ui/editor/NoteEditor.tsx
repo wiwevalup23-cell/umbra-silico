@@ -1,4 +1,5 @@
 import type { Node as ProseMirrorNode } from '@tiptap/pm/model'
+import type { Transaction } from '@tiptap/pm/state'
 import { EditorContent, useEditor, useEditorState } from '@tiptap/react'
 import {
   useEffect,
@@ -28,6 +29,7 @@ import {
   type MathKind,
 } from './extensions'
 import { ImageSourceContext } from '@/ui/document'
+import { remapMathPosition } from './math/math-position'
 import { MathEditorPanel, type MathEditorDraft } from './math/MathEditorPanel'
 import { EditorToolbar } from './toolbar/EditorToolbar'
 import { SquircleButton } from '@/ui/components/silicon/SquircleButton'
@@ -447,6 +449,41 @@ export function NoteEditor({
   useEffect(() => {
     setMathDraft(null)
   }, [note.id])
+
+  useEffect(() => {
+    if (!editor) {
+      return
+    }
+
+    // The panel opens on a click and leaves the document editable, so the
+    // position it was opened with stops pointing at the formula as soon as
+    // anything above it changes length. Following each change keeps the panel
+    // aimed at the formula it belongs to; losing it means the confirmed edit
+    // silently does nothing, because the update command checks what it finds
+    // and declines.
+    function followDocumentChanges({ transaction }: { transaction: Transaction }) {
+      if (!transaction.docChanged) {
+        return
+      }
+
+      setMathDraft((draft) => {
+        if (!draft || draft.pos === null) {
+          return draft
+        }
+
+        const position = remapMathPosition(draft.pos, transaction)
+
+        // Deleted out from under the panel: there is nothing left to edit.
+        return position === null ? null : { ...draft, pos: position }
+      })
+    }
+
+    editor.on('transaction', followDocumentChanges)
+
+    return () => {
+      editor.off('transaction', followDocumentChanges)
+    }
+  }, [editor])
 
   useEffect(() => {
     // Don't clobber a title the user is still typing: with the manual-save
