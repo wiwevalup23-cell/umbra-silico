@@ -1,5 +1,6 @@
 import { Extension } from '@tiptap/core'
 import type { EditorState } from '@tiptap/pm/state'
+import { readNumber } from './read-number'
 
 const pageOffsetMin = 8
 const pageOffsetMax = 132
@@ -49,9 +50,9 @@ export const defaultPageLayout: PageLayoutAttrs = {
 }
 
 function clampPageOffset(value: unknown): number {
-  const parsed = typeof value === 'number' ? value : Number(value)
+  const parsed = readNumber(value)
 
-  if (!Number.isFinite(parsed)) {
+  if (parsed === null) {
     return pageOffsetMin
   }
 
@@ -59,9 +60,9 @@ function clampPageOffset(value: unknown): number {
 }
 
 function clampPageMeasure(value: unknown): number {
-  const parsed = typeof value === 'number' ? value : Number(value)
+  const parsed = readNumber(value)
 
-  if (!Number.isFinite(parsed)) {
+  if (parsed === null) {
     return defaultPageMeasure
   }
 

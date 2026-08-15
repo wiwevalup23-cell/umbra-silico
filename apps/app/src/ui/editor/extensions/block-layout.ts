@@ -1,6 +1,7 @@
 import { Extension } from '@tiptap/core'
 import type { Node as ProseMirrorNode } from '@tiptap/pm/model'
 import type { EditorState, Transaction } from '@tiptap/pm/state'
+import { readNumber } from './read-number'
 
 const blockLayoutNodeTypes = ['paragraph', 'heading'] as const
 const blockMarginValues = ['tight', 'normal', 'wide'] as const
@@ -51,9 +52,9 @@ function normalizeBlockMargin(value: unknown): BlockMarginValue {
 }
 
 function normalizeBlockLineHeight(value: unknown): number {
-  const parsed = typeof value === 'number' ? value : Number(value)
+  const parsed = readNumber(value)
 
-  if (!Number.isFinite(parsed)) {
+  if (parsed === null) {
     return defaultBlockLineHeight
   }
 
