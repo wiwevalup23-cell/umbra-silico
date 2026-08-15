@@ -260,6 +260,7 @@ papers/
 ├── Silicon_Nostalgia_Phased_Implementation_Plan.md
 ├── UX_review.md
 ├── cross_module_debt.md          # Живой реестр межмодульного долга
+├── editor_design_review.md       # Дизайн-ревью редактора вживую
 ├── editor_testing_plan.md        # План тестирования модуля редактора
 ├── design_audit.md
 ├── design_audit_adaptivity.md
