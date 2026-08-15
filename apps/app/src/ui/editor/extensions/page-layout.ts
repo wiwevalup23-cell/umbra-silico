@@ -10,7 +10,12 @@ const pageOffsetMax = 132
    window, so the line quietly runs past the point the eye can track. Stored in
    `ch` — the width of "0" in the body face — so it follows the type size. */
 const pageMeasureMin = 40
-const pageMeasureMax = 100
+/* The stylesheet caps the column at 66ch — "the user setting may make a line
+   shorter, but never longer than the typographic ceiling". The field used to
+   accept up to 100 and the whole upper half of its range did nothing: asking
+   for 80 or 100 produced the same 66. A control must not offer what the design
+   refuses to give. */
+const pageMeasureMax = 66
 const defaultPageMeasure = 66
 const defaultPageHeaderOffset = 48
 /* Deliberately larger than the top: a page with equal top and bottom reads as

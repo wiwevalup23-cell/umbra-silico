@@ -177,6 +177,11 @@
   --sn-editor-display-font: "SN Cormorant Garamond", "SN EB Garamond", Georgia, serif;
   --sn-garamond-weight: 300;
   --sn-editor-body-font: "SN EB Garamond", Georgia, serif;
+  /* The measure is set in `ch`, the width of "0" in the *current* face — so
+     every element that carries the measure has to be in the body face at the
+     body size, or it silently measures somebody else's zero. Single-sourced
+     here so the two cannot drift apart again. */
+  --sn-editor-body-size: 20px;
   --sn-compact-font: "Monaco", "Menlo", "JetBrains Mono", "Consolas", monospace;
   /* Surface ladder, in L*: paper 99.6 → panel 93.8 → app background 87.9.
      The steps used to be ~3 L* apart, which read as one flat field with the
@@ -2723,9 +2728,10 @@ button {
   /* 17px was the figure for the old sans. EB Garamond's x-height is 0.405 of
      its size against that face's 0.520, so the same 17px rendered a fifth
      smaller and the document read as fine print. 20px restores the apparent
-     size the invariant was really protecting; `ch` scales with it, so the
-     measure in characters comes along unchanged. */
-  font-size: 20px;
+     size the invariant was really protecting. `ch` scales with it — but only
+     on elements actually set in this face, which is what the wrappers below
+     had to be taught. */
+  font-size: var(--sn-editor-body-size);
   font-weight: 400;
   line-height: 1.6;
   outline: 0;
@@ -6635,6 +6641,18 @@ button {
   margin-left: 0 !important;
   margin-right: auto !important;
   padding-left: 0 !important;
+}
+
+/* These two carry the measure, so they have to be set in the face the measure
+   counts. They were not: the column inherited the interface face at 16px,
+   where "0" is 9.02px against the body's 10.14px, so a setting of 66 characters
+   produced a column 596px wide and delivered 59. Nothing here renders text —
+   the block handle holds only icons — so the face is declared purely to make
+   `ch` mean the body's zero. */
+.sn-editor-reading-column,
+.sn-editor-reading-column > .sn-editor-content {
+  font-family: var(--sn-editor-body-font);
+  font-size: var(--sn-editor-body-size);
 }
 
 .sn-editor-reading-column {

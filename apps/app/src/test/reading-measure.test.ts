@@ -58,10 +58,29 @@ describe('reading measure (И1)', () => {
   it('sets the type size, leading and measure the invariant is written in', () => {
     const base = css.match(/\.sn-tiptap-prosemirror \{[\s\S]*?\n\}/)?.[0] ?? ''
 
-    expect(base).toContain('font-size: 20px')
+    // The size is single-sourced now, because the measure is counted in `ch`
+    // and every element carrying the measure has to be set in this face at
+    // this size or it counts somebody else's zero.
+    expect(css).toContain('--sn-editor-body-size: 20px')
+    expect(base).toContain('font-size: var(--sn-editor-body-size)')
     // 1.6 with a ~63-character Cyrillic line. The tighter the leading, the
     // shorter the line has to be for the eye to find the next one.
     expect(base).toContain('line-height: 1.6')
+  })
+
+  it('measures the column in the face the text is actually set in', () => {
+    // The column and its content wrapper both carry `width: …ch`. They used to
+    // inherit the interface face at 16px, where "0" is 9.02px against the
+    // body's 10.14 — so a setting of 66 characters produced 59 of them, and
+    // the gap widened with every step up in type size.
+    // Anchored to the start of a line: the selector also appears mid-list in
+    // a neighbouring rule, and matching that one reads a body it never set.
+    const wrappers = css.match(
+      /\n\.sn-editor-reading-column,\n\.sn-editor-reading-column > \.sn-editor-content \{([^}]*)\}/,
+    )?.[1] ?? ''
+
+    expect(wrappers).toContain('font-family: var(--sn-editor-body-font)')
+    expect(wrappers).toContain('font-size: var(--sn-editor-body-size)')
   })
 
   it('keeps a physical sheet centred with one symmetric desk inset', () => {

@@ -575,10 +575,14 @@ export function EditorToolbar({
               <span className="sn-editor-tools-menu__label">{t('editor.pageMargins')}</span>
               <div className="sn-editor-layout-presets">
                 {/* Wider margins mean a shorter line, so the presets run the
-                    measure the other way: 74 characters with the text nearly
-                    filling the sheet, 60 with a broad margin either side. */}
+                    measure the other way. The narrow one asked for 74 and got
+                    66 — the typographic ceiling — so it rendered identically to
+                    normal while still highlighting as the active choice. It
+                    asks for what it can have; the two now differ only in the
+                    vertical margins, which is what is left to differ in once
+                    the line is already as long as the design allows. */}
                 {([
-                  ['editor.marginNarrow', 74, 40, 80],
+                  ['editor.marginNarrow', pageMeasureMax, 40, 80],
                   ['editor.marginNormal', defaultPageMeasure, defaultPageHeaderOffset, defaultPageFooterOffset],
                   ['editor.marginWide', 60, 56, 112],
                 ] as const).map(([labelKey, measure, top, bottom]) => (
