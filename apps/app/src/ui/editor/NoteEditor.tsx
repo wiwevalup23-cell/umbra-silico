@@ -14,7 +14,8 @@ import type { ImageSourceResolver } from '@/shared/contracts/image'
 import type { NoteId, PlaintextLocalNote } from '@/shared/contracts/note'
 import { BlockHandle } from './BlockHandle'
 import { getCurrentTopLevelBlockRange } from './block-actions'
-import { createDebouncedAutosave } from './debounced-autosave'
+import { createDebouncedAutosave, type AutosaveStatus } from './debounced-autosave'
+import { mergeAutosaveStatus } from './autosave-status'
 import {
   createDocumentFromEditorDoc,
   isSameContent,
@@ -71,8 +72,6 @@ export type NoteEditorProps = {
   scrollContainerRef?: RefObject<HTMLElement | null>
 }
 
-type AutosaveState = 'saved' | 'queued' | 'saving' | 'error'
-
 type DocumentAutosavePayload = {
   doc: ProseMirrorNode
   noteId: NoteId
@@ -110,7 +109,8 @@ export function NoteEditor({
 }: NoteEditorProps) {
   const { t } = useTranslation()
   const [titleDraft, setTitleDraft] = useState(note.title)
-  const [autosaveState, setAutosaveState] = useState<AutosaveState>('saved')
+  const [documentStatus, setDocumentStatus] = useState<AutosaveStatus>('idle')
+  const [titleStatus, setTitleStatus] = useState<AutosaveStatus>('idle')
   const [importNotice, setImportNotice] = useState<string | null>(null)
   const [importingCount, setImportingCount] = useState(0)
   const [mathDraft, setMathDraft] = useState<MathEditorDraft | null>(null)
@@ -132,16 +132,12 @@ export function NoteEditor({
     () =>
       createDebouncedAutosave<DocumentAutosavePayload>({
         delayMs: backgroundAutosaveIntervalMs,
-        onError: () => {
-          setAutosaveState('error')
-        },
+        onStatusChange: setDocumentStatus,
         async save(payload) {
-          setAutosaveState('saving')
           lastWrittenRevisionRef.current = await onChangeDocumentRef.current(
             payload.noteId,
             createDocumentFromEditorDoc(payload.doc),
           )
-          setAutosaveState('saved')
         },
       }),
     [],
@@ -150,11 +146,8 @@ export function NoteEditor({
     () =>
       createDebouncedAutosave<TitleAutosavePayload>({
         delayMs: backgroundAutosaveIntervalMs,
-        onError: () => {
-          setAutosaveState('error')
-        },
+        onStatusChange: setTitleStatus,
         async save(payload) {
-          setAutosaveState('saving')
           // The title shares the note's revision counter with the document, so
           // its writes have to be recorded here too or the next document
           // delivery would look like somebody else's.
@@ -162,7 +155,6 @@ export function NoteEditor({
             payload.noteId,
             normalizeTitle(payload.title),
           )
-          setAutosaveState('saved')
         },
       }),
     [],
@@ -231,7 +223,6 @@ export function NoteEditor({
       void documentAutosave.flush()
     },
     onUpdate({ editor }) {
-      setAutosaveState('queued')
       documentAutosave.schedule({ doc: editor.state.doc, noteId: note.id })
     },
   })
@@ -244,6 +235,7 @@ export function NoteEditor({
     selector: ({ editor: currentEditor }) =>
       currentEditor ? getPageLayout(currentEditor.state) : defaultPageLayout,
   }) ?? defaultPageLayout
+  const autosaveState = mergeAutosaveStatus(documentStatus, titleStatus)
   const savePresentation = getLocalSavePresentation(autosaveState)
   const statusBadges = [
     {
@@ -588,7 +580,6 @@ export function NoteEditor({
                   void titleAutosave.flush()
                 }}
                 onChange={(event) => {
-                  setAutosaveState('queued')
                   setTitleDraft(event.target.value)
                   titleAutosave.schedule({
                     noteId: note.id,
