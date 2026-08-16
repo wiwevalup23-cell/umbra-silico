@@ -179,6 +179,36 @@ describe('reading measure (И1)', () => {
     expect(toolbar).toContain('border-bottom: 1px solid')
   })
 
+  it('keeps the toolbar on screen while the sheet scrolls under it', () => {
+    const toolbar = lastRuleBody('.sn-editor-toolbar')
+
+    // Left in the flow, the toolbar scrolled away with the paper, and every
+    // tool went with it — including the marker palette anchored to it.
+    expect(toolbar).toContain('position: sticky !important')
+    // The paper belongs to the sheet behind, so a transparent bar would have
+    // the text run visibly through it.
+    expect(toolbar).toContain('background-color: var(--sn-paper-bg) !important')
+    // Above the compact library and inspector panels, below the modal scrim.
+    expect(toolbar).toMatch(/z-index: (4[1-9]|[5-9]\d|1\d\d|2[01]\d) !important/)
+
+    // A scroller clips at its padding box, so a bar stuck to the content edge
+    // leaves the desk's inset above it for the text to slide through. The
+    // offset that cancels it is declared beside the padding it answers to.
+    expect(toolbar).toContain('top: var(--sn-editor-toolbar-stick, 0px) !important')
+    expect(screenCss).toMatch(
+      /@media \(min-width: 960px\)[\s\S]*?\.sn-editor-panel\s*\{[^}]*--sn-editor-toolbar-stick: calc\(var\(--sn-editor-desk-inset\) \* -1\)/,
+    )
+  })
+
+  it('hangs the marker palette outside the toolbar that would clip it', () => {
+    const palette = lastRuleBody('.sn-editor-highlight-menu')
+
+    // `position: absolute` put it inside a horizontal scroller, which clipped
+    // it away whole: the button opened nothing at any scroll offset.
+    expect(palette).toContain('position: fixed')
+    expect(palette).not.toContain('position: absolute')
+  })
+
   it('does not apply the generic paragraph gap inside task items', () => {
     expect(screenCss).toMatch(
       /ul\[data-type="taskList"\] li > div > p\s*\{[^}]*margin:\s*0 !important;/,

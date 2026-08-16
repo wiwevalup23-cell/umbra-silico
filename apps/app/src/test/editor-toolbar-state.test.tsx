@@ -217,3 +217,69 @@ describe('the toolbar undo and redo state', () => {
     expect(undoDepth(editor.state) > 0).toBe(false)
   })
 })
+
+describe('reaching the menus that hang off the toolbar', () => {
+  function openMarkerPalette(container: HTMLElement) {
+    const button = container.querySelector<HTMLButtonElement>(
+      'button[aria-label="Text marker color"]',
+    )
+
+    expect(button).not.toBeNull()
+
+    act(() => {
+      button?.click()
+    })
+  }
+
+  it('draws the marker palette clear of the toolbar that would clip it', () => {
+    const { container } = mountToolbar()
+
+    openMarkerPalette(container)
+
+    const palette = document.body.querySelector('.sn-editor-highlight-menu')
+
+    expect(palette).not.toBeNull()
+
+    // The toolbar scrolls horizontally, so it clips its own children. A
+    // palette inside it is cut away whole: the button opens something that
+    // cannot be seen or clicked, at any scroll offset.
+    const toolbar = container.querySelector('.sn-editor-toolbar')
+
+    expect(toolbar).not.toBeNull()
+    expect(toolbar?.contains(palette as Node)).toBe(false)
+  })
+
+  it('keeps a click on a swatch from counting as a click outside', () => {
+    const { container, editor } = mountToolbar({
+      type: 'doc',
+      content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Marked' }] }],
+    })
+
+    act(() => {
+      editor.commands.setTextSelection({ from: 1, to: 7 })
+    })
+
+    openMarkerPalette(container)
+
+    const swatch = document.body.querySelector<HTMLButtonElement>(
+      '.sn-editor-highlight-menu .sn-editor-highlight-swatch',
+    )
+
+    expect(swatch).not.toBeNull()
+
+    // The palette is portalled, so the control no longer contains it. The
+    // dismiss handler has to know that, or the pointer press shuts the menu
+    // and the swatch is gone before its click can land.
+    act(() => {
+      swatch?.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true }))
+    })
+
+    expect(document.body.querySelector('.sn-editor-highlight-menu')).not.toBeNull()
+
+    act(() => {
+      swatch?.click()
+    })
+
+    expect(editor.getAttributes('highlight').color).toBeTruthy()
+  })
+})

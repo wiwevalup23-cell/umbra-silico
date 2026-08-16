@@ -1,8 +1,16 @@
 import type { Editor } from '@tiptap/core'
 import { redoDepth, undoDepth } from '@tiptap/pm/history'
 import { useEditorState } from '@tiptap/react'
-import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties } from 'react'
+import {
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+  type CSSProperties,
+  type RefObject,
+} from 'react'
 import { createPortal } from 'react-dom'
+import { placeAnchoredMenu } from './anchored-menu'
 import {
   blockLineHeightMax,
   blockLineHeightMin,
@@ -43,6 +51,86 @@ export type EditorToolbarProps = {
   onOpenMath: (kind: MathKind) => void
 }
 
+type AnchoredMenuBinding = {
+  align: 'end' | 'start'
+  /** The control the menu belongs to. */
+  anchorRef: RefObject<HTMLElement | null>
+  /** The toolbar row the menu hangs from. */
+  barRef: RefObject<HTMLElement | null>
+  heightCap: number
+  maxWidth: number
+  /** The menu itself, once drawn, so its own height can be measured. */
+  menuRef: RefObject<HTMLElement | null>
+  /** Which menu is open, or `null` for none. Changing it re-places. */
+  openKey: string | null
+}
+
+/**
+ * Pins a portalled menu to its control, and keeps it pinned while the page
+ * moves under it.
+ *
+ * The menus are drawn into the body because the toolbar scrolls horizontally
+ * and so clips them (see `anchored-menu`), and anything drawn against the
+ * viewport has to be told when the viewport stops agreeing with it.
+ */
+function useAnchoredMenu({
+  align,
+  anchorRef,
+  barRef,
+  heightCap,
+  maxWidth,
+  menuRef,
+  openKey,
+}: AnchoredMenuBinding): CSSProperties | null {
+  const [style, setStyle] = useState<CSSProperties | null>(null)
+
+  useLayoutEffect(() => {
+    if (!openKey) {
+      setStyle(null)
+      return
+    }
+
+    function place() {
+      const anchor = anchorRef.current
+
+      if (!anchor) {
+        return
+      }
+
+      const anchorRect = anchor.getBoundingClientRect()
+      const placement = placeAnchoredMenu({
+        align,
+        anchor: anchorRect,
+        bar: barRef.current?.getBoundingClientRect() ?? anchorRect,
+        contentHeight: menuRef.current?.scrollHeight ?? heightCap,
+        maxHeight: Math.min(heightCap, window.innerHeight * 0.72),
+        maxWidth,
+        viewport: { height: window.innerHeight, width: window.innerWidth },
+      })
+
+      setStyle({
+        left: placement.left,
+        maxHeight: placement.maxHeight,
+        top: placement.top,
+        visibility: 'visible',
+        width: placement.width,
+      })
+    }
+
+    place()
+    window.addEventListener('resize', place)
+    // Captured, because what scrolls is the editor's own pane, not the window.
+    document.addEventListener('scroll', place, true)
+
+    return () => {
+      window.removeEventListener('resize', place)
+      document.removeEventListener('scroll', place, true)
+    }
+  }, [align, anchorRef, barRef, heightCap, maxWidth, menuRef, openKey])
+
+  return style
+}
+
 export function EditorToolbar({
   editor,
   onInsertImage = null,
@@ -54,10 +142,10 @@ export function EditorToolbar({
   // command meant reading past the block ones. Each aspect gets its own panel.
   const [openPanel, setOpenPanel] = useState<'blocks' | 'table' | null>(null)
   const highlightMenuRef = useRef<HTMLDivElement>(null)
+  const highlightPanelRef = useRef<HTMLDivElement>(null)
   const toolbarRef = useRef<HTMLDivElement>(null)
   const moreMenuRef = useRef<HTMLDivElement>(null)
   const toolsMenuRef = useRef<HTMLDivElement>(null)
-  const [toolsMenuStyle, setToolsMenuStyle] = useState<CSSProperties | null>(null)
   const state = useEditorState({
     editor,
     // Runs on every transaction, caret moves included. `isActive` is a cheap
@@ -150,7 +238,13 @@ export function EditorToolbar({
     }
 
     function handlePointerDown(event: PointerEvent) {
-      if (!highlightMenuRef.current?.contains(event.target as Node)) {
+      // The palette is portalled out of the toolbar, so the control no longer
+      // contains it. Asking only the control would count every click on a
+      // swatch as a click outside and shut the menu before the swatch fired.
+      if (
+        !highlightMenuRef.current?.contains(event.target as Node) &&
+        !highlightPanelRef.current?.contains(event.target as Node)
+      ) {
         setIsHighlightMenuOpen(false)
       }
 
@@ -178,57 +272,25 @@ export function EditorToolbar({
     }
   }, [isHighlightMenuOpen, openPanel])
 
-  useLayoutEffect(() => {
-    if (!openPanel) {
-      setToolsMenuStyle(null)
-      return
-    }
+  const toolsMenuStyle = useAnchoredMenu({
+    align: 'end',
+    anchorRef: moreMenuRef,
+    barRef: toolbarRef,
+    heightCap: 680,
+    maxWidth: 440,
+    menuRef: toolsMenuRef,
+    openKey: openPanel,
+  })
 
-    function placeToolsMenu() {
-      const anchor = moreMenuRef.current
-      const menu = toolsMenuRef.current
-
-      if (!anchor) {
-        return
-      }
-
-      const toolbar = toolbarRef.current
-      const anchorRect = anchor.getBoundingClientRect()
-      const toolbarRect = toolbar?.getBoundingClientRect() ?? anchorRect
-      const viewportMargin = 12
-      const menuWidth = Math.min(440, window.innerWidth - viewportMargin * 2)
-      const left = Math.min(
-        window.innerWidth - menuWidth - viewportMargin,
-        Math.max(viewportMargin, anchorRect.right - menuWidth),
-      )
-      const maxHeight = Math.min(680, window.innerHeight * 0.72)
-      const measuredHeight = Math.min(menu?.scrollHeight ?? maxHeight, maxHeight)
-      const spaceBelow = window.innerHeight - toolbarRect.bottom - viewportMargin - 8
-      const openAbove = spaceBelow < Math.min(measuredHeight, 280) && toolbarRect.top > spaceBelow
-      const top = openAbove
-        ? Math.max(viewportMargin, toolbarRect.top - measuredHeight - 8)
-        : toolbarRect.bottom + 8
-
-      setToolsMenuStyle({
-        left,
-        maxHeight: openAbove
-          ? Math.min(maxHeight, toolbarRect.top - viewportMargin - 8)
-          : Math.min(maxHeight, window.innerHeight - top - viewportMargin),
-        top,
-        visibility: 'visible',
-        width: menuWidth,
-      })
-    }
-
-    placeToolsMenu()
-    window.addEventListener('resize', placeToolsMenu)
-    document.addEventListener('scroll', placeToolsMenu, true)
-
-    return () => {
-      window.removeEventListener('resize', placeToolsMenu)
-      document.removeEventListener('scroll', placeToolsMenu, true)
-    }
-  }, [openPanel])
+  const highlightMenuStyle = useAnchoredMenu({
+    align: 'start',
+    anchorRef: highlightMenuRef,
+    barRef: toolbarRef,
+    heightCap: 320,
+    maxWidth: 196,
+    menuRef: highlightPanelRef,
+    openKey: isHighlightMenuOpen ? 'marker' : null,
+  })
 
   const selectedFontFamily = editorFontOptions.some(
     (option) => option.value === toolbarState.fontFamily,
@@ -362,11 +424,13 @@ export function EditorToolbar({
               A
             </span>
           </ToolbarButton>
-          {isHighlightMenuOpen ? (
+          {isHighlightMenuOpen ? createPortal(
             <div
               aria-label={t('editor.markerColors')}
               className="sn-editor-highlight-menu"
+              ref={highlightPanelRef}
               role="menu"
+              style={highlightMenuStyle ?? { visibility: 'hidden' }}
             >
               <span className="sn-editor-highlight-menu__label">{t('editor.marker')}</span>
               <div className="sn-editor-highlight-menu__swatches">
@@ -397,7 +461,8 @@ export function EditorToolbar({
               >
                 {t('editor.markerClear')}
               </button>
-            </div>
+            </div>,
+            document.body,
           ) : null}
         </div>
       </div>

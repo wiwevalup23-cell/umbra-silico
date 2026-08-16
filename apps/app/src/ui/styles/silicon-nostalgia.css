@@ -1903,11 +1903,15 @@ button {
 }
 
 .sn-editor-highlight-menu {
-  position: absolute;
-  z-index: 24;
-  top: calc(100% + 10px);
-  left: 0;
+  /* Fixed and drawn into the body, with `top`/`left` measured in script. The
+     toolbar scrolls horizontally, and a scroller clips whatever its children
+     open outwards — positioned inside it, this palette was cut away whole,
+     leaving a button that opened nothing at any scroll offset. The blocks
+     panel escapes the same way. */
+  position: fixed;
+  z-index: 360;
   width: 196px;
+  overscroll-behavior: contain;
   display: grid;
   gap: 9px;
   padding: 11px;
@@ -5237,6 +5241,11 @@ button {
   .sn-editor-panel {
     box-sizing: border-box !important;
     padding: var(--sn-editor-desk-inset) !important;
+    /* A scroller clips at its padding box, so a sticky toolbar held at the
+       content edge leaves this inset above it as a strip for the text to
+       slide through. Pulled up by exactly the inset, the toolbar sits flush
+       against the clip. Declared here, beside the padding it answers to. */
+    --sn-editor-toolbar-stick: calc(var(--sn-editor-desk-inset) * -1);
   }
 }
 
@@ -6610,6 +6619,14 @@ button {
 /* The toolbar is a real full-width row in the paper flow. It no longer escapes
    a padded parent through paired positive width and negative margin values. */
 .sn-editor-toolbar {
+  /* Sticky, because the sheet scrolls inside the desk: left in the flow, the
+     toolbar left with it, and formatting a word on the third screenful meant
+     scrolling up, formatting, and hunting for the place again.
+     Above the compact library and inspector panels (36, 40) and the block
+     handle (20), below the modal scrim (220). */
+  position: sticky !important;
+  z-index: 50 !important;
+  top: var(--sn-editor-toolbar-stick, 0px) !important;
   width: 100% !important;
   box-sizing: border-box !important;
   display: flex !important;
@@ -6620,6 +6637,9 @@ button {
   padding: 8px var(--sn-editor-paper-inline) !important;
   overflow-x: auto !important;
   overflow-y: hidden !important;
+  /* Opaque: the paper the text is set on belongs to the sheet behind, so a
+     transparent bar would have the text run visibly through it. */
+  background-color: var(--sn-paper-bg) !important;
   border-bottom: 1px solid rgba(28, 27, 24, 0.1) !important;
   scrollbar-width: none;
 }
