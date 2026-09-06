@@ -242,11 +242,11 @@ describe('Umbra Silico UI shell', () => {
     const paper = rendered.container.querySelector<HTMLElement>(
       '.sn-editor-paper-sheet',
     )
-    expect(paper?.style.getPropertyValue('--sn-page-measure')).toBe('66ch')
+    expect(paper?.style.getPropertyValue('--sn-page-side-margin')).toBe('64px')
     // Foot deeper than head: equal margins read as a page sagging, because the
     // optical centre sits above the geometric one.
-    expect(paper?.style.getPropertyValue('--sn-page-header-offset')).toBe('48px')
-    expect(paper?.style.getPropertyValue('--sn-page-footer-offset')).toBe('96px')
+    expect(paper?.style.getPropertyValue('--sn-page-header-offset')).toBe('56px')
+    expect(paper?.style.getPropertyValue('--sn-page-footer-offset')).toBe('88px')
     expect(
       rendered.container.querySelector('button[aria-label="Heading 1"]'),
     ).not.toBeNull()
@@ -280,7 +280,8 @@ describe('Umbra Silico UI shell', () => {
         attrs: {
           pageFooterOffset: 56,
           pageHeaderOffset: 72,
-          pageMeasure: 58,
+          pageLayoutVersion: 3,
+          pageSideMargin: 80,
         },
         content: [
           {
@@ -385,13 +386,12 @@ describe('Umbra Silico UI shell', () => {
     expect(
       rendered.container
         .querySelector<HTMLElement>('.sn-editor-paper-sheet')
-        ?.style.getPropertyValue('--sn-page-measure'),
-    ).toBe('58ch')
+        ?.style.getPropertyValue('--sn-page-side-margin'),
+    ).toBe('80px')
     expect(rendered.container.textContent).not.toContain('M+')
     expect(rendered.container.textContent).not.toContain('R+')
 
-    // Blocks and tables get a panel each: one drawer holding every aspect meant
-    // reading past the block commands to reach a table one.
+    // Blocks, page geometry and tables get a focused panel each.
     act(() => {
       rendered.container
         .querySelector<HTMLButtonElement>('button[aria-label="Blocks"]')
@@ -405,7 +405,8 @@ describe('Umbra Silico UI shell', () => {
     expect(globalThis.document.body.textContent).toContain('Callout')
     expect(globalThis.document.body.textContent).toContain('Insert table')
     expect(globalThis.document.body.textContent).toContain('Line spacing')
-    expect(globalThis.document.body.textContent).toContain('Page margins')
+    expect(globalThis.document.body.textContent).toContain('First-line indent')
+    expect(globalThis.document.body.textContent).not.toContain('Page margins')
 
     act(() => {
       globalThis.document.body
@@ -419,18 +420,65 @@ describe('Umbra Silico UI shell', () => {
       )
         .find((button) => button.textContent?.trim() === '2')
         ?.click()
+
+      Array.from(
+        globalThis.document.body.querySelectorAll<HTMLButtonElement>(
+          '.sn-editor-layout-preset',
+        ),
+      )
+        .find((button) => button.textContent?.trim() === 'Small')
+        ?.click()
     })
 
-    const sideMarginInput = globalThis.document.body.querySelector<HTMLInputElement>(
-      'input[aria-label="Line length"]',
+    act(() => {
+      const pageSettingsButton = rendered.container.querySelector<HTMLButtonElement>(
+        'button[aria-label="Page settings"]',
+      )
+
+      expect(pageSettingsButton?.getAttribute('aria-controls')).toBe(
+        'sn-editor-page-settings',
+      )
+      pageSettingsButton?.click()
+    })
+
+    expect(
+      rendered.container
+        .querySelector<HTMLButtonElement>('button[aria-label="Page settings"]')
+        ?.getAttribute('aria-expanded'),
+    ).toBe('true')
+    expect(globalThis.document.activeElement?.id).toBe('sn-editor-page-settings')
+    expect(globalThis.document.body.textContent).toContain('Page margins')
+    expect(globalThis.document.body.textContent).toContain(
+      'Left and right margins always match',
     )
 
     act(() => {
-      if (!sideMarginInput) {
-        throw new Error('Expected a line-length input.')
-      }
+      globalThis.document.body
+        .querySelector<HTMLButtonElement>('button[aria-label="Left and right: +"]')
+        ?.click()
+    })
+    expect(
+      rendered.container
+        .querySelector<HTMLElement>('.sn-editor-paper-sheet')
+        ?.style.getPropertyValue('--sn-page-side-margin'),
+    ).toBe('81px')
 
-      setInputValue(sideMarginInput, '40')
+    const sideMarginInput = globalThis.document.body.querySelector<HTMLInputElement>(
+      'input[aria-label="Left and right"]',
+    )
+
+    if (!sideMarginInput) {
+      throw new Error('Expected a symmetric page-margin input.')
+    }
+
+    act(() => {
+      sideMarginInput.focus()
+      globalThis.document.dispatchEvent(new Event('scroll', { bubbles: true }))
+    })
+    expect(globalThis.document.activeElement).toBe(sideMarginInput)
+
+    act(() => {
+      setInputValue(sideMarginInput, '72')
       sideMarginInput.dispatchEvent(new FocusEvent('focusout', { bubbles: true }))
     })
 
@@ -446,7 +494,9 @@ describe('Umbra Silico UI shell', () => {
       (node) => node.type === 'paragraph',
     )
 
-    expect(savedLayoutDocument?.content.attrs?.pageMeasure).toBe(40)
+    expect(savedLayoutDocument?.content.attrs?.pageLayoutVersion).toBe(3)
+    expect(savedLayoutDocument?.content.attrs?.pageSideMargin).toBe(72)
+    expect(savedLayoutDocument?.content.attrs).not.toHaveProperty('pageMeasure')
     expect(
       savedParagraph && 'attrs' in savedParagraph
         ? savedParagraph.attrs?.blockLineHeight
@@ -454,9 +504,31 @@ describe('Umbra Silico UI shell', () => {
     ).toBe(2)
     expect(
       savedParagraph && 'attrs' in savedParagraph
+        ? savedParagraph.attrs?.blockFirstLineIndent
+        : undefined,
+    ).toBe(24)
+    expect(
+      savedParagraph && 'attrs' in savedParagraph
         ? savedParagraph.attrs?.textAlign
         : undefined,
     ).toBe('left')
+
+    act(() => {
+      globalThis.document.dispatchEvent(
+        new KeyboardEvent('keydown', { bubbles: true, key: 'Escape' }),
+      )
+    })
+    await act(async () => {
+      await new Promise<void>((resolve) => {
+        window.requestAnimationFrame(() => resolve())
+      })
+    })
+    expect(globalThis.document.getElementById('sn-editor-page-settings')).toBeNull()
+    expect(globalThis.document.activeElement).toBe(
+      rendered.container.querySelector<HTMLButtonElement>(
+        'button[aria-label="Page settings"]',
+      ),
+    )
 
     act(() => {
       rendered.container

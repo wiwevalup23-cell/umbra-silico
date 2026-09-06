@@ -255,13 +255,15 @@ describe('P1-A visual and interaction contract', () => {
     expect(css).toContain('overflow-x: auto !important;')
     expect(css).not.toContain('aspect-ratio: 210 / 297;')
     expect(css).toContain('min-height: 520px !important;')
-    // The sheet is a bounded paper object; the text column remains a distinct
-    // left-aligned typographic measure inside it.
+    // The sheet is a bounded paper object. A single symmetric paper padding
+    // defines both margins and every inner content wrapper fills the result.
     expect(css).toContain('width: 100% !important;')
     expect(css).toContain('max-width: none !important;')
     expect(css).toContain('margin: 0 !important;')
     expect(css).toContain('var(--sn-editor-paper-inline)')
-    expect(css).toContain('var(--sn-page-measure, 66ch)')
+    expect(css).toContain('var(--sn-page-side-margin, 64px)')
+    expect(css).toContain('padding: 0 var(--sn-page-effective-side-margin) !important;')
+    expect(css).not.toContain('--sn-page-measure')
     expect(css).toContain('text-align: left;')
     expect(css).not.toContain('width: calc(100% + 128px) !important;')
     expect(css).not.toContain('margin-left: -46px !important;')
@@ -270,8 +272,10 @@ describe('P1-A visual and interaction contract', () => {
     expect(css).toContain('.sn-block-handle-menu--floating {')
     expect(css).toContain('z-index: 320;')
     expect(css).toContain('.sn-editor-reading-column {')
-    expect(css).toContain('max-width: 66ch !important;')
-    expect(css).toContain('right: -50px !important;')
+    expect(css).toContain('max-width: none !important;')
+    expect(css).toContain(
+      'left: calc(100% + 6px) !important;',
+    )
     expect(css).toContain('border: 0 !important;')
     expect(css).not.toContain('right: 12px !important;')
     expect(css).toContain('input[type="checkbox"]:checked')

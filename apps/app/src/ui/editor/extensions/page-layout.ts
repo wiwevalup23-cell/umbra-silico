@@ -2,48 +2,39 @@ import { Extension } from '@tiptap/core'
 import type { EditorState } from '@tiptap/pm/state'
 import { readNumber } from './read-number'
 
-const pageOffsetMin = 8
-const pageOffsetMax = 132
-/* The page "margins" are really the measure: what makes a document readable is
-   how many characters land on a line, not how many pixels sit beside them. A
-   pixel gap keeps the same size while the column behind it grows with the
-   window, so the line quietly runs past the point the eye can track. Stored in
-   `ch` — the width of "0" in the body face — so it follows the type size. */
-const pageMeasureMin = 40
-/* The stylesheet caps the column at 66ch — "the user setting may make a line
-   shorter, but never longer than the typographic ceiling". The field used to
-   accept up to 100 and the whole upper half of its range did nothing: asking
-   for 80 or 100 produced the same 66. A control must not offer what the design
-   refuses to give. */
-const pageMeasureMax = 66
-const defaultPageMeasure = 66
-const defaultPageHeaderOffset = 48
-/* Deliberately larger than the top: a page with equal top and bottom reads as
-   sagging, because the optical centre sits above the geometric one. */
-const defaultPageFooterOffset = 96
+const pageOffsetMin = 32
+const pageOffsetMax = 180
+const pageSideMarginMin = 48
+const pageSideMarginMax = 96
+const defaultPageSideMargin = 64
+const defaultPageHeaderOffset = 56
+const defaultPageFooterOffset = 88
+const currentPageLayoutVersion = 3
 
 export {
+  currentPageLayoutVersion,
   defaultPageFooterOffset,
   defaultPageHeaderOffset,
-  defaultPageMeasure,
-  pageMeasureMax,
-  pageMeasureMin,
+  defaultPageSideMargin,
   pageOffsetMax,
   pageOffsetMin,
+  pageSideMarginMax,
+  pageSideMarginMin,
 }
 
 export type PageLayoutAttrs = {
   pageFooterOffset: number
   pageHeaderOffset: number
-  pageMeasure: number
+  pageSideMargin: number
 }
 
 declare module '@tiptap/core' {
   interface Commands<ReturnType> {
     pageLayout: {
+      setPageLayout: (layout: Partial<PageLayoutAttrs>) => ReturnType
       setPageFooterOffset: (offset: number) => ReturnType
       setPageHeaderOffset: (offset: number) => ReturnType
-      setPageMeasure: (margin: number) => ReturnType
+      setPageSideMargin: (margin: number) => ReturnType
     }
   }
 }
@@ -51,7 +42,7 @@ declare module '@tiptap/core' {
 export const defaultPageLayout: PageLayoutAttrs = {
   pageFooterOffset: defaultPageFooterOffset,
   pageHeaderOffset: defaultPageHeaderOffset,
-  pageMeasure: defaultPageMeasure,
+  pageSideMargin: defaultPageSideMargin,
 }
 
 function clampPageOffset(value: unknown): number {
@@ -64,14 +55,17 @@ function clampPageOffset(value: unknown): number {
   return Math.min(pageOffsetMax, Math.max(pageOffsetMin, Math.round(parsed)))
 }
 
-function clampPageMeasure(value: unknown): number {
+function clampPageSideMargin(value: unknown): number {
   const parsed = readNumber(value)
 
   if (parsed === null) {
-    return defaultPageMeasure
+    return defaultPageSideMargin
   }
 
-  return Math.min(pageMeasureMax, Math.max(pageMeasureMin, Math.round(parsed)))
+  return Math.min(
+    pageSideMarginMax,
+    Math.max(pageSideMarginMin, Math.round(parsed)),
+  )
 }
 
 export function getPageLayout(state: EditorState): PageLayoutAttrs {
@@ -82,7 +76,9 @@ export function getPageLayout(state: EditorState): PageLayoutAttrs {
     pageHeaderOffset: clampPageOffset(
       state.doc.attrs.pageHeaderOffset ?? defaultPageHeaderOffset,
     ),
-    pageMeasure: clampPageMeasure(state.doc.attrs.pageMeasure ?? defaultPageMeasure),
+    pageSideMargin: clampPageSideMargin(
+      state.doc.attrs.pageSideMargin ?? defaultPageSideMargin,
+    ),
   }
 }
 
@@ -100,8 +96,11 @@ export const PageLayout = Extension.create({
           pageHeaderOffset: {
             default: defaultPageHeaderOffset,
           },
-          pageMeasure: {
-            default: defaultPageMeasure,
+          pageSideMargin: {
+            default: defaultPageSideMargin,
+          },
+          pageLayoutVersion: {
+            default: currentPageLayoutVersion,
           },
         },
       },
@@ -110,6 +109,36 @@ export const PageLayout = Extension.create({
 
   addCommands() {
     return {
+      setPageLayout:
+        (layout) =>
+        ({ dispatch, state }) => {
+          if (dispatch) {
+            let transaction = state.tr
+
+            if (layout.pageSideMargin !== undefined) {
+              transaction = transaction.setDocAttribute(
+                'pageSideMargin',
+                clampPageSideMargin(layout.pageSideMargin),
+              )
+            }
+            if (layout.pageHeaderOffset !== undefined) {
+              transaction = transaction.setDocAttribute(
+                'pageHeaderOffset',
+                clampPageOffset(layout.pageHeaderOffset),
+              )
+            }
+            if (layout.pageFooterOffset !== undefined) {
+              transaction = transaction.setDocAttribute(
+                'pageFooterOffset',
+                clampPageOffset(layout.pageFooterOffset),
+              )
+            }
+
+            dispatch(transaction)
+          }
+
+          return true
+        },
       setPageFooterOffset:
         (offset) =>
         ({ dispatch, state }) => {
@@ -132,12 +161,15 @@ export const PageLayout = Extension.create({
 
           return true
         },
-      setPageMeasure:
+      setPageSideMargin:
         (margin) =>
         ({ dispatch, state }) => {
           if (dispatch) {
             dispatch(
-              state.tr.setDocAttribute('pageMeasure', clampPageMeasure(margin)),
+              state.tr.setDocAttribute(
+                'pageSideMargin',
+                clampPageSideMargin(margin),
+              ),
             )
           }
 

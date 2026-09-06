@@ -560,7 +560,7 @@ export function NoteEditor({
         {
           '--sn-page-footer-offset': `${pageLayout.pageFooterOffset}px`,
           '--sn-page-header-offset': `${pageLayout.pageHeaderOffset}px`,
-          '--sn-page-measure': `${pageLayout.pageMeasure}ch`,
+          '--sn-page-side-margin': `${pageLayout.pageSideMargin}px`,
         } as CSSProperties
       }
     >

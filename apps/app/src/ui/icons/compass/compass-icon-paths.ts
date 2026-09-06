@@ -37,6 +37,7 @@ export type CompassFormatIconName =
   | 'divider'
   | 'callout'
   | 'image'
+  | 'pageLayout'
   | 'table'
   | 'undo'
   | 'redo'
@@ -80,6 +81,10 @@ export const compassFormatIcons: Record<CompassFormatIconName, CompassIconPath> 
   image: {
     d: `M3 4.5H17V15.5H3ZM3 13.5L7.5 9L11 12.5L13 10.5L17 14.5${circle(14, 7.5, 1.7)}`,
     f: dot(14, 7.5, 0.6),
+  },
+  pageLayout: {
+    d: 'M4 2.8H16V17.2H4ZM6.8 5.2V14.8M13.2 5.2V14.8M6.8 7H13.2M6.8 13H13.2',
+    f: '',
   },
   table: { d: 'M3 4.4H17V15.6H3ZM7.67 4.4V15.6M12.33 4.4V15.6M3 8.13H17M3 11.87H17', f: '' },
   undo: { d: 'M6.2 4.8L3 8L6.2 11.2M3 8H11.4A4.6 4.6 0 0 1 11.4 17.2H7.5', f: '' },

@@ -766,10 +766,9 @@
     box-sizing: border-box !important;
     margin: 0 !important;
     padding:
-      max(28px, var(--sn-page-header-offset, 40px))
-      54px
-      max(88px, var(--sn-page-footer-offset, 40px))
-      clamp(20px, 5vw, 38px) !important;
+      var(--sn-page-header-offset, 56px)
+      0
+      var(--sn-page-footer-offset, 88px) !important;
     font-size: clamp(15px, 3.9vw, 18px);
     line-height: 1.62;
     overflow-wrap: anywhere;
@@ -789,8 +788,8 @@
 
   .sn-block-handle {
     top: calc(var(--sn-block-handle-top, 48px) - 20px) !important;
-    right: 7px !important;
-    left: auto !important;
+    right: auto !important;
+    left: calc(100% + 6px) !important;
     transform: none !important;
     opacity: 0.72 !important;
   }
@@ -872,7 +871,7 @@
   }
 
   .sn-editor-page-settings__field {
-    grid-template-columns: minmax(44px, 1fr) 74px 20px 44px;
+    grid-template-columns: minmax(72px, 1fr) auto 24px;
   }
 
   .sn-math-editor {
@@ -1235,8 +1234,8 @@
   }
 
   .sn-tiptap-prosemirror {
-    padding-right: 50px !important;
-    padding-left: 18px !important;
+    padding-right: 0 !important;
+    padding-left: 0 !important;
   }
 
   .sn-empty-actions {

@@ -3,7 +3,9 @@ import type { TextAlignValue } from '../extensions'
 
 export type ToolbarButtonProps = {
   children: ReactNode
+  controls?: string
   disabled?: boolean
+  expanded?: boolean
   label: string
   onPress: () => void
   pressed?: boolean
@@ -11,16 +13,21 @@ export type ToolbarButtonProps = {
 
 export function ToolbarButton({
   children,
+  controls,
   disabled = false,
+  expanded,
   label,
   onPress,
-  pressed = false,
+  pressed,
 }: ToolbarButtonProps) {
   return (
     <button
+      aria-controls={controls}
+      aria-expanded={expanded}
       aria-label={label}
+      aria-pressed={pressed}
       className="sn-editor-tool"
-      data-active={pressed}
+      data-active={pressed ?? false}
       disabled={disabled}
       onClick={onPress}
       title={label}
@@ -86,29 +93,55 @@ export function LayoutNumberField({
   unit,
   value,
 }: LayoutNumberFieldProps) {
+  function stepValue(direction: -1 | 1) {
+    const next = Math.min(max, Math.max(min, value + direction * step))
+    onCommit(Number(next.toFixed(2)))
+  }
+
   return (
-    <label className="sn-editor-page-settings__field">
+    <div className="sn-editor-page-settings__field">
       <span className="sn-editor-page-settings__name">{label}</span>
-      <input
-        aria-label={label}
-        className="sn-editor-tools-menu__number"
-        defaultValue={value}
-        disabled={disabled}
-        key={value}
-        max={max}
-        min={min}
-        onBlur={(event) => onCommit(event.currentTarget.valueAsNumber)}
-        onKeyDown={(event) => {
-          if (event.key === 'Enter') {
-            event.preventDefault()
-            event.currentTarget.blur()
-          }
-        }}
-        step={step}
-        type="number"
-      />
+      <div aria-label={label} className="sn-editor-number-stepper" role="group">
+        <button
+          aria-label={`${label}: −`}
+          disabled={disabled || value <= min}
+          onClick={() => stepValue(-1)}
+          type="button"
+        >
+          −
+        </button>
+        <input
+          aria-label={label}
+          className="sn-editor-tools-menu__number"
+          defaultValue={value}
+          disabled={disabled}
+          key={value}
+          max={max}
+          min={min}
+          onBlur={(event) => {
+            const next = event.currentTarget.valueAsNumber
+            onCommit(Number.isFinite(next) ? next : value)
+          }}
+          onKeyDown={(event) => {
+            if (event.key === 'Enter') {
+              event.preventDefault()
+              event.currentTarget.blur()
+            }
+          }}
+          step={step}
+          type="number"
+        />
+        <button
+          aria-label={`${label}: +`}
+          disabled={disabled || value >= max}
+          onClick={() => stepValue(1)}
+          type="button"
+        >
+          +
+        </button>
+      </div>
       <span className="sn-editor-page-settings__unit">{unit}</span>
-    </label>
+    </div>
   )
 }
 

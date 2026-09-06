@@ -12,6 +12,8 @@ import {
 import { createPortal } from 'react-dom'
 import { placeAnchoredMenu } from './anchored-menu'
 import {
+  blockFirstLineIndentMax,
+  blockFirstLineIndentMin,
   blockLineHeightMax,
   blockLineHeightMin,
   blockMarginValues,
@@ -19,13 +21,13 @@ import {
   defaultPageFooterOffset,
   defaultPageHeaderOffset,
   defaultPageLayout,
-  defaultPageMeasure,
+  defaultPageSideMargin,
   getPageLayout,
   getSelectedBlockLayout,
-  pageMeasureMax,
-  pageMeasureMin,
   pageOffsetMax,
   pageOffsetMin,
+  pageSideMarginMax,
+  pageSideMarginMin,
   textAlignValues,
   type MathKind,
 } from '../extensions'
@@ -49,6 +51,14 @@ export type EditorToolbarProps = {
   editor: Editor | null
   onInsertImage?: (() => void) | null
   onOpenMath: (kind: MathKind) => void
+}
+
+type EditorToolsPanel = 'blocks' | 'page' | 'table'
+
+const editorToolsPanelIds: Record<EditorToolsPanel, string> = {
+  blocks: 'sn-editor-block-settings',
+  page: 'sn-editor-page-settings',
+  table: 'sn-editor-table-settings',
 }
 
 type AnchoredMenuBinding = {
@@ -140,12 +150,14 @@ export function EditorToolbar({
   const [isHighlightMenuOpen, setIsHighlightMenuOpen] = useState(false)
   // One "more tools" drawer held every aspect at once, so finding a table
   // command meant reading past the block ones. Each aspect gets its own panel.
-  const [openPanel, setOpenPanel] = useState<'blocks' | 'table' | null>(null)
+  const [openPanel, setOpenPanel] = useState<EditorToolsPanel | null>(null)
   const highlightMenuRef = useRef<HTMLDivElement>(null)
   const highlightPanelRef = useRef<HTMLDivElement>(null)
   const toolbarRef = useRef<HTMLDivElement>(null)
   const moreMenuRef = useRef<HTMLDivElement>(null)
   const toolsMenuRef = useRef<HTMLDivElement>(null)
+  const focusedPanelRef = useRef<EditorToolsPanel | null>(null)
+  const panelTriggerRef = useRef<HTMLElement | null>(null)
   const state = useEditorState({
     editor,
     // Runs on every transaction, caret moves included. `isActive` is a cheap
@@ -258,8 +270,14 @@ export function EditorToolbar({
 
     function handleKeyDown(event: KeyboardEvent) {
       if (event.key === 'Escape') {
+        const trigger = openPanel ? panelTriggerRef.current : null
+
         setIsHighlightMenuOpen(false)
         setOpenPanel(null)
+
+        if (trigger) {
+          window.requestAnimationFrame(() => trigger.focus())
+        }
       }
     }
 
@@ -291,6 +309,29 @@ export function EditorToolbar({
     menuRef: highlightPanelRef,
     openKey: isHighlightMenuOpen ? 'marker' : null,
   })
+
+  const isToolsMenuVisible = toolsMenuStyle?.visibility === 'visible'
+
+  useEffect(() => {
+    if (!openPanel) {
+      focusedPanelRef.current = null
+      return
+    }
+
+    if (isToolsMenuVisible && focusedPanelRef.current !== openPanel) {
+      focusedPanelRef.current = openPanel
+      toolsMenuRef.current?.focus()
+    }
+  }, [isToolsMenuVisible, openPanel])
+
+  function toggleToolsPanel(panel: EditorToolsPanel) {
+    panelTriggerRef.current = document.querySelector<HTMLElement>(
+      `[aria-controls="${editorToolsPanelIds[panel]}"]`,
+    )
+
+    setOpenPanel((current) => (current === panel ? null : panel))
+    setIsHighlightMenuOpen(false)
+  }
 
   const selectedFontFamily = editorFontOptions.some(
     (option) => option.value === toolbarState.fontFamily,
@@ -539,23 +580,31 @@ export function EditorToolbar({
         ref={moreMenuRef}
       >
         <ToolbarButton
+          controls={editorToolsPanelIds.page}
           disabled={!editor}
+          expanded={openPanel === 'page'}
+          label={t('editor.pagePanel')}
+          onPress={() => toggleToolsPanel('page')}
+          pressed={openPanel === 'page'}
+        >
+          <CompassIcon name="pageLayout" />
+        </ToolbarButton>
+        <ToolbarButton
+          controls={editorToolsPanelIds.blocks}
+          disabled={!editor}
+          expanded={openPanel === 'blocks'}
           label={t('editor.blocksPanel')}
-          onPress={() => {
-            setOpenPanel((current) => (current === 'blocks' ? null : 'blocks'))
-            setIsHighlightMenuOpen(false)
-          }}
+          onPress={() => toggleToolsPanel('blocks')}
           pressed={openPanel === 'blocks'}
         >
           <CompassIcon name="callout" />
         </ToolbarButton>
         <ToolbarButton
+          controls={editorToolsPanelIds.table}
           disabled={!editor}
+          expanded={openPanel === 'table'}
           label={t('editor.tablePanel')}
-          onPress={() => {
-            setOpenPanel((current) => (current === 'table' ? null : 'table'))
-            setIsHighlightMenuOpen(false)
-          }}
+          onPress={() => toggleToolsPanel('table')}
           pressed={openPanel === 'table'}
         >
           <CompassIcon name="table" />
@@ -565,9 +614,11 @@ export function EditorToolbar({
           <div
             aria-label={t('editor.blocksPanel')}
             className="sn-editor-tools-menu sn-editor-tools-menu--blocks sn-editor-tools-menu--floating"
+            id={editorToolsPanelIds.blocks}
             ref={toolsMenuRef}
             role="dialog"
             style={toolsMenuStyle ?? { visibility: 'hidden' }}
+            tabIndex={-1}
           >
             <div className="sn-editor-tools-menu__section" role="group">
               <span className="sn-editor-tools-menu__label">{t('editor.groupLayout')}</span>
@@ -637,69 +688,34 @@ export function EditorToolbar({
             </div>
 
             <div className="sn-editor-tools-menu__section" role="group">
-              <span className="sn-editor-tools-menu__label">{t('editor.pageMargins')}</span>
+              <span className="sn-editor-tools-menu__label">{t('editor.firstLineIndent')}</span>
               <div className="sn-editor-layout-presets">
-                {/* Wider margins mean a shorter line, so the presets run the
-                    measure the other way. The narrow one asked for 74 and got
-                    66 — the typographic ceiling — so it rendered identically to
-                    normal while still highlighting as the active choice. It
-                    asks for what it can have; the two now differ only in the
-                    vertical margins, which is what is left to differ in once
-                    the line is already as long as the design allows. */}
                 {([
-                  ['editor.marginNarrow', pageMeasureMax, 40, 80],
-                  ['editor.marginNormal', defaultPageMeasure, defaultPageHeaderOffset, defaultPageFooterOffset],
-                  ['editor.marginWide', 60, 56, 112],
-                ] as const).map(([labelKey, measure, top, bottom]) => (
+                  ['editor.indentNone', 0],
+                  ['editor.indentSmall', 24],
+                  ['editor.indentLarge', 40],
+                ] as const).map(([labelKey, indent]) => (
                   <button
                     className="sn-editor-layout-preset"
-                    data-active={
-                      toolbarState.pageLayout.pageMeasure === measure &&
-                      toolbarState.pageLayout.pageHeaderOffset === top &&
-                      toolbarState.pageLayout.pageFooterOffset === bottom
-                    }
+                    data-active={toolbarState.blockLayout.blockFirstLineIndent === indent}
                     disabled={!editor}
                     key={labelKey}
-                    onClick={() => {
-                      editor?.commands.setPageMeasure(measure)
-                      editor?.commands.setPageHeaderOffset(top)
-                      editor?.commands.setPageFooterOffset(bottom)
-                    }}
+                    onClick={() => editor?.commands.setBlockFirstLineIndent(indent)}
                     type="button"
                   >
                     {t(labelKey)}
                   </button>
                 ))}
               </div>
-              <div className="sn-editor-page-settings">
-                <LayoutNumberField
-                  disabled={!editor}
-                  label={t('editor.measure')}
-                  max={pageMeasureMax}
-                  min={pageMeasureMin}
-                  onCommit={(value) => editor?.commands.setPageMeasure(value)}
-                  unit={t('editor.characters')}
-                  value={toolbarState.pageLayout.pageMeasure}
-                />
-                <LayoutNumberField
-                  disabled={!editor}
-                  label={t('editor.marginTop')}
-                  max={pageOffsetMax}
-                  min={pageOffsetMin}
-                  onCommit={(value) => editor?.commands.setPageHeaderOffset(value)}
-                  unit={t('editor.pixels')}
-                  value={toolbarState.pageLayout.pageHeaderOffset}
-                />
-                <LayoutNumberField
-                  disabled={!editor}
-                  label={t('editor.marginBottom')}
-                  max={pageOffsetMax}
-                  min={pageOffsetMin}
-                  onCommit={(value) => editor?.commands.setPageFooterOffset(value)}
-                  unit={t('editor.pixels')}
-                  value={toolbarState.pageLayout.pageFooterOffset}
-                />
-              </div>
+              <LayoutNumberField
+                disabled={!editor}
+                label={t('editor.customValue')}
+                max={blockFirstLineIndentMax}
+                min={blockFirstLineIndentMin}
+                onCommit={(value) => editor?.commands.setBlockFirstLineIndent(value)}
+                unit={t('editor.pixels')}
+                value={toolbarState.blockLayout.blockFirstLineIndent}
+              />
             </div>
 
             <div className="sn-editor-tools-menu__section" role="group">
@@ -834,12 +850,100 @@ export function EditorToolbar({
           document.body,
         ) : null}
 
+        {openPanel === 'page' ? createPortal(
+          <div
+            aria-label={t('editor.pagePanel')}
+            className="sn-editor-tools-menu sn-editor-tools-menu--page sn-editor-tools-menu--floating"
+            id={editorToolsPanelIds.page}
+            ref={toolsMenuRef}
+            role="dialog"
+            style={toolsMenuStyle ?? { visibility: 'hidden' }}
+            tabIndex={-1}
+          >
+            <div className="sn-editor-tools-menu__section" role="group">
+              <span className="sn-editor-tools-menu__label">{t('editor.pageMargins')}</span>
+              <div>
+                <p className="sn-editor-tools-menu__hint">{t('editor.pageMarginsHint')}</p>
+                <div className="sn-editor-layout-presets">
+                  {([
+                    ['editor.marginNarrow', 48, 40, 72],
+                    [
+                      'editor.marginNormal',
+                      defaultPageSideMargin,
+                      defaultPageHeaderOffset,
+                      defaultPageFooterOffset,
+                    ],
+                    ['editor.marginWide', 96, 72, 112],
+                  ] as const).map(([labelKey, side, top, bottom]) => (
+                    <button
+                      className="sn-editor-layout-preset"
+                      data-active={
+                        toolbarState.pageLayout.pageSideMargin === side &&
+                        toolbarState.pageLayout.pageHeaderOffset === top &&
+                        toolbarState.pageLayout.pageFooterOffset === bottom
+                      }
+                      disabled={!editor}
+                      key={labelKey}
+                      onClick={() => {
+                        editor?.commands.setPageLayout({
+                          pageFooterOffset: bottom,
+                          pageHeaderOffset: top,
+                          pageSideMargin: side,
+                        })
+                      }}
+                      type="button"
+                    >
+                      {t(labelKey)}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            <div className="sn-editor-tools-menu__section" role="group">
+              <span className="sn-editor-tools-menu__label">{t('editor.customMargins')}</span>
+              <div className="sn-editor-page-settings">
+                <LayoutNumberField
+                  disabled={!editor}
+                  label={t('editor.marginHorizontal')}
+                  max={pageSideMarginMax}
+                  min={pageSideMarginMin}
+                  onCommit={(value) => editor?.commands.setPageSideMargin(value)}
+                  unit={t('editor.pixels')}
+                  value={toolbarState.pageLayout.pageSideMargin}
+                />
+                <LayoutNumberField
+                  disabled={!editor}
+                  label={t('editor.marginTop')}
+                  max={pageOffsetMax}
+                  min={pageOffsetMin}
+                  onCommit={(value) => editor?.commands.setPageHeaderOffset(value)}
+                  unit={t('editor.pixels')}
+                  value={toolbarState.pageLayout.pageHeaderOffset}
+                />
+                <LayoutNumberField
+                  disabled={!editor}
+                  label={t('editor.marginBottom')}
+                  max={pageOffsetMax}
+                  min={pageOffsetMin}
+                  onCommit={(value) => editor?.commands.setPageFooterOffset(value)}
+                  unit={t('editor.pixels')}
+                  value={toolbarState.pageLayout.pageFooterOffset}
+                />
+              </div>
+            </div>
+          </div>,
+          document.body,
+        ) : null}
+
         {openPanel === 'table' ? createPortal(
           <div
             className="sn-editor-tools-menu sn-editor-tools-menu--floating"
+            id={editorToolsPanelIds.table}
             ref={toolsMenuRef}
             role="menu"
             style={toolsMenuStyle ?? { visibility: 'hidden' }}
+            tabIndex={-1}
           >
             {!toolbarState.isTable ? (
               <p className="sn-editor-tools-menu__empty">{t('editor.tableEmptyHint')}</p>

@@ -8,13 +8,19 @@ const blockMarginValues = ['tight', 'normal', 'wide'] as const
 const blockLineHeightMin = 1
 const blockLineHeightMax = 3
 const defaultBlockLineHeight = 1.6
+const blockFirstLineIndentMin = 0
+const blockFirstLineIndentMax = 96
+const defaultBlockFirstLineIndent = 0
 const textAlignValues = ['left', 'center', 'right', 'justify'] as const
 const defaultTextAlign = 'left'
 
 export {
+  blockFirstLineIndentMax,
+  blockFirstLineIndentMin,
   blockLineHeightMax,
   blockLineHeightMin,
   blockMarginValues,
+  defaultBlockFirstLineIndent,
   defaultBlockLineHeight,
   defaultTextAlign,
   textAlignValues,
@@ -24,6 +30,7 @@ export type BlockMarginValue = (typeof blockMarginValues)[number]
 export type TextAlignValue = (typeof textAlignValues)[number]
 
 export type BlockLayoutAttrs = {
+  blockFirstLineIndent: number
   blockLineHeight: number
   blockMargin: BlockMarginValue
   textAlign: TextAlignValue
@@ -32,6 +39,7 @@ export type BlockLayoutAttrs = {
 declare module '@tiptap/core' {
   interface Commands<ReturnType> {
     blockLayout: {
+      setBlockFirstLineIndent: (indent: number) => ReturnType
       setBlockLineHeight: (lineHeight: number) => ReturnType
       setBlockMargin: (margin: BlockMarginValue) => ReturnType
       setBlockTextAlign: (alignment: TextAlignValue) => ReturnType
@@ -40,6 +48,7 @@ declare module '@tiptap/core' {
 }
 
 export const defaultBlockLayout: BlockLayoutAttrs = {
+  blockFirstLineIndent: defaultBlockFirstLineIndent,
   blockLineHeight: defaultBlockLineHeight,
   blockMargin: 'normal',
   textAlign: defaultTextAlign,
@@ -63,6 +72,22 @@ function normalizeBlockLineHeight(value: unknown): number {
   ) / 100
 }
 
+function normalizeBlockFirstLineIndent(value: unknown): number {
+  const parsed =
+    typeof value === 'string' && /^-?\d+(?:\.\d+)?px$/i.test(value.trim())
+      ? Number.parseFloat(value)
+      : readNumber(value)
+
+  if (parsed === null) {
+    return defaultBlockFirstLineIndent
+  }
+
+  return Math.min(
+    blockFirstLineIndentMax,
+    Math.max(blockFirstLineIndentMin, Math.round(parsed)),
+  )
+}
+
 function normalizeTextAlign(value: unknown): TextAlignValue {
   return textAlignValues.includes(value as TextAlignValue)
     ? (value as TextAlignValue)
@@ -71,6 +96,9 @@ function normalizeTextAlign(value: unknown): TextAlignValue {
 
 function getNodeBlockLayout(node: ProseMirrorNode): BlockLayoutAttrs {
   return {
+    blockFirstLineIndent: normalizeBlockFirstLineIndent(
+      node.attrs.blockFirstLineIndent,
+    ),
     blockLineHeight: normalizeBlockLineHeight(node.attrs.blockLineHeight),
     blockMargin: normalizeBlockMargin(node.attrs.blockMargin),
     textAlign: normalizeTextAlign(node.attrs.textAlign),
@@ -153,6 +181,24 @@ export const BlockLayout = Extension.create({
       {
         types: [...blockLayoutNodeTypes],
         attributes: {
+          blockFirstLineIndent: {
+            default: defaultBlockFirstLineIndent,
+            parseHTML: (element) =>
+              normalizeBlockFirstLineIndent(
+                element.getAttribute('data-block-first-line-indent') ||
+                  element.style.textIndent,
+              ),
+            renderHTML: (attributes: Partial<BlockLayoutAttrs>) => {
+              const indent = normalizeBlockFirstLineIndent(
+                attributes.blockFirstLineIndent,
+              )
+
+              return {
+                'data-block-first-line-indent': String(indent),
+                style: `text-indent: ${indent}px`,
+              }
+            },
+          },
           blockMargin: {
             default: 'normal',
             parseHTML: (element) =>
@@ -203,6 +249,12 @@ export const BlockLayout = Extension.create({
 
   addCommands() {
     return {
+      setBlockFirstLineIndent:
+        (indent) =>
+        ({ dispatch, state }) =>
+          updateSelectedBlockLayout(state, dispatch, {
+            blockFirstLineIndent: normalizeBlockFirstLineIndent(indent),
+          }),
       setBlockLineHeight:
         (lineHeight) =>
         ({ dispatch, state }) =>

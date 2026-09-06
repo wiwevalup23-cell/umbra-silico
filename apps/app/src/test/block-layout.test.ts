@@ -66,6 +66,38 @@ describe('line height on a paragraph that came in as HTML', () => {
   })
 })
 
+describe('first-line indentation', () => {
+  it('defaults to none and persists a bounded pixel value', () => {
+    const editor = createEditor()
+
+    expect(firstBlockAttrs(editor).blockFirstLineIndent).toBe(0)
+
+    editor.commands.setBlockFirstLineIndent(24)
+    expect(firstBlockAttrs(editor).blockFirstLineIndent).toBe(24)
+    expect(editor.getHTML()).toContain('data-block-first-line-indent="24"')
+    expect(editor.getHTML()).toContain('text-indent: 24px')
+
+    editor.commands.setBlockFirstLineIndent(999)
+    expect(firstBlockAttrs(editor).blockFirstLineIndent).toBe(96)
+
+    editor.commands.setBlockFirstLineIndent(-10)
+    expect(firstBlockAttrs(editor).blockFirstLineIndent).toBe(0)
+  })
+
+  it('reads indentation from pasted HTML without disturbing line spacing', () => {
+    const editor = createEditor()
+
+    editor.commands.setContent(
+      '<p style="text-indent: 32px; line-height: 1.8">pasted paragraph</p>',
+    )
+
+    expect(firstBlockAttrs(editor)).toMatchObject({
+      blockFirstLineIndent: 32,
+      blockLineHeight: 1.8,
+    })
+  })
+})
+
 describe('reading a number that may not be there', () => {
   it('tells an absent value from a zero', () => {
     // The whole point: every one of these used to read as 0, which is finite,

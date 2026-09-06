@@ -177,10 +177,8 @@
   --sn-editor-display-font: "SN Cormorant Garamond", "SN EB Garamond", Georgia, serif;
   --sn-garamond-weight: 300;
   --sn-editor-body-font: "SN EB Garamond", Georgia, serif;
-  /* The measure is set in `ch`, the width of "0" in the *current* face — so
-     every element that carries the measure has to be in the body face at the
-     body size, or it silently measures somebody else's zero. Single-sourced
-     here so the two cannot drift apart again. */
+  /* Document typography is single-sourced; page geometry is independent of
+     font metrics and is controlled by the sheet's symmetric pixel margin. */
   --sn-editor-body-size: 20px;
   --sn-compact-font: "Monaco", "Menlo", "JetBrains Mono", "Consolas", monospace;
   /* Surface ladder, in L*: paper 99.6 → panel 93.8 → app background 87.9.
@@ -2135,6 +2133,13 @@ button {
   text-align: center;
 }
 
+.sn-editor-tools-menu__hint {
+  margin: 0 0 10px;
+  color: var(--sn-muted);
+  font-size: 12px;
+  line-height: 1.4;
+}
+
 /* Two columns: short enough to stay one screenful, wide enough that each
    label reads as a phrase rather than a truncated stub. */
 .sn-editor-tools-menu__row {
@@ -2219,11 +2224,13 @@ button {
 }
 
 .sn-editor-tools-menu__number {
-  width: 74px;
+  width: 68px;
   height: 30px;
   padding: 0 8px;
   border: 1px solid rgba(28, 27, 24, 0.2);
-  border-radius: var(--sn-radius-sm);
+  border-right: 0;
+  border-left: 0;
+  border-radius: 0;
   color: var(--sn-ink);
   background: rgba(var(--sn-veil-paper-rgb), 0.88);
   box-shadow: var(--sn-field-shadow);
@@ -2243,9 +2250,60 @@ button {
 .sn-editor-page-settings__field {
   min-width: 0;
   display: grid;
-  grid-template-columns: minmax(72px, 1fr) 74px 28px;
+  grid-template-columns: minmax(88px, 1fr) auto 28px;
   align-items: center;
   gap: 7px;
+}
+
+.sn-editor-number-stepper {
+  display: grid;
+  grid-template-columns: 30px 68px 30px;
+  align-items: center;
+}
+
+.sn-editor-number-stepper input {
+  appearance: textfield;
+  text-align: center;
+}
+
+.sn-editor-number-stepper input::-webkit-inner-spin-button,
+.sn-editor-number-stepper input::-webkit-outer-spin-button {
+  margin: 0;
+  appearance: none;
+}
+
+.sn-editor-number-stepper button {
+  width: 30px;
+  height: 30px;
+  display: inline-grid;
+  place-items: center;
+  padding: 0;
+  border: 1px solid rgba(28, 27, 24, 0.2);
+  color: var(--sn-ink-soft);
+  background: rgba(var(--sn-veil-paper-rgb), 0.72);
+  font-size: 16px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.sn-editor-number-stepper button:first-child {
+  border-radius: var(--sn-radius-sm) 0 0 var(--sn-radius-sm);
+}
+
+.sn-editor-number-stepper button:last-child {
+  border-radius: 0 var(--sn-radius-sm) var(--sn-radius-sm) 0;
+}
+
+.sn-editor-number-stepper button:hover:not(:disabled),
+.sn-editor-number-stepper button:focus-visible {
+  color: var(--sn-ink);
+  background: rgba(28, 27, 24, 0.08);
+  outline: 0;
+}
+
+.sn-editor-number-stepper button:disabled {
+  opacity: 0.38;
+  cursor: default;
 }
 
 .sn-editor-page-settings__name,
@@ -2569,7 +2627,7 @@ button {
   position: relative;
   width: 100%;
   display: flex;
-  justify-content: center;
+  justify-content: flex-start;
 }
 
 .sn-block-handle {
@@ -2577,12 +2635,9 @@ button {
   /* JS sets the variable to the vertical midpoint of the active line;
      the translate keeps the cluster optically centered on it. */
   top: var(--sn-block-handle-top, 48px);
-  /* Right of the reading column, not left of it. Sitting in the left margin
-     put the controls ahead of the line the eye is about to read, which is
-     exactly where nothing should be competing for attention. Anchored off the
-     column's own half-width so it tracks the measure (И1). */
-  left: auto;
-  right: max(6px, calc(50% - 33ch - 44px));
+  /* Hang in the right paper margin so the control never steals text width. */
+  right: auto;
+  left: calc(100% + 6px);
   z-index: 8;
   display: flex;
   align-items: center;
@@ -2708,20 +2763,16 @@ button {
 .sn-page-layout-frame > .sn-editor-content {
   width: 100%;
   display: flex;
-  justify-content: center;
+  justify-content: stretch;
 }
 
 .sn-tiptap-prosemirror {
-  /* И1 is a *measure*, 60-75 characters, not a pixel width — and `ch` is the
-     width of "0" in the current face, so the cap had to be re-cut when the
-     body font became EB Garamond. Its digits are wide relative to its
-     lowercase, so the old 76ch let Latin prose run past 80 characters. */
-  width: min(100%, 66ch);
+  width: 100%;
   min-height: 680px;
-  margin: 0 auto;
+  margin: 0;
   padding:
     calc(42px + var(--sn-page-header-offset, 40px))
-    32px
+    0
     calc(58px + var(--sn-page-footer-offset, 40px));
   border: 0;
   border-radius: 0;
@@ -6545,6 +6596,7 @@ button {
 }
 
 .sn-editor-paper-sheet {
+  --sn-page-effective-side-margin: var(--sn-page-side-margin, 64px);
   width: 100% !important;
   max-width: var(--sn-editor-paper-max-width) !important;
   box-sizing: border-box !important;
@@ -6561,14 +6613,13 @@ button {
   flex: 1 0 auto !important;
   height: auto !important;
   overflow: visible !important;
-  padding: 0 var(--sn-editor-paper-inline) !important;
+  padding: 0 var(--sn-page-effective-side-margin) !important;
   border: 0 !important;
   box-shadow: none !important;
 }
 
-/* Header and body share --sn-editor-paper-inline. The leading header inset is
-   smaller by exactly the icon-plus-gap gutter, so the icon hangs in the paper
-   margin while the title begins on the body axis without a negative margin. */
+/* The application header keeps its stable chrome inset while the document
+   body uses the user-controlled, symmetric page margin below. */
 .sn-editor-paper-sheet > .sn-editor-topbar {
   width: 100% !important;
   box-sizing: border-box !important;
@@ -6663,50 +6714,33 @@ button {
   padding-left: 0 !important;
 }
 
-/* These two carry the measure, so they have to be set in the face the measure
-   counts. They were not: the column inherited the interface face at 16px,
-   where "0" is 9.02px against the body's 10.14px, so a setting of 66 characters
-   produced a column 596px wide and delivered 59. Nothing here renders text —
-   the block handle holds only icons — so the face is declared purely to make
-   `ch` mean the body's zero. */
-.sn-editor-reading-column,
-.sn-editor-reading-column > .sn-editor-content {
-  font-family: var(--sn-editor-body-font);
-  font-size: var(--sn-editor-body-size);
-}
-
 .sn-editor-reading-column {
   position: relative !important;
-  width: min(100%, var(--sn-page-measure, 66ch), 66ch) !important;
-  max-width: 66ch !important;
-  margin-left: 0 !important;
-  margin-right: auto !important;
-  padding-left: 0 !important;
+  width: 100% !important;
+  max-width: none !important;
+  margin: 0 !important;
+  padding: 0 !important;
 }
 
 .sn-editor-reading-column > .sn-editor-content {
-  width: min(100%, var(--sn-page-measure, 66ch), 66ch) !important;
+  width: 100% !important;
+  max-width: none !important;
   display: flex !important;
-  justify-content: flex-start !important;
-  margin-left: 0 !important;
-  margin-right: auto !important;
-  padding-left: 0 !important;
+  justify-content: stretch !important;
+  margin: 0 !important;
+  padding: 0 !important;
 }
 
 .sn-tiptap-prosemirror {
   min-height: 520px !important;
-  /* The user setting may make a line shorter, but never longer than the
-     typographic 66ch ceiling. The column starts at the paper's left padding;
-     spare room remains visibly on its right, like a composed paper page. */
-  width: min(100%, var(--sn-page-measure, 66ch), 66ch) !important;
+  width: 100% !important;
   max-width: none !important;
   box-sizing: border-box !important;
-  margin-left: 0 !important;
-  margin-right: auto !important;
+  margin: 0 !important;
   padding:
-    var(--sn-page-header-offset, 48px)
+    var(--sn-page-header-offset, 56px)
     0
-    var(--sn-page-footer-offset, 96px) !important;
+    var(--sn-page-footer-offset, 88px) !important;
   padding-left: 0 !important;
   line-height: var(--sn-block-line-height, 1.6);
   text-align: left;
@@ -6800,8 +6834,8 @@ button {
 
 .sn-block-handle {
   position: absolute !important;
-  right: -50px !important;
-  left: auto !important;
+  right: auto !important;
+  left: calc(100% + 6px) !important;
   margin-left: 0 !important;
   z-index: 20;
   transform: translateY(-50%) !important;

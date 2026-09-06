@@ -1,9 +1,12 @@
 export {
   BlockLayout,
+  blockFirstLineIndentMax,
+  blockFirstLineIndentMin,
   blockLineHeightMax,
   blockLineHeightMin,
   blockMarginValues,
   defaultBlockLayout,
+  defaultBlockFirstLineIndent,
   defaultBlockLineHeight,
   defaultTextAlign,
   getSelectedBlockLayout,
@@ -29,15 +32,16 @@ export {
 } from './note-editor-extensions'
 export {
   PageLayout,
+  currentPageLayoutVersion,
   defaultPageFooterOffset,
   defaultPageHeaderOffset,
   defaultPageLayout,
-  defaultPageMeasure,
+  defaultPageSideMargin,
   getPageLayout,
-  pageMeasureMax,
-  pageMeasureMin,
   pageOffsetMax,
   pageOffsetMin,
+  pageSideMarginMax,
+  pageSideMarginMin,
   type PageLayoutAttrs,
 } from './page-layout'
 export { TaskListExtensions } from './task-list'

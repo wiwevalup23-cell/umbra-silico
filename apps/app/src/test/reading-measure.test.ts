@@ -2,8 +2,11 @@
 
 import { readFileSync } from 'node:fs'
 import { describe, expect, it } from 'vitest'
+import type { NoteDocument } from '@/shared/contracts/document'
+import { normalizeEditorContent } from '@/ui/editor/document-content'
 
 const css = readFileSync(`${process.cwd()}/src/ui/styles/silicon-nostalgia.css`, 'utf8')
+const mobileCss = readFileSync(`${process.cwd()}/src/ui/styles/mobile-ui.css`, 'utf8')
 const pageLayout = readFileSync(
   `${process.cwd()}/src/ui/editor/extensions/page-layout.ts`,
   'utf8',
@@ -15,16 +18,8 @@ const editorToolbar = readFileSync(
 const printAt = css.indexOf('@media print')
 const screenCss = printAt === -1 ? css : css.slice(0, printAt)
 
-/**
- * Every rule that sets a width on the reading column, base and override.
- *
- * A declaration block holds no braces of its own, so `[^}]` stops at the right
- * one — matching to the next `\n}` would run past a rule nested in a media
- * query and pick up whatever followed it.
- */
-function columnWidthDeclarations(): string[] {
-  // Print is excluded: on paper the sheet size sets the measure, so there the
-  // column is meant to fill the page box.
+/** Every screen rule that sizes the editable body. */
+function contentWidthDeclarations(): string[] {
   return [...screenCss.matchAll(/\.sn-tiptap-prosemirror\s*\{([^}]*)\}/g)]
     .flatMap((rule) => [...rule[1].matchAll(/^\s*width:\s*([^;]+);/gm)])
     .map((match) => match[1].trim())
@@ -37,50 +32,89 @@ function lastRuleBody(selector: string): string {
   return matches.at(-1)?.[1] ?? ''
 }
 
-describe('reading measure (И1)', () => {
-  it('caps the reading column in every rule that sizes it', () => {
-    const widths = columnWidthDeclarations()
+describe('page layout policy', () => {
+  it('starts with a useful symmetric page margin', () => {
+    expect(pageLayout).toContain('const pageSideMarginMin = 48')
+    expect(pageLayout).toContain('const pageSideMarginMax = 96')
+    expect(pageLayout).toContain('const defaultPageSideMargin = 64')
+    expect(pageLayout).toContain('const currentPageLayoutVersion = 3')
+  })
 
-    expect(widths.length).toBeGreaterThan(0)
+  it('replaces every legacy line-width layout, including the stuck v2 value', () => {
+    const legacy: NoteDocument = {
+      schemaVersion: 1,
+      editor: 'tiptap',
+      content: {
+        type: 'doc',
+        attrs: {
+          pageFooterOffset: 104,
+          pageHeaderOffset: 72,
+          pageMeasure: 66,
+        },
+        content: [{ type: 'paragraph' }],
+      },
+    }
+    const intentional: NoteDocument = {
+      ...legacy,
+      content: {
+        ...legacy.content,
+        attrs: {
+          ...legacy.content.attrs,
+          pageMeasure: 66,
+          pageMeasureVersion: 2,
+        },
+      },
+    }
 
-    // This has silently regressed three times: first a later rule replaced the
-    // cap with `calc(100% - 60px)`, then with a plain `100%`. Either way the
-    // column grew with the window until a line ran past 140 characters, while
-    // the plan still claimed the measure was held. A width that sizes this
-    // element has to carry a cap, not just fill its parent.
-    for (const width of widths) {
-      // Either a literal cap or the custom property carrying one.
-      expect(width).toMatch(/\d+ch|--sn-page-measure/)
-      expect(width).toMatch(/^min\(/)
+    for (const document of [legacy, intentional]) {
+      const attrs = normalizeEditorContent(document).attrs
+
+      expect(attrs).toMatchObject({
+        pageFooterOffset: 104,
+        pageHeaderOffset: 72,
+        pageLayoutVersion: 3,
+        pageSideMargin: 64,
+      })
+      expect(attrs).not.toHaveProperty('pageMeasure')
+      expect(attrs).not.toHaveProperty('pageMeasureVersion')
     }
   })
 
-  it('sets the type size, leading and measure the invariant is written in', () => {
+  it('lets the editable body fill all space between the two page margins', () => {
+    const widths = contentWidthDeclarations()
+
+    expect(widths.length).toBeGreaterThan(0)
+    for (const width of widths) {
+      expect(width).toMatch(/^100%(?: !important)?$/)
+    }
+    expect(screenCss).not.toContain('--sn-page-measure')
+    expect(screenCss).not.toMatch(/max-width:\s*\d+ch/)
+  })
+
+  it('sets a readable default type size and leading', () => {
     const base = css.match(/\.sn-tiptap-prosemirror \{[\s\S]*?\n\}/)?.[0] ?? ''
 
-    // The size is single-sourced now, because the measure is counted in `ch`
-    // and every element carrying the measure has to be set in this face at
-    // this size or it counts somebody else's zero.
     expect(css).toContain('--sn-editor-body-size: 20px')
     expect(base).toContain('font-size: var(--sn-editor-body-size)')
-    // 1.6 with a ~63-character Cyrillic line. The tighter the leading, the
-    // shorter the line has to be for the eye to find the next one.
     expect(base).toContain('line-height: 1.6')
   })
 
-  it('measures the column in the face the text is actually set in', () => {
-    // The column and its content wrapper both carry `width: …ch`. They used to
-    // inherit the interface face at 16px, where "0" is 9.02px against the
-    // body's 10.14 — so a setting of 66 characters produced 59 of them, and
-    // the gap widened with every step up in type size.
-    // Anchored to the start of a line: the selector also appears mid-list in
-    // a neighbouring rule, and matching that one reads a body it never set.
-    const wrappers = css.match(
-      /\n\.sn-editor-reading-column,\n\.sn-editor-reading-column > \.sn-editor-content \{([^}]*)\}/,
-    )?.[1] ?? ''
+  it('applies horizontal space once, at the paper boundary', () => {
+    const paper = lastRuleBody('.sn-editor-paper')
+    const column = lastRuleBody('.sn-editor-reading-column')
+    const content = lastRuleBody('.sn-editor-reading-column > .sn-editor-content')
+    const body = lastRuleBody('.sn-tiptap-prosemirror')
 
-    expect(wrappers).toContain('font-family: var(--sn-editor-body-font)')
-    expect(wrappers).toContain('font-size: var(--sn-editor-body-size)')
+    expect(paper).toContain('padding: 0 var(--sn-page-effective-side-margin) !important')
+    for (const inner of [column, content, body]) {
+      const horizontalLonghands = [
+        ...inner.matchAll(/padding-(?:left|right):\s*([^;]+)/g),
+      ].map((match) => match[1].trim())
+
+      for (const value of horizontalLonghands) {
+        expect(value).toMatch(/^0(?:px)?(?: !important)?$/)
+      }
+    }
   })
 
   it('keeps a physical sheet centred with one symmetric desk inset', () => {
@@ -110,6 +144,7 @@ describe('reading measure (И1)', () => {
   })
 
   it('uses one paper axis without escape-width or negative-margin compensation', () => {
+    const sheet = lastRuleBody('.sn-editor-paper-sheet')
     const header = lastRuleBody('.sn-editor-paper-sheet > .sn-editor-topbar')
     const toolbar = lastRuleBody('.sn-editor-toolbar')
     const bodyPaper = lastRuleBody('.sn-editor-paper')
@@ -121,7 +156,9 @@ describe('reading measure (И1)', () => {
     expect(toolbar).toContain('min-height: 46px !important')
     expect(toolbar).toContain('padding: 8px var(--sn-editor-paper-inline) !important')
     expect(toolbar).toContain('margin: 0 !important')
-    expect(bodyPaper).toContain('padding: 0 var(--sn-editor-paper-inline) !important')
+    expect(sheet).toContain('--sn-page-effective-side-margin: var(')
+    expect(sheet).toContain('var(--sn-page-side-margin, 64px)')
+    expect(bodyPaper).toContain('padding: 0 var(--sn-page-effective-side-margin) !important')
     expect(screenCss).toMatch(
       /\.sn-editor-title-group\s*\{[^}]*margin-left: 0 !important/,
     )
@@ -142,18 +179,26 @@ describe('reading measure (И1)', () => {
     const handle = lastRuleBody('.sn-block-handle')
 
     expect(column).toContain('position: relative !important')
-    expect(column).toContain('66ch')
-    expect(column).toContain('max-width: 66ch !important')
-    expect(column).toContain('margin-left: 0 !important')
-    expect(column).toContain('margin-right: auto !important')
-    expect(column).toContain('padding-left: 0 !important')
-    expect(body).toContain('margin-left: 0 !important')
-    expect(body).toContain('margin-right: auto !important')
+    expect(column).toContain('width: 100% !important')
+    expect(column).toContain('max-width: none !important')
+    expect(column).toContain('margin: 0 !important')
+    expect(column).toContain('padding: 0 !important')
+    expect(body).toContain('width: 100% !important')
+    expect(body).toContain('max-width: none !important')
+    expect(body).toContain('margin: 0 !important')
     expect(body).toContain('text-align: left')
     expect(handle).toContain('position: absolute !important')
-    expect(handle).toContain('right: -50px !important')
-    expect(handle).toContain('left: auto !important')
+    expect(handle).toContain('right: auto !important')
+    expect(handle).toContain('left: calc(100% + 6px) !important')
     expect(handle).toContain('translateY(-50%)')
+  })
+
+  it('renders every supported value exactly on mobile too', () => {
+    expect(css).not.toContain('18%')
+    expect(mobileCss).toContain('var(--sn-page-header-offset, 56px)')
+    expect(mobileCss).toContain('var(--sn-page-footer-offset, 88px) !important')
+    expect(mobileCss).not.toContain('max(28px, var(--sn-page-header-offset')
+    expect(mobileCss).not.toContain('max(88px, var(--sn-page-footer-offset')
   })
 
   it('keeps collapse tooltips local to their live panel button', () => {
