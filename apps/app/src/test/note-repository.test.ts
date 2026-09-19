@@ -317,6 +317,32 @@ describe('DefaultNoteRepository', () => {
     await expect(repository.moveFolder(parentId, childId)).rejects.toThrow('Cannot move')
   })
 
+  it('searches all folder levels globally while retaining a distinct unfiled collection', async () => {
+    const { cleanup, repository } = createRepositoryHarness()
+    cleanupTasks.push(cleanup)
+    const parent = await repository.createFolder({ name: 'Проекты' })
+    const child = await repository.createFolder({ name: 'Черновики', parentFolderId: parent })
+    const rootNote = await repository.createNote({ title: 'Корневая', document: createDocument('янтарь') })
+    const parentNote = await repository.createNote({ parentFolderId: parent, title: 'Родительская', document: createDocument('янтарь') })
+    const childNote = await repository.createNote({ parentFolderId: child, title: 'Вложенная', document: createDocument('янтарь') })
+    const all = repository.liveNoteList({ folderId: undefined, search: 'янтарь' })
+    const unfiled = repository.liveNoteList({ folderId: null, search: 'янтарь' })
+    const scoped = repository.liveNoteList({ folderId: child, search: 'янтарь' })
+    try {
+      const allNotes = await waitForSnapshot(() => all.getSnapshot(), (notes) => notes.length === 3)
+      expect(allNotes.map((note) => note.id).sort()).toEqual([rootNote, parentNote, childNote].sort())
+      const unfiledNotes = await waitForSnapshot(() => unfiled.getSnapshot(), (notes) => notes.length === 1)
+      expect(unfiledNotes.map((note) => note.id)).toEqual([rootNote])
+      const scopedNotes = await waitForSnapshot(() => scoped.getSnapshot(), (notes) => notes.length === 1)
+      expect(scopedNotes.map((note) => note.id)).toEqual([childNote])
+      await repository.moveNoteToFolder(rootNote, child)
+      expect(await waitForSnapshot(() => unfiled.getSnapshot(), (notes) => notes.length === 0)).toEqual([])
+      expect(all.getSnapshot()).toHaveLength(3)
+    } finally {
+      all.dispose(); unfiled.dispose(); scoped.dispose()
+    }
+  })
+
   it('deletes folders by lifting direct notes and child folders to the parent', async () => {
     const { cleanup, repository } = createRepositoryHarness()
     cleanupTasks.push(cleanup)

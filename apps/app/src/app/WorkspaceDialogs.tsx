@@ -144,7 +144,7 @@ export function WorkspaceDialogs({
               },
               {
                 exportFolder,
-                parentFolderId: foldersViewModel.activeFolderId,
+                parentFolderId: foldersViewModel.activeFolderId ?? null,
                 selfParticipant,
               },
             )

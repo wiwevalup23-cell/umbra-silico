@@ -61,7 +61,7 @@ export function QuickSwitcher({
         id: 'action-new',
         label: t('switcher.newBlank'),
         run: onCreateBlank,
-        searchText: 'new blank note create page',
+        searchText: `new blank note create page ${t('switcher.newBlankKeywords')}`,
       },
       {
         description: t('switcher.newTemplateHint'),
@@ -70,7 +70,7 @@ export function QuickSwitcher({
         id: 'action-template',
         label: t('switcher.newTemplate'),
         run: onOpenTemplates,
-        searchText: 'new template daily meeting project',
+        searchText: `new template daily meeting project ${t('switcher.templateKeywords')}`,
       },
       {
         description: t('switcher.openTrashHint'),
@@ -79,7 +79,7 @@ export function QuickSwitcher({
         id: 'action-trash',
         label: t('switcher.openTrash'),
         run: onOpenTrash,
-        searchText: 'open trash deleted restore remove',
+        searchText: `open trash deleted restore remove ${t('switcher.trashKeywords')}`,
       },
       {
         description: t('switcher.settingsHint'),
@@ -88,16 +88,16 @@ export function QuickSwitcher({
         id: 'action-settings',
         label: t('shell.settings'),
         run: onOpenSettings,
-        searchText: 'settings preferences background appearance',
+        searchText: `settings preferences background appearance ${t('switcher.settingsKeywords')}`,
       },
     ]
 
+    const matches = (item: SwitcherItem) => !search ||
+      `${item.label} ${item.description} ${item.searchText}`.toLocaleLowerCase().includes(search)
     const filteredNotes = noteItems
-      .filter((item) => !search || item.searchText.includes(search))
+      .filter(matches)
       .slice(0, 7)
-    const filteredActions = actionItems.filter(
-      (item) => !search || item.searchText.includes(search),
-    )
+    const filteredActions = actionItems.filter(matches)
     return [...filteredNotes, ...filteredActions]
   }, [notes, onCreateBlank, onOpenSettings, onOpenTemplates, onOpenTrash, onSelectNote, search, t])
 
@@ -223,7 +223,7 @@ export function QuickSwitcher({
               </div>
             )
           }) : (
-            <p className="sn-command-empty">No notes or actions match “{query}”.</p>
+            <p className="sn-command-empty">{t('switcher.noMatches', { query })}</p>
           )}
         </div>
       </section>

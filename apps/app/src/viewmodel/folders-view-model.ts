@@ -6,7 +6,7 @@ import { useNoteRepository } from '@/viewmodel/repository-hooks'
 import { useSyncEngine } from '@/viewmodel/sync-engine-hooks'
 
 export type FoldersViewModel = {
-  activeFolderId: FolderId | null
+  activeFolderId: FolderId | null | undefined
   createFolder(input: { name: string; parentFolderId?: FolderId | null }): Promise<FolderId>
   deleteFolder(folderId: FolderId): Promise<void>
   folderTree: ReturnType<NoteRepository['liveFolderTree']> extends {
@@ -17,7 +17,7 @@ export type FoldersViewModel = {
   moveFolder(folderId: FolderId, parentFolderId: FolderId | null): Promise<void>
   moveNoteToFolder(noteId: NoteId, folderId: FolderId | null): Promise<void>
   renameFolder(folderId: FolderId, name: string): Promise<void>
-  selectFolder(folderId: FolderId | null): void
+  selectFolder(folderId: FolderId | null | undefined): void
 }
 
 export function useFoldersViewModel(): FoldersViewModel {
@@ -37,7 +37,7 @@ export function useFoldersViewModel(): FoldersViewModel {
       await repository.deleteFolder(folderId)
 
       if (activeFolderId === folderId) {
-        selectFolder(null)
+        selectFolder(undefined)
       }
     },
     folderTree,

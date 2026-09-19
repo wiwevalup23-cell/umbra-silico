@@ -9,6 +9,7 @@ import { getPersistencePresentation } from '@/ui/note-presentation'
 type NoteListProps = {
   activeNoteId: NoteId | null
   hasRemote?: boolean
+  isUnfiled?: boolean
   navigationSlot?: ReactNode
   notes: NoteListItem[]
   onCollapse?: () => void
@@ -24,6 +25,7 @@ type NoteListProps = {
   searchQuery?: string
   /** Folder name, or null for the whole library. */
   scopeLabel?: string | null
+  scopePath?: string
   syncStatus?: string
   trashCount?: number
 }
@@ -31,6 +33,7 @@ type NoteListProps = {
 export function NoteList({
   activeNoteId,
   hasRemote = false,
+  isUnfiled = false,
   navigationSlot,
   notes,
   onCollapse,
@@ -45,11 +48,19 @@ export function NoteList({
   pendingOperations = 0,
   searchQuery = '',
   scopeLabel = null,
+  scopePath,
   syncStatus = 'synced',
   trashCount = 0,
 }: NoteListProps) {
   const { plural, t } = useTranslation()
   const noteCountLabel = plural('library.noteCount', notes.length)
+  const searchLabel = scopeLabel
+    ? t('library.searchScope', { name: scopeLabel })
+    : t('library.searchAll')
+  const emptyTitle = isUnfiled ? 'library.emptyUnfiledTitle'
+    : scopeLabel ? 'library.emptyFolderTitle' : 'library.emptyTitle'
+  const emptyBody = isUnfiled ? 'library.emptyUnfiledBody'
+    : scopeLabel ? 'library.emptyFolderBody' : 'library.emptyBody'
   const libraryStatus = getPersistencePresentation({
     hasRemote,
     pendingOperations,
@@ -61,7 +72,15 @@ export function NoteList({
       <header className="sn-panel-heading">
         <div>
           <div className="sn-panel-heading__title-row">
-            <h2 title={scopeLabel ?? t('library.title')}>{scopeLabel ?? t('library.title')}</h2>
+            {scopePath ? (
+              <details className="sn-library-location" key={scopePath}>
+                <summary aria-label={`${scopeLabel}. ${t('library.location')}`}>
+                  <h2 title={scopePath}>{scopeLabel}</h2>
+                  <UiIcon name="chevronDown" />
+                </summary>
+                <p>{scopePath}</p>
+              </details>
+            ) : <h2>{scopeLabel ?? t('library.allNotes')}</h2>}
             <span className="sn-panel-heading__right">{noteCountLabel}</span>
           </div>
           <p className="sn-panel-status" aria-live="polite">
@@ -85,10 +104,10 @@ export function NoteList({
 
       <label className="sn-search-field">
         <UiIcon name="search" />
-        <span className="sr-only">{t('library.searchNotes')}</span>
+        <span className="sr-only">{searchLabel}</span>
         <input
           onChange={(event) => onSearchChange?.(event.target.value)}
-          placeholder={t('library.searchNotes')}
+          placeholder={searchLabel}
           type="search"
           value={searchQuery}
         />
@@ -97,11 +116,11 @@ export function NoteList({
       {notes.length === 0 ? (
         <div className="sn-empty-list">
           <UiIcon name="document" />
-          <strong>{t(searchQuery ? 'library.noMatches' : 'library.emptyTitle')}</strong>
-          <p>{t(searchQuery ? 'library.noMatchesHint' : 'library.emptyBody')}</p>
+          <strong>{t(searchQuery ? 'library.noMatches' : emptyTitle)}</strong>
+          <p>{t(searchQuery ? 'library.noMatchesHint' : emptyBody)}</p>
           {!searchQuery ? (
             <button className="sn-empty-list__action" onClick={onCreateNote} type="button">
-              New blank note
+              {t('switcher.newBlank')}
             </button>
           ) : null}
         </div>

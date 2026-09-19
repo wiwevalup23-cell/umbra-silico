@@ -156,7 +156,7 @@ function AppWorkspace() {
 
     void notesViewModel.createNote({
         ...input,
-        parentFolderId: foldersViewModel.activeFolderId,
+        parentFolderId: foldersViewModel.activeFolderId ?? null,
       })
       .then((noteId) => {
         setPendingCreatedNoteId(noteId)
@@ -182,7 +182,7 @@ function AppWorkspace() {
     setLibraryMode('notes')
     setIsHomeView(true)
     setMobileTab('editor')
-    foldersViewModel.selectFolder(null)
+    foldersViewModel.selectFolder(undefined)
     notesViewModel.selectNote(null)
   }, [foldersViewModel, notesViewModel, setMobileTab])
 
@@ -206,7 +206,7 @@ function AppWorkspace() {
 
   const handleCreateFolder = useCallback(
     (parentFolderId: typeof foldersViewModel.activeFolderId) => {
-      openOverlay({ kind: 'createFolder', parentFolderId })
+      openOverlay({ kind: 'createFolder', parentFolderId: parentFolderId ?? null })
     },
     [openOverlay],
   )
@@ -244,29 +244,32 @@ function AppWorkspace() {
 
   // Returns null when the folder is gone, rather than the label for "no
   // folder": a folder actually named "All notes" used to end the search early.
-  function findFolderName(
+  function findFolderPath(
     nodes: FolderTreeNode[],
     folderId: string | null,
-  ): string | null {
+  ): string[] | null {
     if (!folderId) return null
 
     for (const node of nodes) {
-      if (node.folder.id === folderId) return node.folder.name
+      if (node.folder.id === folderId) return [node.folder.name]
 
-      const nested = findFolderName(node.children, folderId)
+      const nested = findFolderPath(node.children, folderId)
 
-      if (nested !== null) return nested
+      if (nested !== null) return [node.folder.name, ...nested]
     }
 
     return null
   }
 
   function folderLabel(folderId: string | null): string {
-    return findFolderName(foldersViewModel.folderTree, folderId) ?? t('library.allNotes')
+    return findFolderPath(foldersViewModel.folderTree, folderId)?.at(-1) ?? t('library.unfiled')
   }
 
-  const activeFolderName = activeNote ? folderLabel(activeNote.parentFolderId) : t('library.allNotes')
-  const selectedFolderName = folderLabel(foldersViewModel.activeFolderId)
+  const activeFolderName = activeNote ? folderLabel(activeNote.parentFolderId) : t('library.unfiled')
+  const selectedFolderName = folderLabel(foldersViewModel.activeFolderId ?? null)
+  const selectedFolderPath = findFolderPath(
+    foldersViewModel.folderTree, foldersViewModel.activeFolderId ?? null,
+  )?.join(' / ')
 
   const handleRestoreNote = useCallback(
     async (noteId: NoteId) => {
@@ -399,6 +402,7 @@ function AppWorkspace() {
                 <NoteList
                   activeNoteId={notesViewModel.activeNoteId}
                   hasRemote={syncViewModel.hasRemote}
+                  isUnfiled={foldersViewModel.activeFolderId === null}
                   navigationSlot={
                     <FolderTree
                       activeFolderId={foldersViewModel.activeFolderId}
@@ -445,8 +449,9 @@ function AppWorkspace() {
                   pendingOperations={visiblePendingOperations}
                   searchQuery={searchQuery}
                   scopeLabel={
-                    foldersViewModel.activeFolderId ? selectedFolderName : null
+                    foldersViewModel.activeFolderId !== undefined ? selectedFolderName : null
                   }
+                  scopePath={selectedFolderPath}
                   syncStatus={syncViewModel.status}
                   trashCount={trashViewModel.trashedNotes.length}
                 />

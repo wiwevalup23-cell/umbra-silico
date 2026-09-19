@@ -13,6 +13,7 @@ import type { NoteDocument } from '@/shared/contracts/document'
 import type { ImageSourceResolver } from '@/shared/contracts/image'
 import type { NoteId, PlaintextLocalNote } from '@/shared/contracts/note'
 import { BlockHandle } from './BlockHandle'
+import { NoteTitleField } from './NoteTitleField'
 import { getCurrentTopLevelBlockRange } from './block-actions'
 import { createDebouncedAutosave, type AutosaveStatus } from './debounced-autosave'
 import { mergeAutosaveStatus } from './autosave-status'
@@ -572,18 +573,21 @@ export function NoteEditor({
             </span>
             <label className="sn-editor-title-label" htmlFor="sn-editor-title">
               <span className="sn-sr-only">{t('editor.noteTitle')}</span>
-              <input
+              <NoteTitleField
                 aria-label={t('editor.noteTitle')}
                 className="sn-editor-document-title sn-editor-title-input"
                 id="sn-editor-title"
+                placeholder={t('editor.noteTitle')}
+                title={titleDraft || t('editor.noteTitle')}
                 onBlur={() => {
                   void titleAutosave.flush()
                 }}
                 onChange={(event) => {
-                  setTitleDraft(event.target.value)
+                  const title = event.target.value.replace(/[\r\n]+/g, ' ')
+                  setTitleDraft(title)
                   titleAutosave.schedule({
                     noteId: note.id,
-                    title: event.target.value,
+                    title,
                   })
                 }}
                 onKeyDown={(event) => {

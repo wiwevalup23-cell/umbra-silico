@@ -35,7 +35,7 @@ export function MoveToFolderDialog({
   const { t } = useTranslation()
   const firstLocationRef = useRef<HTMLButtonElement>(null)
   const locations = useMemo<FolderLocation[]>(
-    () => [{ depth: 0, id: null, name: t('library.allNotes') }, ...flattenFolders(folders)],
+    () => [{ depth: 0, id: null, name: t('library.unfiled') }, ...flattenFolders(folders)],
     [folders, t],
   )
   const firstAvailableIndex = locations.findIndex(
@@ -58,7 +58,7 @@ export function MoveToFolderDialog({
             {t('move.description', { title: noteTitle || t('note.untitled') })}
           </p>
         </div>
-        <div className="sn-move-folder-list" role="listbox" aria-label="Folder destination">
+        <div className="sn-move-folder-list" role="listbox" aria-label={t('inspector.folder')}>
           {locations.map((location, index) => (
             <button
               aria-selected={location.id === currentFolderId}

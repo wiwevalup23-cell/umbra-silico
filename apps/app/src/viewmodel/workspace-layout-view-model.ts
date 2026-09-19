@@ -2,6 +2,31 @@ import { useCallback, useEffect, useState } from 'react'
 
 export type MobileTab = 'notes' | 'editor' | 'details'
 
+type PanelPreferences = {
+  isLibraryCollapsed: boolean
+  isInspectorCollapsed: boolean
+}
+
+const panelStorageKey = 'umbra.workspace.panels.v1'
+const defaultPanels: PanelPreferences = {
+  isLibraryCollapsed: false,
+  isInspectorCollapsed: false,
+}
+
+function readPanelPreferences(): PanelPreferences {
+  try {
+    const value = JSON.parse(window.localStorage.getItem(panelStorageKey) ?? 'null')
+    if (typeof value?.isLibraryCollapsed === 'boolean' &&
+        typeof value?.isInspectorCollapsed === 'boolean') {
+      return {
+        isLibraryCollapsed: value.isLibraryCollapsed,
+        isInspectorCollapsed: value.isInspectorCollapsed,
+      }
+    }
+  } catch { /* Storage may be unavailable; keep the in-session layout working. */ }
+  return defaultPanels
+}
+
 export type WorkspaceLayout = {
   /** Desktop wide enough for both side panels at once. */
   isCompactDesktop: boolean
@@ -50,15 +75,22 @@ export function useMediaQuery(query: string): boolean {
 export function useWorkspaceLayout(): WorkspaceLayout {
   const isCompact = useMediaQuery('(max-width: 1279px)')
   const isNarrow = useMediaQuery('(max-width: 959px)')
-  const [isLibraryCollapsed, setLibraryCollapsed] = useState(false)
-  const [isInspectorCollapsed, setInspectorCollapsed] = useState(false)
+  const [panels, setPanels] = useState(readPanelPreferences)
+  // Focus temporarily hides the panels without overwriting the user's layout.
+  const [isFocusLayout, setFocusLayout] = useState(false)
   const [isCompactInspectorOpen, setCompactInspectorOpen] = useState(false)
   const [mobileTab, setMobileTab] = useState<MobileTab>('notes')
 
   const isCompactDesktop = isCompact && !isNarrow
-  const isInspectorEffectivelyCollapsed = isCompactDesktop
+  const isInspectorEffectivelyCollapsed = isFocusLayout || (isCompactDesktop
     ? !isCompactInspectorOpen
-    : isInspectorCollapsed
+    : panels.isInspectorCollapsed)
+
+  useEffect(() => {
+    try {
+      window.localStorage.setItem(panelStorageKey, JSON.stringify(panels))
+    } catch { /* A storage failure must not prevent opening a panel. */ }
+  }, [panels])
 
   useEffect(() => {
     if (!isCompactDesktop) {
@@ -67,41 +99,43 @@ export function useWorkspaceLayout(): WorkspaceLayout {
   }, [isCompactDesktop])
 
   const collapseInspector = useCallback(() => {
+    setFocusLayout(false)
     if (isCompactDesktop) {
       setCompactInspectorOpen(false)
     } else {
-      setInspectorCollapsed(true)
+      setPanels((previous) => ({ ...previous, isInspectorCollapsed: true }))
     }
   }, [isCompactDesktop])
 
   const expandInspector = useCallback(() => {
+    setFocusLayout(false)
     if (isCompactDesktop) {
       setCompactInspectorOpen(true)
     } else {
-      setInspectorCollapsed(false)
+      setPanels((previous) => ({ ...previous, isInspectorCollapsed: false }))
     }
   }, [isCompactDesktop])
 
   const toggleFocus = useCallback(() => {
-    const shouldFocus = !(isLibraryCollapsed && isInspectorEffectivelyCollapsed)
-    setLibraryCollapsed(shouldFocus)
-
-    if (isCompactDesktop) {
-      setCompactInspectorOpen(false)
-    } else {
-      setInspectorCollapsed(shouldFocus)
-    }
-  }, [isCompactDesktop, isInspectorEffectivelyCollapsed, isLibraryCollapsed])
+    setFocusLayout((focused) => !focused)
+    setCompactInspectorOpen(false)
+  }, [])
 
   return {
     collapseInspector,
-    collapseLibrary: useCallback(() => setLibraryCollapsed(true), []),
+    collapseLibrary: useCallback(() => {
+      setFocusLayout(false)
+      setPanels((previous) => ({ ...previous, isLibraryCollapsed: true }))
+    }, []),
     expandInspector,
-    expandLibrary: useCallback(() => setLibraryCollapsed(false), []),
+    expandLibrary: useCallback(() => {
+      setFocusLayout(false)
+      setPanels((previous) => ({ ...previous, isLibraryCollapsed: false }))
+    }, []),
     isCompactDesktop,
-    isFocusLayout: isLibraryCollapsed && isInspectorEffectivelyCollapsed,
+    isFocusLayout,
     isInspectorCollapsed: isInspectorEffectivelyCollapsed,
-    isLibraryCollapsed,
+    isLibraryCollapsed: isFocusLayout || panels.isLibraryCollapsed,
     isNarrow,
     mobileTab,
     setMobileTab,

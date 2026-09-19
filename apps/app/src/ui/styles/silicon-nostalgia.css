@@ -834,6 +834,57 @@ button {
   margin-left: 2px;
 }
 
+.sn-library-location {
+  flex: 1;
+  min-width: 0;
+}
+
+.sn-library-location summary {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  list-style: none;
+}
+
+.sn-library-location summary::-webkit-details-marker {
+  display: none;
+}
+
+.sn-library-location h2 {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+  overflow-wrap: anywhere;
+}
+
+.sn-library-location h2::after {
+  display: none;
+}
+
+.sn-library-location summary > svg {
+  flex: 0 0 14px;
+  width: 14px;
+  height: 14px;
+}
+
+.sn-library-location[open] summary > svg {
+  transform: rotate(180deg);
+}
+
+.sn-library-location > p {
+  margin: 8px 0 0;
+  overflow-wrap: anywhere;
+  color: var(--sn-muted);
+}
+
+.sn-library-location summary:focus-visible,
+.sn-marker-disclosure summary:focus-visible {
+  outline: 2px solid var(--sn-ink);
+  outline-offset: 3px;
+}
+
 .sn-panel-heading__right {
   overflow: hidden;
   color: var(--sn-muted);
@@ -6441,6 +6492,50 @@ button {
   gap: 6px;
 }
 
+.sn-selected-markers {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 0;
+  margin: 0;
+  list-style: none;
+}
+
+.sn-selected-markers li {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 7px;
+  border: 1px solid var(--sn-border);
+  border-radius: 5px;
+  background: rgba(var(--sn-veil-paper-rgb), 0.7);
+  font-size: 12px;
+}
+
+.sn-selected-markers svg {
+  width: 18px;
+  height: 18px;
+}
+
+.sn-marker-disclosure summary {
+  width: fit-content;
+  padding: 6px 8px;
+  border: 1px solid var(--sn-border);
+  border-radius: 5px;
+  background: rgba(var(--sn-veil-rgb), 0.42);
+  color: var(--sn-ink);
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.sn-marker-disclosure[open] summary {
+  margin-bottom: 10px;
+}
+
+.sn-marker-disclosure .sn-property-empty {
+  margin-bottom: 8px;
+}
+
 .sn-marker-picker button {
   min-width: 0;
   min-height: 40px;
@@ -6660,6 +6755,25 @@ button {
 .sn-editor-document-title {
   font-size: clamp(34px, 2.25vw, 38px) !important;
   line-height: 1 !important;
+}
+
+textarea.sn-editor-title-input {
+  display: block;
+  resize: none;
+  overflow-y: auto;
+  overflow-wrap: anywhere;
+  line-height: 1.2 !important;
+  border-radius: 0;
+}
+
+textarea.sn-editor-title-input::placeholder {
+  color: var(--sn-muted);
+  opacity: 0.8;
+}
+
+textarea.sn-editor-title-input:focus-visible {
+  outline: 1px solid var(--sn-border-control);
+  outline-offset: 3px;
 }
 
 .sn-editor-icon {

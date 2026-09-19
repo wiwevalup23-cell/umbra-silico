@@ -4,20 +4,21 @@ import type { FolderId, NoteId } from '@/shared/contracts'
 export type SyncBadge = 'offline' | 'idle' | 'syncing' | 'conflict' | 'error'
 
 type AppUiState = {
-  activeFolderId: FolderId | null
+  /** undefined: all notes; null: unfiled; FolderId: one folder. */
+  activeFolderId: FolderId | null | undefined
   activeNoteId: NoteId | null
   lockModalNoteId: NoteId | null
   openWindows: string[]
   syncBadge: SyncBadge
   closeLockModal: () => void
   openLockModal: (noteId: NoteId) => void
-  setActiveFolder: (folderId: FolderId | null) => void
+  setActiveFolder: (folderId: FolderId | null | undefined) => void
   setActiveNote: (noteId: NoteId | null) => void
   setSyncBadge: (status: SyncBadge) => void
 }
 
 export const useAppUiStore = create<AppUiState>((set) => ({
-  activeFolderId: null,
+  activeFolderId: undefined,
   activeNoteId: null,
   lockModalNoteId: null,
   openWindows: ['workspace'],

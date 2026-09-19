@@ -57,9 +57,9 @@ afterEach(() => {
   }
 })
 
-function setInputValue(input: HTMLInputElement, value: string) {
+function setInputValue(input: HTMLInputElement | HTMLTextAreaElement, value: string) {
   const valueSetter = Object.getOwnPropertyDescriptor(
-    HTMLInputElement.prototype,
+    input instanceof HTMLTextAreaElement ? HTMLTextAreaElement.prototype : HTMLInputElement.prototype,
     'value',
   )?.set
 
@@ -224,8 +224,8 @@ describe('Umbra Silico UI shell', () => {
     cleanupTasks.push(rendered.cleanup)
 
     expect(
-      rendered.container.querySelector<HTMLInputElement>(
-        'input[aria-label="Note title"]',
+      rendered.container.querySelector<HTMLTextAreaElement>(
+        'textarea[aria-label="Note title"]',
       )?.value,
     ).toBe('Active Surface')
     expect(rendered.container.querySelector('[role="textbox"]')?.textContent).toContain(
@@ -670,8 +670,8 @@ describe('Umbra Silico UI shell', () => {
     )
     cleanupTasks.push(rendered.cleanup)
 
-    const titleInput = rendered.container.querySelector<HTMLInputElement>(
-      'input[aria-label="Note title"]',
+    const titleInput = rendered.container.querySelector<HTMLTextAreaElement>(
+      'textarea[aria-label="Note title"]',
     )
 
     await act(async () => {
@@ -789,8 +789,8 @@ describe('Umbra Silico UI shell', () => {
     )
     cleanupTasks.push(rendered.cleanup)
 
-    const titleInput = rendered.container.querySelector<HTMLInputElement>(
-      'input[aria-label="Note title"]',
+    const titleInput = rendered.container.querySelector<HTMLTextAreaElement>(
+      'textarea[aria-label="Note title"]',
     )
     const saveButton = rendered.container.querySelector<HTMLButtonElement>(
       'button[aria-label="Save note"]',

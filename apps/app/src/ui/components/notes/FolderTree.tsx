@@ -5,13 +5,13 @@ import { UiIcon } from '@/ui/icons/ui/UiIcon'
 import { useTranslation } from '@/ui/i18n/use-translation'
 
 type FolderTreeProps = {
-  activeFolderId: FolderId | null
+  activeFolderId: FolderId | null | undefined
   nodes: FolderTreeNode[]
   onCreateFolder: (parentFolderId: FolderId | null) => void
   onDeleteFolder: (folderId: FolderId) => void
   onMoveNoteToFolder: (noteId: NoteId, folderId: FolderId | null) => void
   onRenameFolder: (folderId: FolderId, currentName: string) => void
-  onSelectFolder: (folderId: FolderId | null) => void
+  onSelectFolder: (folderId: FolderId | null | undefined) => void
 }
 
 function readDraggedNoteId(event: DragEvent): NoteId | null {
@@ -174,17 +174,8 @@ export function FolderTree(props: FolderTreeProps) {
     <nav className="sn-folder-tree" aria-label={t('library.folders')}>
       <div
         className="sn-folder-tree__root"
-        data-active={props.activeFolderId === null}
+        data-active={props.activeFolderId === undefined}
         data-expanded={isFolderListExpanded}
-        onDragOver={(event) => event.preventDefault()}
-        onDrop={(event) => {
-          const noteId = readDraggedNoteId(event)
-
-          if (noteId) {
-            event.preventDefault()
-            props.onMoveNoteToFolder(noteId, null)
-          }
-        }}
       >
         {hasFolders ? (
           <button
@@ -202,7 +193,7 @@ export function FolderTree(props: FolderTreeProps) {
         ) : <span className="sn-folder-tree__twisty-space" aria-hidden="true" />}
         <button
           className="sn-folder-tree__root-select"
-          onClick={() => props.onSelectFolder(null)}
+          onClick={() => props.onSelectFolder(undefined)}
           type="button"
         >
           <UiIcon name="library" />
@@ -215,6 +206,31 @@ export function FolderTree(props: FolderTreeProps) {
           type="button"
         >
           <UiIcon name="folderPlus" />
+        </button>
+      </div>
+      <div
+        className="sn-folder-tree__root"
+        data-active={props.activeFolderId === null}
+        onDragOver={(event) => {
+          event.preventDefault()
+          event.dataTransfer.dropEffect = 'move'
+        }}
+        onDrop={(event) => {
+          const noteId = readDraggedNoteId(event)
+          if (noteId) {
+            event.preventDefault()
+            props.onMoveNoteToFolder(noteId, null)
+          }
+        }}
+      >
+        <span className="sn-folder-tree__twisty-space" aria-hidden="true" />
+        <button
+          className="sn-folder-tree__root-select"
+          onClick={() => props.onSelectFolder(null)}
+          type="button"
+        >
+          <UiIcon name="document" />
+          {t('library.unfiled')}
         </button>
       </div>
       <ul className="sn-folder-tree__list" hidden={!isFolderListExpanded} id={folderListId}>

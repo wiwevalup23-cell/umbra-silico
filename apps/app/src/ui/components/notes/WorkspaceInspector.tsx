@@ -10,6 +10,8 @@ import {
 } from '@/shared/contracts'
 import { useTranslation } from '@/ui/i18n/use-translation'
 import { UiIcon } from '@/ui/icons/ui/UiIcon'
+import { StatusGlyph } from '@/ui/icons/status/StatusGlyph'
+import { propertyMarkerOptions } from '@/ui/note-property-presentation'
 import { SquircleButton } from '@/ui/components/silicon/SquircleButton'
 import { NoteImageGallery } from './NoteImageGallery'
 import { MarkerPicker } from './MarkerPicker'
@@ -239,14 +241,28 @@ export function WorkspaceInspector({
                   <h3><UiIcon name="status" /> {t('marker.section')}</h3>
                   <span>{properties.markers.length}/13</span>
                 </div>
-                <p className="sn-property-empty">{t('marker.hint')}</p>
-                <MarkerPicker
-                  onChange={(markers) => void saveProperties({
-                    ...properties,
-                    markers,
-                  })}
-                  value={properties.markers}
-                />
+                {properties.markers.length > 0 ? (
+                  <ul className="sn-selected-markers" aria-label={t('marker.selected')}>
+                    {propertyMarkerOptions.filter((option) => properties.markers.includes(option.value))
+                      .map((option) => (
+                        <li key={option.value}>
+                          <StatusGlyph symbol={option.icon} />
+                          {t(option.labelKey)}
+                        </li>
+                      ))}
+                  </ul>
+                ) : <p className="sn-property-empty">{t('marker.none')}</p>}
+                <details className="sn-marker-disclosure" key={activeNoteId}>
+                  <summary>{t('marker.edit')}</summary>
+                  <p className="sn-property-empty">{t('marker.hint')}</p>
+                  <MarkerPicker
+                    onChange={(markers) => void saveProperties({
+                      ...properties,
+                      markers,
+                    })}
+                    value={properties.markers}
+                  />
+                </details>
               </section>
 
               <section className="sn-tags-section" aria-label={t('inspector.pageTags')}>
@@ -272,9 +288,7 @@ export function WorkspaceInspector({
                       </span>
                     ))}
                   </div>
-                ) : (
-                  <p className="sn-property-empty">{t('inspector.noTags')}</p>
-                )}
+                ) : null}
                 <form className="sn-tag-entry" onSubmit={addTag}>
                   <input
                     aria-label={t('inspector.newTag')}
@@ -317,7 +331,7 @@ export function WorkspaceInspector({
           <dl className="sn-inspector-list">
             <div>
               <dt>{t('inspector.folder')}</dt>
-              <dd><UiIcon name="folder" />{folderName ?? t('library.allNotes')}</dd>
+              <dd><UiIcon name="folder" />{folderName ?? t('library.unfiled')}</dd>
             </div>
             <div>
               <dt>{t('inspector.updated')}</dt>
