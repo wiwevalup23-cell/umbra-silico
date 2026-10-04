@@ -73,7 +73,9 @@ export function useMediaQuery(query: string): boolean {
  * site from having to re-derive which of the two flags currently applies.
  */
 export function useWorkspaceLayout(): WorkspaceLayout {
-  const isCompact = useMediaQuery('(max-width: 1279px)')
+  // 300px library + 280px inspector + frame/desk gutters leave at least
+  // 700px of paper from 1440px. At 1279/1280 the inspector stays an overlay.
+  const isCompact = useMediaQuery('(max-width: 1439px)')
   const isNarrow = useMediaQuery('(max-width: 959px)')
   const [panels, setPanels] = useState(readPanelPreferences)
   // Focus temporarily hides the panels without overwriting the user's layout.

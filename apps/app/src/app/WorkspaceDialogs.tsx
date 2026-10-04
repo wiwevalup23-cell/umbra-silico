@@ -1,5 +1,5 @@
 import { lazy, Suspense } from 'react'
-import type { NoteDetail, NoteId, NoteListItem } from '@/shared/contracts'
+import type { FolderId, NoteDetail, NoteId, NoteListItem } from '@/shared/contracts'
 import { noteTemplates, type NoteTemplateId } from '@/shared/note-templates'
 import { ConfirmationDialog, PromptDialog } from '@/ui/components/silicon'
 import { LockModal } from '@/ui/components/notes/LockModal'
@@ -56,6 +56,7 @@ export type WorkspaceDialogsProps = {
   onCreateNote: (template?: NoteTemplateId) => void
   onOpenLockedNote: (noteId: NoteId) => void
   onOpenNote: (noteId: NoteId) => void
+  onMoveNote: (noteId: NoteId, folderId: FolderId | null) => Promise<boolean>
   onOpenTrash: () => void
 }
 
@@ -76,6 +77,7 @@ export function WorkspaceDialogs({
   onOpenLockedNote,
   onOpenNote,
   onOpenTrash,
+  onMoveNote,
 }: WorkspaceDialogsProps) {
   const { t } = useTranslation()
   const overlay = useWorkspaceOverlay()
@@ -212,6 +214,29 @@ export function WorkspaceDialogs({
         />
       ) : null}
 
+      {overlay.kind === 'moveFolder' ? (() => {
+        function findFolder(nodes: FoldersViewModel['folderTree']): FoldersViewModel['folderTree'][number]['folder'] | undefined {
+          for (const node of nodes) {
+            if (node.folder.id === (overlay.kind === 'moveFolder' ? overlay.folderId : null)) return node.folder
+            const nested = findFolder(node.children)
+            if (nested) return nested
+          }
+        }
+        const folder = findFolder(foldersViewModel.folderTree)
+        return folder ? <MoveToFolderDialog
+          currentFolderId={folder.parentFolderId}
+          folders={foldersViewModel.folderTree}
+          movingFolderId={folder.id}
+          noteTitle={folder.name}
+          onCancel={close}
+          onMove={async (parentId) => {
+            await foldersViewModel.moveFolder(folder.id, parentId)
+            foldersViewModel.selectFolder(folder.id)
+            close()
+          }}
+        /> : null
+      })() : null}
+
       {overlay.kind === 'moveNote'
         ? (() => {
             const noteToMove = allNotes.find((note) => note.id === overlay.noteId)
@@ -222,8 +247,8 @@ export function WorkspaceDialogs({
                 folders={foldersViewModel.folderTree}
                 noteTitle={noteToMove.title}
                 onCancel={close}
-                onMove={(folderId) => {
-                  void foldersViewModel.moveNoteToFolder(noteToMove.id, folderId)
+                onMove={async (folderId) => {
+                  if (!await onMoveNote(noteToMove.id, folderId)) throw new Error('Move failed')
                   close()
                 }}
               />

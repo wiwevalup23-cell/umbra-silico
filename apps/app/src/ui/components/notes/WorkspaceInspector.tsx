@@ -55,7 +55,7 @@ export function WorkspaceInspector({
   onOpenSettings,
   onRevealImage,
 }: WorkspaceInspectorProps) {
-  const { formatDateTime, plural, t } = useTranslation()
+  const { formatDateTime, t } = useTranslation()
   const [activeTab, setActiveTab] = useState<InspectorTab>('properties')
   const [tagDraft, setTagDraft] = useState('')
   const [propertyError, setPropertyError] = useState<string | null>(null)
@@ -133,9 +133,6 @@ export function WorkspaceInspector({
         <div>
           <div className="sn-panel-heading__title-row">
             <h2>{t('shell.details')}</h2>
-            <span className="sn-panel-heading__right">
-              {plural('library.noteCount', noteCount)}
-            </span>
           </div>
           <p>
             {!activeNote

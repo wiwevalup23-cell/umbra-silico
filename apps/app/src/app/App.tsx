@@ -1,5 +1,6 @@
 import { lazy, Suspense, useCallback, useEffect, useRef, useState } from 'react'
 import brandEmblemUrl from '../../src-tauri/icons/128x128@2x.png'
+import { useNoteLocation } from '@/viewmodel/note-location-view-model'
 import { AppProviders } from '@/app/providers'
 import type { EditorShellApi } from '@/ui/editor'
 import { EmptyWorkspaceState } from '@/ui/components/notes/EmptyWorkspaceState'
@@ -95,6 +96,7 @@ function AppWorkspace() {
   })
   const allNotesViewModel = useNotesViewModel()
   const trashViewModel = useTrashViewModel()
+  const noteLocation = useNoteLocation()
   const activeNoteViewModel = useActiveNoteViewModel()
   const noteImagesViewModel = useNoteImagesViewModel(
     activeNoteViewModel.note && !activeNoteViewModel.note.isLocked
@@ -415,8 +417,9 @@ function AppWorkspace() {
                           name: folderLabel(folderId),
                         })
                       }}
+                      onMoveFolder={(folderId) => openOverlay({ kind: 'moveFolder', folderId })}
                       onMoveNoteToFolder={(noteId, folderId) => {
-                        void foldersViewModel.moveNoteToFolder(noteId, folderId)
+                        void noteLocation.move(noteId, folderId)
                       }}
                       onRenameFolder={(folderId, currentName) => {
                         openOverlay({ kind: 'renameFolder', folderId, currentName })
@@ -428,7 +431,9 @@ function AppWorkspace() {
                   onCollapse={isNarrow ? undefined : layout.collapseLibrary}
                   onCreateNote={handleCreateNote}
                   onDeleteNote={(noteId) => {
-                    void notesViewModel.deleteNote(noteId)
+                    void noteLocation.trash(noteId).then((success) => {
+                      if (success && notesViewModel.activeNoteId === noteId) notesViewModel.selectNote(null)
+                    })
                   }}
                   onDragNoteStart={(noteId, event) => {
                     event.dataTransfer.effectAllowed = 'move'
@@ -561,6 +566,31 @@ function AppWorkspace() {
         ) : null}
       </div>
 
+      {noteLocation.receipt || noteLocation.error ? (
+        <div className="sn-operation-receipt">
+          <span role={noteLocation.error ? 'alert' : 'status'}>
+            {noteLocation.error ? t('move.failed') : noteLocation.receipt?.kind === 'trash'
+              ? t('move.trashed')
+              : t('move.completed', { folder: findFolderPath(foldersViewModel.folderTree, noteLocation.receipt?.destination ?? null)?.join(' / ') ?? t('library.unfiled') })}
+          </span>
+          {noteLocation.receipt ? <>
+            <button type="button" disabled={noteLocation.busy} onClick={() => {
+              const receipt = noteLocation.receipt
+              void noteLocation.undo().then((success) => {
+                if (success && receipt?.kind === 'trash') handleSelectNote(receipt.noteId)
+              })
+            }}>{t('editor.undo')}</button>
+            <button type="button" disabled={noteLocation.busy} onClick={() => {
+              layout.expandLibrary()
+              setSearchQuery('')
+              if (noteLocation.receipt?.kind === 'trash') handleOpenTrash()
+              else handleSelectFolder(noteLocation.receipt?.destination ?? null)
+            }}>{t(noteLocation.receipt.kind === 'trash' ? 'switcher.openTrash' : 'move.openFolder')}</button>
+          </> : null}
+          <button type="button" disabled={noteLocation.busy} aria-label={t('action.close')} onClick={noteLocation.dismiss}>×</button>
+        </div>
+      ) : null}
+
       <WorkspaceDialogs
         activeNote={activeNote}
         allNotes={allNotesViewModel.notes}
@@ -570,6 +600,7 @@ function AppWorkspace() {
         onOpenLockedNote={handleOpenLockedNote}
         onOpenNote={handleSelectNote}
         onOpenTrash={handleOpenTrash}
+        onMoveNote={noteLocation.move}
       />
     </main>
   )

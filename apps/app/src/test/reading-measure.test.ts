@@ -214,12 +214,12 @@ describe('page layout policy', () => {
     expect(screenCss).toContain('> .sn-inspector-panel')
   })
 
-  it('keeps the complete toolbar on one horizontally scrollable row', () => {
+  it('keeps toolbar actions visible by wrapping instead of hidden horizontal scrolling', () => {
     const toolbar = lastRuleBody('.sn-editor-toolbar')
 
     expect(toolbar).toContain('display: flex !important')
-    expect(toolbar).toContain('flex-wrap: nowrap !important')
-    expect(toolbar).toContain('overflow-x: auto !important')
+    expect(toolbar).toContain('flex-wrap: wrap !important')
+    expect(toolbar).toContain('overflow: visible !important')
     expect(toolbar).toContain('align-items: center !important')
     expect(toolbar).toContain('border-bottom: 1px solid')
   })

@@ -144,7 +144,7 @@ export const en = {
   'editor.callout': 'Callout',
   'editor.inlineEquation': 'Inline equation',
   'editor.equationBlock': 'Equation block',
-  'editor.blocksPanel': 'Blocks',
+  'editor.blocksPanel': 'Block settings',
   'editor.pagePanel': 'Page settings',
   'editor.tablePanel': 'Table',
   'editor.groupText': 'Text',
@@ -410,6 +410,14 @@ export const en = {
   'template.projectHint': 'Outcome, context, next steps and open questions.',
 
   // Move note ---------------------------------------------------------------
+  'editor.insertPanel': 'Insert',
+  'editor.advancedLayout': 'Advanced · line {line}× · indent {indent}px',
+  'folder.moveTitle': 'Move folder',
+  'folder.root': 'Root folders',
+  'move.failed': 'Could not complete the operation. Check the current location and try again.',
+  'move.completed': 'Moved to {folder}',
+  'move.trashed': 'Moved to trash',
+  'move.openFolder': 'Open folder',
   'move.title': 'Move note',
   'move.heading': 'Choose a folder',
   'move.description': 'Move “{title}” to another location.',

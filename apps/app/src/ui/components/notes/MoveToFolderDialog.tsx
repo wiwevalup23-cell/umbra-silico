@@ -1,4 +1,4 @@
-import { useMemo, useRef, type CSSProperties } from 'react'
+import { useMemo, useRef, useState, type CSSProperties } from 'react'
 import type { FolderId, FolderTreeNode } from '@/shared/contracts'
 import { RetroDialogShell } from '@/ui/components/silicon'
 import { UiIcon } from '@/ui/icons/ui/UiIcon'
@@ -10,33 +10,37 @@ type FolderLocation = {
   name: string
 }
 
-function flattenFolders(nodes: FolderTreeNode[], depth = 0): FolderLocation[] {
-  return nodes.flatMap((node) => [
-    { depth, id: node.folder.id, name: node.folder.name },
-    ...flattenFolders(node.children, depth + 1),
+function flattenFolders(nodes: FolderTreeNode[], depth = 0, path: string[] = [], excluded?: FolderId): FolderLocation[] {
+  return nodes.filter((node) => node.folder.id !== excluded).flatMap((node) => [
+    { depth, id: node.folder.id, name: [...path, node.folder.name].join(' / ') },
+    ...flattenFolders(node.children, depth + 1, [...path, node.folder.name], excluded),
   ])
 }
 
 type MoveToFolderDialogProps = {
   currentFolderId: FolderId | null
   folders: FolderTreeNode[]
+  movingFolderId?: FolderId
   noteTitle: string
   onCancel: () => void
-  onMove: (folderId: FolderId | null) => void
+  onMove: (folderId: FolderId | null) => void | Promise<void>
 }
 
 export function MoveToFolderDialog({
   currentFolderId,
   folders,
+  movingFolderId,
   noteTitle,
   onCancel,
   onMove,
 }: MoveToFolderDialogProps) {
   const { t } = useTranslation()
+  const [pending, setPending] = useState(false)
+  const [error, setError] = useState(false)
   const firstLocationRef = useRef<HTMLButtonElement>(null)
   const locations = useMemo<FolderLocation[]>(
-    () => [{ depth: 0, id: null, name: t('library.unfiled') }, ...flattenFolders(folders)],
-    [folders, t],
+    () => [{ depth: 0, id: null, name: t(movingFolderId ? 'folder.root' : 'library.unfiled') }, ...flattenFolders(folders, 0, [], movingFolderId)],
+    [folders, movingFolderId, t],
   )
   const firstAvailableIndex = locations.findIndex(
     (location) => location.id !== currentFolderId,
@@ -45,28 +49,33 @@ export function MoveToFolderDialog({
   return (
     <RetroDialogShell
       className="sn-modal--move"
+      closeDisabled={pending}
       describedBy="sn-move-folder-description"
       initialFocusRef={firstLocationRef}
       labelledBy="sn-move-folder-title"
       onClose={onCancel}
-      title={t('move.title')}
+      title={t(movingFolderId ? 'folder.moveTitle' : 'move.title')}
     >
       <div className="sn-move-folder-dialog">
         <div className="sn-move-folder-dialog__intro">
-          <h3 id="sn-move-folder-title">{t('move.heading')}</h3>
+          <h3>{t('move.heading')}</h3>
           <p id="sn-move-folder-description">
             {t('move.description', { title: noteTitle || t('note.untitled') })}
           </p>
         </div>
-        <div className="sn-move-folder-list" role="listbox" aria-label={t('inspector.folder')}>
+        <div className="sn-move-folder-list" role="group" aria-label={t('inspector.folder')}>
           {locations.map((location, index) => (
             <button
-              aria-selected={location.id === currentFolderId}
-              disabled={location.id === currentFolderId}
+              aria-current={location.id === currentFolderId ? 'location' : undefined}
+              disabled={pending || location.id === currentFolderId}
               key={location.id ?? 'all-notes'}
-              onClick={() => onMove(location.id)}
+              onClick={async () => {
+                setPending(true)
+                setError(false)
+                try { await onMove(location.id) } catch { setError(true) }
+                finally { setPending(false) }
+              }}
               ref={index === firstAvailableIndex ? firstLocationRef : undefined}
-              role="option"
               style={{ '--sn-folder-depth': location.depth } as CSSProperties}
               type="button"
             >
@@ -76,6 +85,7 @@ export function MoveToFolderDialog({
             </button>
           ))}
         </div>
+        {error ? <p role="alert">{t('move.failed')}</p> : null}
       </div>
     </RetroDialogShell>
   )

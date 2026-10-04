@@ -137,7 +137,7 @@ export const ru: Dictionary = {
   'editor.callout': 'Выноска',
   'editor.inlineEquation': 'Формула в строке',
   'editor.equationBlock': 'Блок с формулой',
-  'editor.blocksPanel': 'Блоки',
+  'editor.blocksPanel': 'Настроить блок',
   'editor.pagePanel': 'Параметры листа',
   'editor.tablePanel': 'Таблица',
   'editor.groupText': 'Текст',
@@ -403,6 +403,14 @@ export const ru: Dictionary = {
   'template.projectHint': 'Результат, контекст, следующие шаги и открытые вопросы.',
 
   // Move note ---------------------------------------------------------------
+  'editor.insertPanel': 'Вставить',
+  'editor.advancedLayout': 'Дополнительно · строка {line}× · отступ {indent}px',
+  'folder.moveTitle': 'Переместить папку',
+  'folder.root': 'Корень папок',
+  'move.failed': 'Не удалось выполнить действие. Проверьте текущее расположение и повторите попытку.',
+  'move.completed': 'Перемещено в «{folder}»',
+  'move.trashed': 'Перемещено в корзину',
+  'move.openFolder': 'Открыть папку',
   'move.title': 'Переместить заметку',
   'move.heading': 'Выберите папку',
   'move.description': 'Переместить «{title}» в другое место.',

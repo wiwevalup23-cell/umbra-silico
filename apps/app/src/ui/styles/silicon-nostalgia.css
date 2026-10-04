@@ -5148,8 +5148,8 @@ button {
 :root {
   --sn-control: 42px !important;
   --sn-topbar-height: 80px !important;
-  --sidebar-width: 374px !important;
-  --inspector-width: 344px !important;
+  --sidebar-width: 300px !important;
+  --inspector-width: 280px !important;
 }
 
 .sn-app-shell {
@@ -5170,19 +5170,19 @@ button {
 
 .sn-workspace {
   grid-template-columns:
-    minmax(340px, var(--sidebar-width))
+    minmax(280px, var(--sidebar-width))
     minmax(0, 1fr)
-    minmax(320px, var(--inspector-width)) !important;
+    minmax(260px, var(--inspector-width)) !important;
   gap: 14px !important;
   padding: 14px 0 !important;
 }
 
 .sn-workspace[data-left-collapsed="true"] {
-  grid-template-columns: 60px minmax(0, 1fr) minmax(320px, var(--inspector-width)) !important;
+  grid-template-columns: 60px minmax(0, 1fr) minmax(260px, var(--inspector-width)) !important;
 }
 
 .sn-workspace[data-right-collapsed="true"] {
-  grid-template-columns: minmax(340px, var(--sidebar-width)) minmax(0, 1fr) 60px !important;
+  grid-template-columns: minmax(280px, var(--sidebar-width)) minmax(0, 1fr) 60px !important;
 }
 
 .sn-workspace[data-left-collapsed="true"][data-right-collapsed="true"] {
@@ -6187,7 +6187,7 @@ button {
 
 /* Compact desktop keeps the editor width stable. Details open as a deliberate
    overlay while the 60px rail continues to reserve a predictable edge. */
-@media (min-width: 960px) and (max-width: 1279px) {
+@media (min-width: 960px) and (max-width: 1439px) {
   .sn-workspace[data-compact="true"],
   .sn-workspace[data-compact="true"][data-right-collapsed="true"] {
     position: relative;
@@ -6204,11 +6204,12 @@ button {
 
   .sn-workspace[data-compact="true"] > .sn-inspector-panel {
     position: absolute;
-    z-index: 40;
+    z-index: 80;
     top: 14px;
     right: 0;
     bottom: 14px;
     width: min(344px, calc(100% - 28px));
+    background: var(--sn-surface-solid);
     box-shadow: 0 20px 44px rgba(28, 27, 24, 0.24);
   }
 }
@@ -6787,21 +6788,20 @@ textarea.sn-editor-title-input:focus-visible {
   /* Sticky, because the sheet scrolls inside the desk: left in the flow, the
      toolbar left with it, and formatting a word on the third screenful meant
      scrolling up, formatting, and hunting for the place again.
-     Above the compact library and inspector panels (36, 40) and the block
-     handle (20), below the modal scrim (220). */
+     Above the block handle (20), below the inspector overlay (80) and the
+     modal scrim (220). */
   position: sticky !important;
   z-index: 50 !important;
   top: var(--sn-editor-toolbar-stick, 0px) !important;
   width: 100% !important;
   box-sizing: border-box !important;
   display: flex !important;
-  flex-wrap: nowrap !important;
+  flex-wrap: wrap !important;
   align-items: center !important;
   margin: 0 !important;
   min-height: 46px !important;
   padding: 8px var(--sn-editor-paper-inline) !important;
-  overflow-x: auto !important;
-  overflow-y: hidden !important;
+  overflow: visible !important;
   /* Opaque: the paper the text is set on belongs to the sheet behind, so a
      transparent bar would have the text run visibly through it. */
   background-color: var(--sn-paper-bg) !important;
@@ -7694,4 +7694,49 @@ textarea.sn-editor-title-input:focus-visible {
 
 .sn-theme-option__accent {
   background: var(--sn-selection);
+}
+
+/* Reversible location changes remain available until dismissed or replaced. */
+.sn-operation-receipt {
+  position: fixed;
+  z-index: 210;
+  bottom: 18px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  max-width: calc(100vw - 32px);
+  width: max-content;
+  padding: 12px 16px;
+  border: 1px solid var(--sn-border-strong);
+  background: var(--sn-paper-bg, #f4f0e5);
+  color: var(--sn-ink);
+  box-shadow: 3px 3px 0 rgba(0, 0, 0, .18);
+}
+.sn-operation-receipt > span { overflow-wrap: anywhere; }
+.sn-operation-receipt button {
+  padding: 5px 9px;
+  border: 1px solid var(--sn-border-strong);
+  background: var(--sn-panel-bg, #e3e0d9);
+  color: inherit;
+  cursor: pointer;
+}
+.sn-operation-receipt button:focus-visible,
+.sn-editor-advanced summary:focus-visible { outline: 2px solid currentColor; outline-offset: 2px; }
+.sn-editor-advanced summary { cursor: pointer; padding: 10px 4px; font-size: 12px; }
+.sn-editor-advanced[open] { border-bottom: 1px solid var(--sn-border-strong); }
+.sn-move-folder-list button > span { white-space: normal; overflow-wrap: anywhere; text-align: left; }
+@media (min-width: 960px) {
+  .sn-editor-toolbar { column-gap: 6px; row-gap: 5px; padding-inline: 12px !important; }
+  .sn-editor-toolbar__divider { display: none; }
+}
+
+.sn-editor-tool-caption { display: inline-flex; align-items: center; gap: 5px; }
+.sn-note-list-shell .sn-panel-heading__title-row { flex-wrap: wrap; row-gap: 4px; }
+.sn-note-list-shell .sn-panel-heading__title-row > h2,
+.sn-note-list-shell .sn-library-location { flex-basis: 100%; }
+.sn-note-list-shell .sn-panel-heading__title-row > .sn-panel-heading__right {
+  max-width: 100%; margin-left: 0; font-size: 12px !important;
 }

@@ -149,6 +149,18 @@ describe('focus layout restoration', () => {
     },
   )
 
+  it('keeps the inspector off the paper at 1279/1280 and allows three columns at 1440', () => {
+    const h = harness(1279)
+    expect(h.layout.isCompactDesktop).toBe(true)
+    h.resize(1280)
+    expect(h.layout.isCompactDesktop).toBe(true)
+    expect(h.layout.isInspectorCollapsed).toBe(true)
+    h.resize(1439)
+    expect(h.layout.isCompactDesktop).toBe(true)
+    h.resize(1440)
+    expect(h.layout.isCompactDesktop).toBe(false)
+  })
+
   it('does not reopen a compact overlay after focus or resize', () => {
     const h = harness()
     act(() => h.layout.toggleFocus())

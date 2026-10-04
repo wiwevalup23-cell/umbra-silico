@@ -53,10 +53,11 @@ export type EditorToolbarProps = {
   onOpenMath: (kind: MathKind) => void
 }
 
-type EditorToolsPanel = 'blocks' | 'page' | 'table'
+type EditorToolsPanel = 'blocks' | 'insert' | 'page' | 'table'
 
 const editorToolsPanelIds: Record<EditorToolsPanel, string> = {
   blocks: 'sn-editor-block-settings',
+  insert: 'sn-editor-insert',
   page: 'sn-editor-page-settings',
   table: 'sn-editor-table-settings',
 }
@@ -291,8 +292,8 @@ export function EditorToolbar({
   }, [isHighlightMenuOpen, openPanel])
 
   const toolsMenuStyle = useAnchoredMenu({
-    align: 'end',
-    anchorRef: moreMenuRef,
+    align: 'start',
+    anchorRef: panelTriggerRef,
     barRef: toolbarRef,
     heightCap: 680,
     maxWidth: 440,
@@ -590,6 +591,16 @@ export function EditorToolbar({
           <CompassIcon name="pageLayout" />
         </ToolbarButton>
         <ToolbarButton
+          controls={editorToolsPanelIds.insert}
+          disabled={!editor}
+          expanded={openPanel === 'insert'}
+          label={t('editor.insertPanel')}
+          onPress={() => toggleToolsPanel('insert')}
+          pressed={openPanel === 'insert'}
+        >
+          <span className="sn-editor-tool-caption"><UiIcon name="plus" />{t('editor.insertPanel')}</span>
+        </ToolbarButton>
+        <ToolbarButton
           controls={editorToolsPanelIds.blocks}
           disabled={!editor}
           expanded={openPanel === 'blocks'}
@@ -638,6 +649,11 @@ export function EditorToolbar({
               </div>
             </div>
 
+            <details className="sn-editor-advanced">
+              <summary>{t('editor.advancedLayout', {
+                line: toolbarState.blockLayout.blockLineHeight,
+                indent: toolbarState.blockLayout.blockFirstLineIndent,
+              })}</summary>
             <div className="sn-editor-tools-menu__section" role="group">
               <span className="sn-editor-tools-menu__label">{t('editor.lineSpacing')}</span>
               <div className="sn-editor-layout-presets">
@@ -718,6 +734,8 @@ export function EditorToolbar({
               />
             </div>
 
+            </details>
+
             <div className="sn-editor-tools-menu__section" role="group">
               <span className="sn-editor-tools-menu__label">{t('editor.groupText')}</span>
               <div className="sn-editor-tools-menu__row">
@@ -743,7 +761,7 @@ export function EditorToolbar({
                 />
                 <MenuButton
                   disabled={!editor}
-                  icon={<CompassIcon name="heading2" />}
+                  icon={<span aria-hidden="true">H3</span>}
                   label={t('editor.heading3')}
                   onPress={() => { if (editor) turnInto(editor, 'heading3') }}
                 />
@@ -764,6 +782,23 @@ export function EditorToolbar({
               </div>
             </div>
 
+          </div>,
+          document.body,
+        ) : null}
+
+        {openPanel === 'insert' ? createPortal(
+          <div
+            aria-label={t('editor.insertPanel')}
+            className="sn-editor-tools-menu sn-editor-tools-menu--floating"
+            id={editorToolsPanelIds.insert}
+            onClick={(event) => {
+              if ((event.target as HTMLElement).closest('button')) setOpenPanel(null)
+            }}
+            ref={toolsMenuRef}
+            role="dialog"
+            style={toolsMenuStyle ?? { visibility: 'hidden' }}
+            tabIndex={-1}
+          >
             <div className="sn-editor-tools-menu__section" role="group">
               <span className="sn-editor-tools-menu__label">{t('editor.groupLists')}</span>
               <div className="sn-editor-tools-menu__row">

@@ -251,8 +251,8 @@ describe('P1-A visual and interaction contract', () => {
     expect(css).toContain('max-width: var(--sn-editor-paper-max-width) !important;')
     expect(css).toContain('padding: var(--sn-editor-desk-inset) !important;')
     expect(css).toContain('margin: 0 auto !important;')
-    expect(css).toContain('flex-wrap: nowrap !important;')
-    expect(css).toContain('overflow-x: auto !important;')
+    expect(css).toContain('flex-wrap: wrap !important;')
+    expect(css).toContain('overflow: visible !important;')
     expect(css).not.toContain('aspect-ratio: 210 / 297;')
     expect(css).toContain('min-height: 520px !important;')
     // The sheet is a bounded paper object. A single symmetric paper padding

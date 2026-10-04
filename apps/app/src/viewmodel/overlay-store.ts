@@ -20,6 +20,7 @@ export type WorkspaceOverlay =
   | { kind: 'renameFolder'; folderId: FolderId; currentName: string }
   | { kind: 'deleteFolder'; folderId: FolderId; name: string }
   | { kind: 'moveNote'; noteId: NoteId }
+  | { kind: 'moveFolder'; folderId: FolderId }
 
 export type OverlayKind = WorkspaceOverlay['kind']
 

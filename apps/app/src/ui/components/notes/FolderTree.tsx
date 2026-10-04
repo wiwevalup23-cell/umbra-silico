@@ -1,4 +1,5 @@
 import { useEffect, useId, useRef, useState, type CSSProperties, type DragEvent } from 'react'
+import { useFolderExpansion } from './use-folder-expansion'
 import type { FolderId, FolderTreeNode, NoteId } from '@/shared/contracts'
 import { noteDragType } from '@/ui/components/notes/note-drag'
 import { UiIcon } from '@/ui/icons/ui/UiIcon'
@@ -9,6 +10,7 @@ type FolderTreeProps = {
   nodes: FolderTreeNode[]
   onCreateFolder: (parentFolderId: FolderId | null) => void
   onDeleteFolder: (folderId: FolderId) => void
+  onMoveFolder?: (folderId: FolderId) => void
   onMoveNoteToFolder: (noteId: NoteId, folderId: FolderId | null) => void
   onRenameFolder: (folderId: FolderId, currentName: string) => void
   onSelectFolder: (folderId: FolderId | null | undefined) => void
@@ -22,20 +24,24 @@ function readDraggedNoteId(event: DragEvent): NoteId | null {
 type FolderNodeProps = Omit<FolderTreeProps, 'nodes'> & {
   node: FolderTreeNode
   level: number
+  expansion: ReturnType<typeof useFolderExpansion>
 }
 
 function FolderNode({
   activeFolderId,
+  expansion,
   level,
   node,
   onCreateFolder,
   onDeleteFolder,
+  onMoveFolder,
   onMoveNoteToFolder,
   onRenameFolder,
   onSelectFolder,
 }: FolderNodeProps) {
   const { t } = useTranslation()
-  const [isExpanded, setExpanded] = useState(true)
+  const childrenId = useId()
+  const isExpanded = expansion.isExpanded(node.folder.id)
   const [isActionsOpen, setActionsOpen] = useState(false)
   const [isDropTarget, setDropTarget] = useState(false)
   const actionsRef = useRef<HTMLDivElement>(null)
@@ -91,8 +97,10 @@ function FolderNode({
         {hasChildren ? (
           <button
             aria-label={t(isExpanded ? 'library.collapseFolder' : 'library.expandFolder')}
+            aria-expanded={isExpanded}
+            aria-controls={childrenId}
             className="sn-folder-tree__twisty"
-            onClick={() => setExpanded((expanded) => !expanded)}
+            onClick={() => expansion.toggle(node.folder.id)}
             type="button"
           >
             <UiIcon name="chevronRight" />
@@ -104,7 +112,7 @@ function FolderNode({
           type="button"
         >
           <UiIcon name="folder" />
-          <span>{node.folder.name}</span>
+          <span title={node.folder.name}>{node.folder.name}</span>
         </button>
         <span className="sn-folder-tree__count">{node.noteCount}</span>
         <div className="sn-folder-tree__actions" ref={actionsRef}>
@@ -132,6 +140,12 @@ function FolderNode({
               }} role="menuitem" type="button">
                 <UiIcon name="edit" /> {t('library.renameFolder')}
               </button>
+              {onMoveFolder ? <button onClick={() => {
+                setActionsOpen(false)
+                onMoveFolder(node.folder.id)
+              }} role="menuitem" type="button">
+                <UiIcon name="folder" /> {t('folder.moveTitle')}
+              </button> : null}
               <button className="sn-folder-tree__menu-danger" onClick={() => {
                 setActionsOpen(false)
                 onDeleteFolder(node.folder.id)
@@ -144,10 +158,12 @@ function FolderNode({
       </div>
 
       {hasChildren && isExpanded ? (
-        <ul className="sn-folder-tree__children">
+        <ul className="sn-folder-tree__children" id={childrenId}>
           {node.children.map((child) => (
             <FolderNode
               activeFolderId={activeFolderId}
+              expansion={expansion}
+              onMoveFolder={onMoveFolder}
               key={child.folder.id}
               level={level + 1}
               node={child}
@@ -167,7 +183,8 @@ function FolderNode({
 export function FolderTree(props: FolderTreeProps) {
   const { t } = useTranslation()
   const folderListId = useId()
-  const [isFolderListExpanded, setFolderListExpanded] = useState(true)
+  const expansion = useFolderExpansion(props.nodes, props.activeFolderId)
+  const isFolderListExpanded = expansion.isExpanded('root')
   const hasFolders = props.nodes.length > 0
 
   return (
@@ -185,7 +202,7 @@ export function FolderTree(props: FolderTreeProps) {
               isFolderListExpanded ? 'library.collapseFolders' : 'library.expandFolders',
             )}
             className="sn-folder-tree__twisty"
-            onClick={() => setFolderListExpanded((expanded) => !expanded)}
+            onClick={() => expansion.toggle('root')}
             type="button"
           >
             <UiIcon name="chevronRight" />
@@ -237,6 +254,7 @@ export function FolderTree(props: FolderTreeProps) {
         {props.nodes.map((node) => (
           <FolderNode
             {...props}
+            expansion={expansion}
             key={node.folder.id}
             level={0}
             node={node}

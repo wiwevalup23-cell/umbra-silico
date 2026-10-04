@@ -394,16 +394,16 @@ describe('Umbra Silico UI shell', () => {
     // Blocks, page geometry and tables get a focused panel each.
     act(() => {
       rendered.container
-        .querySelector<HTMLButtonElement>('button[aria-label="Blocks"]')
+        .querySelector<HTMLButtonElement>('button[aria-label="Block settings"]')
         ?.click()
     })
 
     // Menu items render the dictionary string they announce, so the two cannot
     // drift apart — this used to show a hardcoded "Numbered list" beside an
     // aria-label reading "Ordered list".
-    expect(globalThis.document.body.textContent).toContain('Ordered list')
-    expect(globalThis.document.body.textContent).toContain('Callout')
-    expect(globalThis.document.body.textContent).toContain('Insert table')
+    expect(globalThis.document.body.textContent).not.toContain('Insert table')
+    expect(globalThis.document.body.querySelector('details')?.open).toBe(false)
+    act(() => globalThis.document.body.querySelector('details summary')?.dispatchEvent(new MouseEvent('click', { bubbles: true })))
     expect(globalThis.document.body.textContent).toContain('Line spacing')
     expect(globalThis.document.body.textContent).toContain('First-line indent')
     expect(globalThis.document.body.textContent).not.toContain('Page margins')
@@ -614,7 +614,7 @@ describe('Umbra Silico UI shell', () => {
 
     act(() => {
       rendered.container
-        .querySelector<HTMLButtonElement>('button[aria-label="Blocks"]')
+        .querySelector<HTMLButtonElement>('button[aria-label="Insert"]')
         ?.click()
     })
 
