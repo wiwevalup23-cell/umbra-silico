@@ -53,12 +53,12 @@ export function EmptyWorkspaceState({
           onClick={onCreateNote}
           type="button"
         >
-          <UiIcon name="plus" />
+          <UiIcon className="sn-icon sn-icon--16" name="plus" />
           {t('library.newBlankNote')}
         </button>
         {onBrowseTemplates ? (
           <button onClick={onBrowseTemplates} type="button">
-            <UiIcon name="template" />
+            <UiIcon className="sn-icon sn-icon--16" name="template" />
             {t('library.browseTemplates')}
           </button>
         ) : null}

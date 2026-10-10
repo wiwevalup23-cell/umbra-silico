@@ -1,6 +1,6 @@
 # Umbra Silico Project Map
 
-Дата актуализации: 2026-07-15
+Дата актуализации: 2026-10-08 (чистка устаревших аудитов и макетов)
 
 Этот файл описывает, где что лежит в директории `umbra silico`, какие папки являются рабочими для приложения, где лежат runtime-assets, а какие папки являются макетами, исходниками, архивами или кандидатами на чистку.
 
@@ -24,7 +24,6 @@ apps/app/src/ui/icons/
 ```txt
 papers/
 PROJECT_MAP.md
-UX_review.md
 ```
 
 Все остальные корневые папки в основном являются дизайн-исходниками, макетами, референсами, архивами или бэкапами.
@@ -35,25 +34,16 @@ UX_review.md
 .
 ├── apps/                                  # Рабочее приложение
 ├── supabase/                              # SQL migrations для remote sync
-├── papers/                                # Документация, аудиты, планы
-├── backups/                               # Файловые бэкапы перед UI-правками
+├── papers/                                # Актуальные документы: мастер-промпт правок, реестр долга
+├── backups/                               # Файловые бэкапы перед UI-правками (могут содержать реальную БД)
 ├── PROJECT_MAP.md                         # Эта карта проекта
-├── UX_review.md                           # UX-аудит в корне
 ├── actual/                                # Исходный набор SVG-иконок, не runtime
-├── based_ui/                              # Старый прототип/scaffold
-├── design-taste/                          # Локальные дизайн-инструкции/skill docs
-├── elements/                              # Старый одиночный design asset
-├── fons/                                  # Исходные фоны, уже скопированы в app/public
-├── hello/                                 # Старый макет empty player / UI
-├── imagegen/                              # Локальные imagegen skill/scripts
-├── refrenses/                             # Референсы и исходники
-├── troubles/                              # Временные problem screenshots
+├── hello/                                 # Исходники плеера и надписи «hello» (не трогать)
+├── refrenses/                             # Референсы (Mac OS X и др.) и исходники
 ├── variants/                              # Большие библиотеки иконок/вариантов
-├── Анализ дизайна записной книжки/        # Старый аудит/макет
-├── Анализ дизайна записной книжки_элементы/ # Старые UI element макеты
-├── Иконка затмения с циркулем и буквой U_final/ # Исходный макет логотипа
+├── Иконка затмения с циркулем и буквой U/ # Исходный макет логотипа
 ├── архивы/                                # Zip-архивы макетов/исходников
-└── проверить/                             # Старый макет/проверочный экспорт
+└── чат экспорты/                          # Экспорты Telegram для проверки импорта
 ```
 
 ## Рабочее Приложение
@@ -256,29 +246,19 @@ apps/app/src-tauri/
 
 ```txt
 papers/
-├── Silicon_Nostalgia_App_Spec.md
-├── Silicon_Nostalgia_Phased_Implementation_Plan.md
-├── UX_review.md
-├── cross_module_debt.md          # Живой реестр межмодульного долга
-├── editor_design_review.md       # Дизайн-ревью редактора вживую
-├── editor_testing_plan.md        # План тестирования модуля редактора
-├── design_audit.md
-├── design_audit_adaptivity.md
-└── silicon_nostalgia_code_review.md
+├── Master_Prompt_UI_Fixes_2026-10-08.md  # Текущее задание на визуальные правки
+└── cross_module_debt.md                  # Живой реестр межмодульного долга
 ```
 
 `cross_module_debt.md` — не аудит и не план, а рабочий список. Запись заводится,
 когда работа внутри модуля упирается в чужой контракт, общий стилевой файл или
 словарь, и удаляется, когда правка сделана.
 
-Root docs:
-
-```txt
-UX_review.md
-PROJECT_MAP.md
-```
-
-Note: there is also `papers/UX_review.md`. If both are kept, decide which one is canonical to avoid drift.
+Старые аудиты, планы и разборы (июль–октябрь 2026: спецификация Silicon
+Nostalgia, аудиты D01–D22 и V01–V41, визуальный разбор R01–R25, брифы Claude
+Design и отчёты о переносе дизайн-системы) убраны 2026-10-08 в Корзину; то, что
+из них ещё открыто, перечислено в конце мастер-промпта. Отслеживаемые в git
+версии остаются в истории.
 
 ## Backups
 
@@ -302,23 +282,22 @@ Policy suggestion:
 
 ## Design Sources And References
 
-These folders are not imported by the current app. They are source material, old exports, references, or candidate cleanup targets.
+These folders are not imported by the current app. They are source material, references, or archives.
 
 ```txt
 actual/                                  # Original SVG icon source set
-based_ui/                                # Old UI scaffold/prototype
-elements/                                # Old design element image
-fons/                                    # Source backgrounds, copied into app/public
-hello/                                   # Old player/hello UI export
-refrenses/                               # Visual references and icon source archives
+hello/                                   # Source of the player picture and the "hello" lettering — keep
+refrenses/                               # Visual references (Mac OS X etc.) and icon source archives
 variants/                                # Large icon/design asset libraries
-Анализ дизайна записной книжки/          # Old design audit export
-Анализ дизайна записной книжки_элементы/ # Old element export
-Иконка затмения с циркулем и буквой U_final/ # Logo source/export
-проверить/                               # Old verification/export folder
+Иконка затмения с циркулем и буквой U/   # Logo source/export
 архивы/                                  # Zip archives of old source/export folders
-troubles/                                # Temporary issue screenshots
+чат экспорты/                            # Telegram exports for checking the importer
 ```
+
+Removed 2026-10-08 (to the Trash): `fons/` and `effects/` (old textures, copies
+live in `apps/app/public/assets`), `elements/`, `based_ui/`, `troubles/`,
+`проверить/`, `Анализ дизайна записной книжки/`,
+`Анализ дизайна записной книжки_элементы/`, old debug APKs.
 
 ## Tooling / Agent Support Folders
 
@@ -327,30 +306,11 @@ These are not application runtime folders.
 ```txt
 .claude/          # Local Claude/settings
 .skills/          # Local skill notes
-design-taste/     # Design-taste skill/reference notes
-imagegen/         # Imagegen skill/scripts/reference files
 ```
 
 Do not delete these unless you intentionally want to remove local assistant/tooling materials from the project folder.
 
 ## Cleanup Guidance
-
-### Safe to remove after confirming no need for source history
-
-These folders are not referenced by `apps/app` and the needed runtime assets have already been copied into `apps/app/public` or `apps/app/src`.
-
-```txt
-fons/
-hello/
-проверить/
-Анализ дизайна записной книжки/
-Анализ дизайна записной книжки_элементы/
-Иконка затмения с циркулем и буквой U_final/
-архивы/
-elements/
-based_ui/
-troubles/
-```
 
 ### Safe to remove only if you no longer need design libraries
 

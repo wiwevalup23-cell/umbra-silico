@@ -192,7 +192,8 @@ describe('P2 visual system, accessibility and brand', () => {
     expect(css).toContain('--sn-selection:')
     expect(css).toContain('--sn-pending:')
     expect(css).toContain('.sn-note-card__properties')
-    expect(css).toContain('.sn-inspector-list > div:first-child')
+    // The inspector's list is a label/value grid without row rules; dates are data.
+    expect(css).toContain('.sn-inspector-list dd.sn-inspector-list__data')
     expect(css).not.toContain('.sn-settings-range')
     expect(mobileCss).toContain('color: var(--sn-muted)')
     expect(mobileCss).toContain('font-size: 12px')

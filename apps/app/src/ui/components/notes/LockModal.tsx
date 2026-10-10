@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { RetroDialogShell } from '@/ui/components/silicon'
 import { UiIcon } from '@/ui/icons/ui/UiIcon'
 import { useTranslation } from '@/ui/i18n/use-translation'
@@ -6,13 +6,21 @@ import { useTranslation } from '@/ui/i18n/use-translation'
 // A format mask, not prose: it reads the same in every language.
 const recoveryKeyMask = 'XXXXX-XXXXX-XXXXX-XXXXX'
 
+// Mirrors `lockCredentialsSchema`: the repository refuses anything shorter.
+const minimumPasswordLength = 8
+
 export type LockModalCredentials = {
   masterPassword?: string
   recoveryKey?: string
 }
 
+/** Structurally the view model's `LockModalError`; the UI owns the wording. */
+export type LockModalErrorInput = {
+  kind: 'wrong-password' | 'wrong-recovery-key' | 'failed'
+}
+
 type LockModalProps = {
-  error?: string | null
+  error?: LockModalErrorInput | null
   isPending?: boolean
   mode: 'lock' | 'unlock'
   noteId: string
@@ -123,13 +131,15 @@ export function LockModal({
   onSubmit,
   recoveryKey = null,
 }: LockModalProps) {
-  const { t } = useTranslation()
+  const { plural, t } = useTranslation()
   const passwordInputRef = useRef<HTMLInputElement>(null)
   const [masterPassword, setMasterPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
   const [recoveryInput, setRecoveryInput] = useState('')
+  const recoveryInputRef = useRef<HTMLInputElement>(null)
   const [showPassword, setShowPassword] = useState(false)
   const [useRecoveryKey, setUseRecoveryKey] = useState(false)
+  const [isConfirmationSettled, setIsConfirmationSettled] = useState(false)
   const noteFingerprint =
     noteId.length > 18 ? `${noteId.slice(0, 3)}...${noteId.slice(-6)}` : noteId
   const noteCipherLabel = `NOTE_${noteFingerprint.toUpperCase()} · AES-GCM · NEVER LEAVES DEVICE`
@@ -140,22 +150,50 @@ export function LockModal({
   const helpText = isLocking
     ? t('lock.encryptHelp')
     : t('lock.decryptHelp')
+  // While the confirmation is still a prefix of the password the person is
+  // most likely mid-way through typing it; calling that a mismatch is noise.
+  // Once they leave the field, or type past what could still match, it counts.
   const passwordsDoNotMatch = isLocking
     && confirmPassword.length > 0
     && masterPassword !== confirmPassword
+    && (isConfirmationSettled || !masterPassword.startsWith(confirmPassword))
+  const missingPasswordCharacters = !useRecoveryKey && masterPassword.length > 0
+    ? Math.max(0, minimumPasswordLength - masterPassword.length)
+    : 0
   const canSubmit = Boolean(
     onSubmit
       && !isPending
       && (useRecoveryKey
         ? recoveryInput.trim().length > 0
-        : masterPassword.length >= 8 && (!isLocking || masterPassword === confirmPassword)),
+        : masterPassword.length >= minimumPasswordLength
+          && (!isLocking || masterPassword === confirmPassword)),
   )
+  const errorMessage = !error
+    ? null
+    : error.kind === 'wrong-recovery-key'
+      ? t('lock.wrongRecoveryKey')
+      : error.kind === 'wrong-password'
+        ? t(isLocking ? 'lock.wrongVaultPassword' : 'lock.wrongPassword')
+        : t(isLocking ? 'lock.lockFailed' : 'lock.unlockFailed')
   const describedBy = [
     'sn-lock-help',
     'sn-lock-note-fingerprint',
     error ? 'sn-lock-error' : '',
     passwordsDoNotMatch ? 'sn-lock-password-mismatch' : '',
+    missingPasswordCharacters > 0 ? 'sn-lock-password-length' : '',
   ].filter(Boolean).join(' ')
+
+  // The fields are disabled while a submit is pending, which drops focus to
+  // the page. After a refusal, put the person back in the field to retype.
+  useEffect(() => {
+    if (!error || isPending || recoveryKey) {
+      return
+    }
+
+    const field = useRecoveryKey ? recoveryInputRef.current : passwordInputRef.current
+    field?.focus()
+    field?.select()
+  }, [error, isPending, recoveryKey, useRecoveryKey])
 
   // The recovery key replaces the form entirely: the lock already succeeded,
   // and this is the only moment the key can be read.
@@ -222,6 +260,7 @@ export function LockModal({
               id="sn-lock-recovery"
               onChange={(event) => setRecoveryInput(event.target.value)}
               placeholder={recoveryKeyMask}
+              ref={recoveryInputRef}
               spellCheck={false}
               type="text"
               value={recoveryInput}
@@ -252,6 +291,11 @@ export function LockModal({
                 {t(showPassword ? 'lock.hide' : 'lock.show')}
               </button>
             </div>
+            {missingPasswordCharacters > 0 ? (
+              <p className="sn-lock-form__hint" id="sn-lock-password-length">
+                {plural('lock.passwordShortBy', missingPasswordCharacters)}
+              </p>
+            ) : null}
           </div>
         )}
 
@@ -264,6 +308,7 @@ export function LockModal({
               autoComplete="new-password"
               disabled={isPending}
               id="sn-lock-password-confirmation"
+              onBlur={() => setIsConfirmationSettled(true)}
               onChange={(event) => setConfirmPassword(event.target.value)}
               placeholder={t('lock.repeatPlaceholder')}
               type={showPassword ? 'text' : 'password'}
@@ -289,17 +334,17 @@ export function LockModal({
             className="sn-lock-form__error"
             id="sn-lock-password-mismatch"
           >
-            Passwords do not match.
+            {t('lock.passwordsMismatch')}
           </p>
         ) : null}
-        {error ? (
+        {errorMessage ? (
           <p
             aria-live="assertive"
             className="sn-lock-form__error"
             id="sn-lock-error"
             role="alert"
           >
-            {error}
+            {errorMessage}
           </p>
         ) : null}
         <code className="sn-note-fingerprint" id="sn-lock-note-fingerprint">
@@ -312,7 +357,7 @@ export function LockModal({
             title={t('action.close')}
             type="button"
           >
-            Cancel
+            {t('action.cancel')}
           </button>
           <button disabled={!canSubmit} title={title} type="submit">
             {isPending ? t('lock.working') : actionLabel}

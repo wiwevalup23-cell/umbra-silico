@@ -7,7 +7,6 @@ import type {
 } from '@/shared/contracts'
 import { RetroDialogShell } from '@/ui/components/silicon'
 import { UiIcon } from '@/ui/icons/ui/UiIcon'
-import { SquircleButton } from '@/ui/components/silicon/SquircleButton'
 import type { Translator } from '@/shared/i18n'
 import { useTranslation } from '@/ui/i18n/use-translation'
 
@@ -48,7 +47,7 @@ export function TelegramImportDialog({
   onOpenNote,
   onReadFolder,
 }: TelegramImportDialogProps) {
-  const { t } = useTranslation()
+  const { plural, t } = useTranslation()
   const fileInputRef = useRef<HTMLInputElement>(null)
   const chooseButtonRef = useRef<HTMLButtonElement>(null)
   const [exportFolder, setExportFolder] = useState<TelegramExportFolder | null>(null)
@@ -103,28 +102,19 @@ export function TelegramImportDialog({
   }
 
   return (
+    // The common window: titlebar with the dialog's name and a 36 squircle,
+    // then the task heading — not a header of its own with a mono eyebrow.
     <RetroDialogShell
-      className="sn-modal--command sn-modal--telegram-import"
+      className="sn-modal--telegram-import"
       closeDisabled={isImporting}
+      closeLabel={t('telegram.close')}
       initialFocusRef={chooseButtonRef}
       labelledBy="telegram-import-title"
       onClose={onClose}
-      showTitlebar={false}
       title={t('telegram.title')}
     >
-      <section className="sn-command-window sn-telegram-import">
-        <header className="sn-command-window__header">
-          <div>
-            <span className="sn-command-window__eyebrow">Telegram Desktop</span>
-            <h2 id="telegram-import-title">{t('telegram.heading')}</h2>
-          </div>
-          <SquircleButton
-            aria-label={t('telegram.close')}
-            disabled={isImporting}
-            icon="close"
-            onClick={onClose}
-          />
-        </header>
+      <section className="sn-telegram-import">
+        <h3 className="sn-telegram-import__heading">{t('telegram.heading')}</h3>
 
         <input
           hidden
@@ -148,26 +138,22 @@ export function TelegramImportDialog({
         {result ? (
           <div className="sn-telegram-import__result">
             <span aria-hidden="true" className="sn-telegram-import__result-icon">
-              <UiIcon height={26} name="check" width={26} />
+              <UiIcon className="sn-icon" name="check" />
             </span>
             <div>
               <strong>{t('telegram.imported')}</strong>
               <p>
-                {result.importedMessageCount} messages and{' '}
-                {result.importedAttachmentCount} attachments were saved.
+                {t('telegram.importedSummary', {
+                  attachments: result.importedAttachmentCount,
+                  messages: result.importedMessageCount,
+                })}
               </p>
               {result.skippedAttachmentCount > 0 ? (
-                <p>
-                  {result.skippedAttachmentCount} attachments could not be imported;
-                  readable placeholders were kept in the chat.
-                </p>
+                <p>{t('telegram.skippedAttachments', { count: result.skippedAttachmentCount })}</p>
               ) : null}
               {result.warnings.length > 0 ? (
                 <details className="sn-telegram-import__warnings">
-                  <summary>
-                    {result.warnings.length} import notice
-                    {result.warnings.length === 1 ? '' : 's'}
-                  </summary>
+                  <summary>{plural('telegram.noticeCount', result.warnings.length)}</summary>
                   <ul>
                     {result.warnings.slice(0, 12).map((warning) => (
                       <li key={warning}>{warning}</li>
@@ -177,40 +163,39 @@ export function TelegramImportDialog({
               ) : null}
             </div>
             <button
-              className="sn-button sn-button--primary"
+              className="sn-btn sn-btn--36 sn-btn--primary"
               onClick={() => onOpenNote(result.noteId)}
               type="button"
             >
-              Open imported chat
+              {t('telegram.openImported')}
             </button>
           </div>
         ) : (
           <>
             <div className="sn-telegram-import__instructions">
-              <UiIcon height={22} name="folder" width={22} />
+              <UiIcon className="sn-icon" name="folder" />
               <div>
                 <strong>{t('telegram.selectFolder')}</strong>
                 <p>
-                  In Telegram Desktop choose export format <b>HTML</b> and include
-                  photos/media. Umbra reads the copy you select; it never modifies
-                  the source folder.
+                  {t('telegram.instructionsBefore')} <b>HTML</b>{' '}
+                  {t('telegram.instructionsAfter')}
                 </p>
               </div>
               <button
-                className="sn-button sn-button--primary"
+                className="sn-btn sn-btn--36 sn-btn--primary"
                 disabled={isReading || isImporting}
                 onClick={() => fileInputRef.current?.click()}
                 ref={chooseButtonRef}
                 type="button"
               >
-                <UiIcon height={16} name="folder" width={16} />
+                <UiIcon className="sn-icon sn-icon--16" name="folder" />
                 {t(exportFolder ? 'telegram.chooseAnotherFolder' : 'telegram.chooseFolder')}
               </button>
             </div>
 
             {isReading ? (
               <div aria-live="polite" className="sn-telegram-import__status" role="status">
-                Reading Telegram export…
+                {t('telegram.reading')}
               </div>
             ) : null}
 
@@ -223,8 +208,10 @@ export function TelegramImportDialog({
                   <strong>{exportFolder.messages.length}</strong>
                   <span>{t('telegram.attachments')}</span>
                   <strong>
-                    {exportFolder.availableAttachmentCount}/
-                    {exportFolder.attachmentCount} available
+                    {t('telegram.attachmentsAvailable', {
+                      available: exportFolder.availableAttachmentCount,
+                      total: exportFolder.attachmentCount,
+                    })}
                   </strong>
                   <span>{t('telegram.destination')}</span>
                   <strong>{destinationLabel}</strong>
@@ -237,26 +224,22 @@ export function TelegramImportDialog({
                     value={selfParticipant}
                   >
                     <option disabled value="">
-                      Select your Telegram identity…
+                      {t('telegram.selectIdentity')}
                     </option>
                     {exportFolder.participants.map((participant) => (
                       <option key={participant.name} value={participant.name}>
-                        {participant.name} · {participant.messageCount} messages
+                        {plural('telegram.participantMessages', participant.messageCount, {
+                          name: participant.name,
+                        })}
                       </option>
                     ))}
                   </select>
-                  <small>
-                    Messages from this participant appear on the right. Everyone
-                    else appears on the left.
-                  </small>
+                  <small>{t('telegram.sidesHint')}</small>
                 </label>
 
                 {exportFolder.warnings.length > 0 ? (
                   <details className="sn-telegram-import__warnings">
-                    <summary>
-                      {exportFolder.warnings.length} import notice
-                      {exportFolder.warnings.length === 1 ? '' : 's'}
-                    </summary>
+                    <summary>{plural('telegram.noticeCount', exportFolder.warnings.length)}</summary>
                     <ul>
                       {exportFolder.warnings.slice(0, 12).map((warning) => (
                         <li key={warning}>{warning}</li>
@@ -269,7 +252,7 @@ export function TelegramImportDialog({
 
             {error ? (
               <div className="sn-telegram-import__error" role="alert">
-                <UiIcon height={16} name="info" width={16} />
+                <UiIcon className="sn-icon sn-icon--16" name="info" />
                 <span>{error}</span>
               </div>
             ) : null}
@@ -282,21 +265,21 @@ export function TelegramImportDialog({
 
             <footer className="sn-telegram-import__actions">
               <button
-                className="sn-button"
+                className="sn-btn sn-btn--36"
                 disabled={isImporting}
                 onClick={onClose}
                 type="button"
               >
-                Cancel
+                {t('action.cancel')}
               </button>
               <button
-                className="sn-button sn-button--primary"
+                className="sn-btn sn-btn--36 sn-btn--primary"
                 disabled={!exportFolder || !selfParticipant || isImporting}
                 onClick={() => void startImport()}
                 type="button"
               >
-                <UiIcon height={16} name="arrowDown" width={16} />
-                Import as a new chat
+                <UiIcon className="sn-icon sn-icon--16" name="arrowDown" />
+                {t('telegram.importSubmit')}
               </button>
             </footer>
           </>

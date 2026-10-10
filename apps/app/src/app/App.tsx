@@ -574,20 +574,28 @@ function AppWorkspace() {
               : t('move.completed', { folder: findFolderPath(foldersViewModel.folderTree, noteLocation.receipt?.destination ?? null)?.join(' / ') ?? t('library.unfiled') })}
           </span>
           {noteLocation.receipt ? <>
-            <button type="button" disabled={noteLocation.busy} onClick={() => {
+            <button className="sn-tool" type="button" disabled={noteLocation.busy} onClick={() => {
               const receipt = noteLocation.receipt
               void noteLocation.undo().then((success) => {
                 if (success && receipt?.kind === 'trash') handleSelectNote(receipt.noteId)
               })
             }}>{t('editor.undo')}</button>
-            <button type="button" disabled={noteLocation.busy} onClick={() => {
+            <button className="sn-tool" type="button" disabled={noteLocation.busy} onClick={() => {
               layout.expandLibrary()
               setSearchQuery('')
               if (noteLocation.receipt?.kind === 'trash') handleOpenTrash()
               else handleSelectFolder(noteLocation.receipt?.destination ?? null)
             }}>{t(noteLocation.receipt.kind === 'trash' ? 'switcher.openTrash' : 'move.openFolder')}</button>
           </> : null}
-          <button type="button" disabled={noteLocation.busy} aria-label={t('action.close')} onClick={noteLocation.dismiss}>×</button>
+          <button
+            aria-label={t('action.close')}
+            className="sn-tool sn-operation-receipt__close"
+            disabled={noteLocation.busy}
+            onClick={noteLocation.dismiss}
+            type="button"
+          >
+            <UiIcon className="sn-icon sn-icon--16" name="close" />
+          </button>
         </div>
       ) : null}
 

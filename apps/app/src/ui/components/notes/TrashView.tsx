@@ -59,6 +59,7 @@ export function TrashView({
           {onCollapse ? (
             <SquircleButton
               aria-label={t('library.collapse')}
+              tooltip={t('library.collapse')}
               className="sn-panel-collapse-button"
               icon="panelLeft"
               onClick={onCollapse}
@@ -69,7 +70,7 @@ export function TrashView({
 
       {notes.length === 0 ? (
         <div className="sn-empty-list">
-          <UiIcon name="trash" />
+          <UiIcon className="sn-icon" name="trash" />
           <strong>{t('trash.empty')}</strong>
           <p>{t('trash.hint')}</p>
         </div>
@@ -80,7 +81,7 @@ export function TrashView({
           <li className="sn-trash-row" key={note.id}>
             <div className="sn-trash-row__content">
               <strong>{note.title.trim() || t('note.untitled')}</strong>
-              <p>{note.isLocked ? 'Encrypted local note' : note.preview || 'No preview'}</p>
+              <p>{note.isLocked ? t('note.encryptedPreview') : note.preview || t('trash.noPreview')}</p>
               <time dateTime={note.updatedAt}>
                 {t('trash.deletedAt', { date: formatTrashDate(note.updatedAt) })}
               </time>

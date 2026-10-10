@@ -132,18 +132,17 @@
     gap: 4px !important;
   }
 
-  .sn-topbar .sn-icon-button,
-  .sn-icon-button {
-    width: 44px !important;
-    height: 44px !important;
-    min-width: 44px;
-    min-height: 44px;
+  /* Touch: every squircle grows to the 44 target — the ring is redrawn for
+     44, not stretched from 32 — and carries the 20px glyph. */
+  .sn-squircle {
+    --_size: var(--sn-size-44);
+    --_ring: var(--sn-squircle-ring-44);
   }
 
-  .sn-topbar .sn-icon-button svg,
-  .sn-icon-button svg {
-    width: 19px !important;
-    height: 19px !important;
+  .sn-squircle .sn-icon {
+    width: var(--sn-icon-20);
+    height: var(--sn-icon-20);
+    stroke-width: var(--sn-stroke-20);
   }
 
   .sn-topbar-actions .sn-icon-button[aria-label="Lock selected note"],
@@ -674,13 +673,6 @@
     gap: 2px;
   }
 
-  .sn-editor-actions .sn-icon-button {
-    width: 40px !important;
-    height: 40px !important;
-    min-width: 40px;
-    min-height: 40px;
-  }
-
   .sn-editor-toolbar {
     position: relative;
     width: 100% !important;
@@ -721,19 +713,22 @@
     padding-right: 8px;
   }
 
+  /* The width sits on the .sn-select wrapper, so its chevron stays inside
+     the field; the select fills it. */
   .sn-editor-format-field {
     height: 40px;
     flex: 0 0 auto;
+    max-width: 132px;
   }
 
-  .sn-editor-format-field select {
+  .sn-editor-format-field.sn-select select {
+    width: 100%;
     height: 38px;
-    max-width: 112px;
     font-size: 12px;
   }
 
-  .sn-editor-format-field--size select {
-    width: 48px;
+  .sn-editor-format-field--size {
+    width: 76px;
   }
 
   .sn-editor-notice {
@@ -1025,20 +1020,6 @@
 
   .sn-command-window__desktop-hint {
     display: none;
-  }
-
-  .sn-command-window__mobile-close {
-    min-width: 44px;
-    min-height: 44px;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    padding: 0 10px;
-    border: 1px solid var(--sn-border);
-    border-radius: 8px;
-    color: var(--sn-ink-soft);
-    background: var(--sn-bevel-bg);
-    box-shadow: var(--sn-bevel-shadow);
   }
 
   .sn-template-grid {

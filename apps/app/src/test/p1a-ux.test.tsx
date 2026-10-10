@@ -142,7 +142,7 @@ describe('P1-A visual and interaction contract', () => {
       `${process.cwd()}/src/ui/components/notes/FolderTree.tsx`,
       'utf8',
     )
-    expect(folderTreeSource).toContain('<UiIcon name="library" />')
+    expect(folderTreeSource).toMatch(/<UiIcon [^>]*name="library"[^>]*\/>/)
   })
 
   it('drops a dragged note onto the intended folder with move feedback', () => {
@@ -280,11 +280,17 @@ describe('P1-A visual and interaction contract', () => {
     expect(css).not.toContain('right: 12px !important;')
     expect(css).toContain('input[type="checkbox"]:checked')
     expect(css).toContain('details > :not(summary)')
-    expect(css).toContain('border-left: none !important;')
-    expect(css).toContain('border: 1px solid rgba(0, 0, 0, 0.08) !important;')
-    expect(css).toContain('background: var(--sn-bevel-bg) !important;')
-    expect(css).toContain('color: var(--sn-ink-soft) !important;')
-    expect(css).toContain('background-color: rgba(210, 180, 180, 0.15) !important;')
+    // Selection is the design system's own: the folder row takes the accent's
+    // soft tint, the active note the control edge on the squircle fill. The
+    // warm tint and the late stack of !important release overrides are gone.
+    expect(css).toMatch(
+      /\.sn-folder-tree__row\[data-active="true"\] \{\n {2}background: var\(--sn-selection-soft\);/,
+    )
+    expect(css).toMatch(
+      /\.sn-note-card\[data-active="true"\] \{\n {2}border-color: var\(--sn-control-border\);\n {2}background: var\(--sn-squircle-fill\);/,
+    )
+    expect(css).not.toContain('rgba(210, 180, 180, 0.15)')
+    expect(css).not.toMatch(/\.sn-status-picker__popover \{[^}]*!important/)
     expect(blockHandle).toContain('lineMidpoint - frameRect.top')
     expect(blockHandle).toContain("scrollContainer?.addEventListener('scroll'")
     expect(logo).toContain('translate(142.8,380.5)')

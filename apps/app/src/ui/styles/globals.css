@@ -5,7 +5,12 @@
   color: #1f2024;
   background: var(--sn-boot-bg, #f3f1ea);
   font-synthesis: none;
-  text-rendering: optimizeLegibility;
+  /* Not optimizeLegibility: the bundled faces are unhinted, and with metric
+     hinting on, FreeType (Chromium and WebKitGTK on Linux) rounds every glyph
+     advance to a whole pixel — at 12–14px that opens visible gaps inside words
+     ("Исслед ования"). geometricPrecision keeps fractional advances; kerning
+     and ligatures stay on through font-kerning/font-variant defaults. */
+  text-rendering: geometricPrecision;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
@@ -37,6 +42,15 @@ button,
 input,
 textarea {
   font: inherit;
+}
+
+/* The UA sheet resets text-rendering to auto on form controls, so they would
+   miss the root setting above — most of the chrome is buttons. */
+button,
+input,
+select,
+textarea {
+  text-rendering: inherit;
 }
 
 a {

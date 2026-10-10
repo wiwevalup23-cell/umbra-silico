@@ -464,7 +464,7 @@ export const ru: Dictionary = {
   'lock.copied': 'Скопировано',
   'lock.copyFailed': 'Не удалось скопировать',
   'lock.download': 'Скачать .txt',
-  'lock.savedConfirm': 'Я сохранил этот ключ в надёжном месте.',
+  'lock.savedConfirm': 'Ключ сохранён в надёжном месте.',
   'lock.done': 'Готово',
   'lock.masterPassword': 'Мастер-пароль',
   'lock.passwordPlaceholder': 'Минимум 8 символов',
@@ -475,6 +475,13 @@ export const ru: Dictionary = {
   'lock.useMasterPassword': 'Использовать мастер-пароль',
   'lock.useRecoveryKey': 'Использовать ключ восстановления',
   'lock.working': 'Работаем',
+  'lock.passwordsMismatch': 'Пароли не совпадают.',
+  'lock.wrongPassword': 'Пароль не подходит. Проверьте раскладку и Caps Lock.',
+  'lock.wrongVaultPassword':
+    'Это не мастер-пароль. Все заметки запираются одним паролем — тем, что вы задали при первой блокировке.',
+  'lock.wrongRecoveryKey': 'Ключ восстановления не подходит. Проверьте, что он введён полностью.',
+  'lock.lockFailed': 'Не удалось заблокировать заметку. Попробуйте ещё раз.',
+  'lock.unlockFailed': 'Не удалось разблокировать заметку. Попробуйте ещё раз.',
 
   // Chat --------------------------------------------------------------------
   'chat.today': 'Сегодня',
@@ -513,6 +520,16 @@ export const ru: Dictionary = {
   'chat.pin': 'Закрепить',
   'chat.unpin': 'Открепить',
   'chat.edit': 'Изменить',
+  'chat.pinnedOnly': 'Закреплённые',
+  'chat.import': 'Импорт',
+  'chat.foundCount': 'Найдено: {count}',
+  'chat.showEarlier': 'Показать ранние сообщения ({count})',
+  'chat.emptyBody': 'Складывайте сюда мысли, ссылки и картинки — как в «Избранном» мессенджера.',
+  'chat.emptyHint': 'Перетащите · вставьте · Enter отправляет',
+  'chat.clearFilters': 'Сбросить фильтры',
+  'chat.pinnedMark': 'закреплено',
+  'chat.editedMark': 'изменено',
+  'chat.cancelEditingHint': 'Отменить (Esc)',
 
   // Telegram import ---------------------------------------------------------
   'telegram.title': 'Импорт чата из Telegram',
@@ -532,6 +549,18 @@ export const ru: Dictionary = {
   'telegram.attachments': 'Вложения',
   'telegram.destination': 'Куда',
   'telegram.whichParticipant': 'Кто из участников — вы?',
+  'telegram.instructionsBefore': 'В Telegram Desktop выберите формат экспорта',
+  'telegram.instructionsAfter':
+    'и включите фото и медиа. Umbra читает выбранную копию и никогда не меняет исходную папку.',
+  'telegram.reading': 'Читаем экспорт Telegram…',
+  'telegram.attachmentsAvailable': 'доступно {available} из {total}',
+  'telegram.selectIdentity': 'Выберите себя среди участников…',
+  'telegram.sidesHint': 'Сообщения этого участника будут справа, остальных — слева.',
+  'telegram.importSubmit': 'Импортировать как новый чат',
+  'telegram.openImported': 'Открыть импортированный чат',
+  'telegram.importedSummary': 'Сохранено сообщений: {messages}, вложений: {attachments}.',
+  'telegram.skippedAttachments':
+    'Не удалось импортировать вложений: {count}. В чате остались понятные заглушки.',
 
   // Folders -----------------------------------------------------------------
   'folder.window': 'Папка',
@@ -553,12 +582,25 @@ export const ru: Dictionary = {
   // Generic -----------------------------------------------------------------
   'dialog.confirmAction': 'Подтвердите действие',
   'trash.deletedAt': 'Удалена {date}',
+  'trash.noPreview': 'Без текста',
   'action.cancel': 'Отмена',
   'action.close': 'Закрыть',
 }
 
 export const ruPlurals: PluralDictionary = {
   // Russian needs three forms: 1 заметка, 2–4 заметки, 5+ заметок.
+  'telegram.noticeCount': {
+    one: '{count} замечание при импорте',
+    few: '{count} замечания при импорте',
+    many: '{count} замечаний при импорте',
+    other: '{count} замечания при импорте',
+  },
+  'telegram.participantMessages': {
+    one: '{name} · {count} сообщение',
+    few: '{name} · {count} сообщения',
+    many: '{name} · {count} сообщений',
+    other: '{name} · {count} сообщения',
+  },
   'library.noteCount': {
     one: '{count} заметка',
     few: '{count} заметки',
@@ -570,5 +612,11 @@ export const ruPlurals: PluralDictionary = {
     few: '{count} удалённые заметки',
     many: '{count} удалённых заметок',
     other: '{count} удалённой заметки',
+  },
+  'lock.passwordShortBy': {
+    one: 'Ещё {count} символ — пароль должен быть не короче 8',
+    few: 'Ещё {count} символа — пароль должен быть не короче 8',
+    many: 'Ещё {count} символов — пароль должен быть не короче 8',
+    other: 'Ещё {count} символа — пароль должен быть не короче 8',
   },
 }

@@ -482,6 +482,14 @@ export const en = {
   'lock.useMasterPassword': 'Use master password instead',
   'lock.useRecoveryKey': 'Use a recovery key instead',
   'lock.working': 'Working',
+  'lock.passwordsMismatch': 'Passwords do not match.',
+  'lock.wrongPassword':
+    "That password doesn't open your notes. Check the keyboard layout and Caps Lock.",
+  'lock.wrongVaultPassword':
+    "That isn't your master password. Every note locks with the same one — the password set at your first lock.",
+  'lock.wrongRecoveryKey': "That recovery key doesn't open your notes. Check that it is complete.",
+  'lock.lockFailed': "Couldn't lock the note. Please try again.",
+  'lock.unlockFailed': "Couldn't unlock the note. Please try again.",
 
   // Chat --------------------------------------------------------------------
   'chat.today': 'Today',
@@ -520,6 +528,16 @@ export const en = {
   'chat.pin': 'Pin',
   'chat.unpin': 'Unpin',
   'chat.edit': 'Edit',
+  'chat.pinnedOnly': 'Pinned',
+  'chat.import': 'Import',
+  'chat.foundCount': '{count} found',
+  'chat.showEarlier': 'Show earlier messages ({count})',
+  'chat.emptyBody': 'Drop thoughts, links and images here the way you would in your saved-messages chat.',
+  'chat.emptyHint': 'Drop · paste · Enter sends',
+  'chat.clearFilters': 'Clear filters',
+  'chat.pinnedMark': 'pinned',
+  'chat.editedMark': 'edited',
+  'chat.cancelEditingHint': 'Cancel (Esc)',
 
   // Telegram import ---------------------------------------------------------
   'telegram.title': 'Import Telegram chat',
@@ -539,6 +557,19 @@ export const en = {
   'telegram.attachments': 'Attachments',
   'telegram.destination': 'Destination',
   'telegram.whichParticipant': 'Which participant is you?',
+  'telegram.instructionsBefore': 'In Telegram Desktop choose export format',
+  'telegram.instructionsAfter':
+    'and include photos/media. Umbra reads the copy you select; it never modifies the source folder.',
+  'telegram.reading': 'Reading Telegram export…',
+  'telegram.attachmentsAvailable': '{available} of {total} available',
+  'telegram.selectIdentity': 'Select your Telegram identity…',
+  'telegram.sidesHint':
+    'Messages from this participant appear on the right. Everyone else appears on the left.',
+  'telegram.importSubmit': 'Import as a new chat',
+  'telegram.openImported': 'Open imported chat',
+  'telegram.importedSummary': 'Messages saved: {messages}. Attachments saved: {attachments}.',
+  'telegram.skippedAttachments':
+    'Attachments not imported: {count}. Readable placeholders were kept in the chat.',
 
   // Folders -----------------------------------------------------------------
   'folder.window': 'Folder',
@@ -558,13 +589,23 @@ export const en = {
   // Generic -----------------------------------------------------------------
   'dialog.confirmAction': 'Confirm action',
   'trash.deletedAt': 'Deleted {date}',
+  'trash.noPreview': 'No text',
   'action.cancel': 'Cancel',
   'action.close': 'Close',
 } as const satisfies Record<string, string>
 
 export const enPlurals = {
+  'telegram.noticeCount': { one: '{count} import notice', other: '{count} import notices' },
+  'telegram.participantMessages': {
+    one: '{name} · {count} message',
+    other: '{name} · {count} messages',
+  },
   'library.noteCount': { one: '{count} note', other: '{count} notes' },
   'library.trashCount': { one: '{count} deleted note', other: '{count} deleted notes' },
+  'lock.passwordShortBy': {
+    one: '{count} more character — the password needs at least 8',
+    other: '{count} more characters — the password needs at least 8',
+  },
 } as const satisfies Record<string, PluralMessage>
 
 export type MessageKey = keyof typeof en

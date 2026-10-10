@@ -317,7 +317,7 @@ export function BlockHandle({
   const floatingMenu = activeMenu
     ? createPortal(
         <div
-          className={`sn-block-handle-menu sn-block-handle-menu--floating${
+          className={`sn-block-handle-menu sn-block-handle-menu--floating sn-menu${
             activeMenu === 'actions' ? ' sn-block-handle-menu--wide' : ''
           }`}
           ref={menuRef}
@@ -326,71 +326,83 @@ export function BlockHandle({
         >
           {activeMenu === 'insert' ? (
             <>
+              <span className="sn-menu__group">{t('block.insert')}</span>
               {insertTargets.map((item) => (
                 <button
+                  className="sn-menu-item"
                   key={item.target}
                   onClick={() =>
                     runAction(() => insertBlockBelow(editor, item.target))
                   }
+                  role="menuitem"
                   type="button"
                 >
-                  {t(item.labelKey)}
+                  <span className="sn-menu-item__label">{t(item.labelKey)}</span>
                 </button>
               ))}
               {onInsertImage ? (
                 <button
+                  className="sn-menu-item"
                   key="image"
                   onClick={() => runAction(() => onInsertImage())}
+                  role="menuitem"
                   type="button"
                 >
-                  {t('block.image')}
+                  <span className="sn-menu-item__label">{t('block.image')}</span>
                 </button>
               ) : null}
             </>
           ) : (
             <>
-              <div className="sn-block-handle-menu__grid">
-                <button
-                  onClick={() => runAction(() => duplicateCurrentBlock(editor))}
-                  type="button"
-                >
-                  <UiIcon name="copy" />
-                  {t('block.duplicate')}
-                </button>
-                <button
-                  onClick={() => runAction(() => deleteCurrentBlock(editor))}
-                  type="button"
-                >
-                  <UiIcon name="trash" />
-                  {t('block.delete')}
-                </button>
-                <button
-                  onClick={() => runAction(() => moveCurrentBlock(editor, 'up'))}
-                  type="button"
-                >
-                  <UiIcon name="arrowUp" />
-                  {t('block.moveUp')}
-                </button>
-                <button
-                  onClick={() => runAction(() => moveCurrentBlock(editor, 'down'))}
-                  type="button"
-                >
-                  <UiIcon name="arrowDown" />
-                  {t('block.moveDown')}
-                </button>
-              </div>
-              <span className="sn-block-handle-menu__label">{t('block.turnInto')}</span>
+              {/* One menu, one rule: no glyphs here, because the "turn into"
+                  rows have none. Delete is last, after a separator. */}
+              <button
+                className="sn-menu-item"
+                onClick={() => runAction(() => duplicateCurrentBlock(editor))}
+                role="menuitem"
+                type="button"
+              >
+                <span className="sn-menu-item__label">{t('block.duplicate')}</span>
+              </button>
+              <button
+                className="sn-menu-item"
+                onClick={() => runAction(() => moveCurrentBlock(editor, 'up'))}
+                role="menuitem"
+                type="button"
+              >
+                <span className="sn-menu-item__label">{t('block.moveUp')}</span>
+              </button>
+              <button
+                className="sn-menu-item"
+                onClick={() => runAction(() => moveCurrentBlock(editor, 'down'))}
+                role="menuitem"
+                type="button"
+              >
+                <span className="sn-menu-item__label">{t('block.moveDown')}</span>
+              </button>
+              <span className="sn-block-handle-menu__label sn-menu__group">{t('block.turnInto')}</span>
               <div className="sn-block-handle-menu__turn-grid">
                 {turnTargets.map((item) => (
                   <button
+                    className="sn-menu-item"
                     key={item.target}
                     onClick={() => runAction(() => turnInto(editor, item.target))}
+                    role="menuitem"
                     type="button"
                   >
-                    {t(item.labelKey)}
+                    <span className="sn-menu-item__label">{t(item.labelKey)}</span>
                   </button>
                 ))}
               </div>
+              <div className="sn-menu__sep" role="separator" />
+              <button
+                className="sn-menu-item sn-menu-item--danger"
+                onClick={() => runAction(() => deleteCurrentBlock(editor))}
+                role="menuitem"
+                type="button"
+              >
+                <span className="sn-menu-item__label">{t('block.delete')}</span>
+              </button>
             </>
           )}
         </div>,
@@ -407,16 +419,16 @@ export function BlockHandle({
       >
         <button
           aria-label={t('block.insert')}
-          className="sn-block-handle__button sn-block-handle__button--insert"
+          className="sn-block-handle__button sn-block-handle__button--insert sn-tool"
           onClick={() => setActiveMenu((menu) => (menu === 'insert' ? null : 'insert'))}
           title={t('block.insert')}
           type="button"
         >
-          <UiIcon name="plus" />
+          <UiIcon className="sn-icon sn-icon--16" name="plus" />
         </button>
         <button
           aria-label={t('block.actions')}
-          className="sn-block-handle__button sn-block-handle__button--grip"
+          className="sn-block-handle__button sn-block-handle__button--grip sn-tool"
           draggable
           onClick={() => setActiveMenu((menu) => (menu === 'actions' ? null : 'actions'))}
           onDragEnd={() => {
@@ -436,7 +448,7 @@ export function BlockHandle({
           title={t('block.actions')}
           type="button"
         >
-          <UiIcon name="gripVertical" />
+          <UiIcon className="sn-icon sn-icon--16" name="gripVertical" />
         </button>
       </div>
       {floatingMenu}

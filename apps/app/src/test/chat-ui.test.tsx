@@ -72,6 +72,11 @@ describe('saved messages UI', () => {
 
     expect(toolsButton?.classList.contains('sn-chat-titlebar__control')).toBe(true)
     expect(lockButton?.classList.contains('sn-chat-titlebar__control')).toBe(true)
+    // Both are the design system's 36 squircle, like every window's close.
+    for (const control of [toolsButton, lockButton]) {
+      expect(control?.classList.contains('sn-squircle')).toBe(true)
+      expect(control?.classList.contains('sn-squircle--36')).toBe(true)
+    }
     expect(container.querySelector('.sn-chat-tools')).toBeNull()
 
     act(() => toolsButton?.click())
@@ -90,15 +95,14 @@ describe('saved messages UI', () => {
 
   it('keeps date markers quiet and centers composer controls with its input', () => {
     const css = readFileSync(`${process.cwd()}/src/ui/styles/chat.css`, 'utf8')
-    const titlebarControlRule = css.match(/\.sn-chat-titlebar__control \{([\s\S]*?)\n\}/)?.[1]
     const dateChipRule = css.match(/\.sn-chat-day__chip \{([\s\S]*?)\n\}/)?.[1]
     const composerRule = css.match(/\.sn-chat-composer \{([\s\S]*?)\n\}/)?.[1]
 
-    expect(titlebarControlRule).toMatch(/width:\s*38px/)
-    expect(titlebarControlRule).toMatch(/height:\s*38px/)
-    expect(dateChipRule).toMatch(/border:\s*1px solid rgba\(28, 27, 24, 0\.14\)/)
-    expect(dateChipRule).toMatch(/color:\s*var\(--sn-muted-2\)/)
-    expect(dateChipRule).toMatch(/font-size:\s*9px/)
+    // The day is data (11px mono) on a hairline, not 9px tape lettering.
+    expect(dateChipRule).toMatch(/border:\s*1px solid var\(--sn-line\)/)
+    expect(dateChipRule).toMatch(/color:\s*var\(--sn-muted\)/)
+    expect(dateChipRule).toMatch(/font:\s*var\(--sn-type-data\)/)
+    expect(dateChipRule).not.toMatch(/font-size:\s*9px/)
     expect(composerRule).toMatch(/align-items:\s*center/)
   })
 

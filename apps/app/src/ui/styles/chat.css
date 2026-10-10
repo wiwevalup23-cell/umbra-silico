@@ -14,6 +14,8 @@
   color: var(--sn-muted);
 }
 
+/* The chat window sits on the desk like the sheet: a hairline edge and the
+   card radius, no shadow of its own. */
 .sn-chat-shell {
   width: calc(100% - 40px);
   height: calc(100% - 40px);
@@ -22,10 +24,10 @@
   min-height: 0;
   margin: 20px;
   background: var(--sn-editor-base);
-  border: 1px solid rgba(28, 27, 24, 0.4);
-  border-radius: 14px;
+  border: 1px solid var(--sn-line);
+  border-radius: var(--sn-radius-card);
   overflow: hidden;
-  box-shadow: var(--sn-shadow-panel);
+  box-shadow: none;
 }
 
 /* Titlebar: same chrome family as the lock dialog — ridges, gradient cap,
@@ -34,98 +36,54 @@
 .sn-chat-titlebar {
   position: relative;
   z-index: 10;
-  min-height: 56px;
+  min-height: 52px;
   display: grid;
   grid-template-columns: auto minmax(0, 1fr) clamp(170px, 38%, 430px) minmax(0, 1fr) auto;
   align-items: center;
-  gap: 16px;
-  padding: 0 12px 0 14px;
-  border-bottom: 1px solid rgba(28, 27, 24, 0.24);
-  background: linear-gradient(180deg, #ffffff, var(--sn-titlebar-bg));
+  gap: var(--sn-space-4);
+  padding: 0 var(--sn-space-2);
+  border-bottom: 1px solid var(--sn-line);
+  background: linear-gradient(180deg, var(--sn-bevel-top), var(--sn-titlebar-bg));
   flex: 0 0 auto;
+}
+
+.sn-chat-titlebar .sn-icon {
+  width: var(--sn-icon-titlebar);
+  height: var(--sn-icon-titlebar);
 }
 
 .sn-chat-titlebar__ridge {
-  height: 10px;
+  height: 9px;
   background: var(--sn-stripe-line);
-  opacity: 0.72;
+  opacity: 0.7;
 }
 
 .sn-chat-titlebar__control {
-  width: 38px;
-  height: 38px;
-  display: grid;
-  place-items: center;
   flex: 0 0 auto;
-  padding: 0;
-  border: 1px solid var(--sn-border-control);
-  border-radius: 10px;
-  color: var(--sn-ink);
-  background: var(--sn-bevel-bg);
-  box-shadow: var(--sn-bevel-shadow);
-  cursor: pointer;
-  transition:
-    color 140ms ease,
-    border-color 140ms ease,
-    background-color 140ms ease,
-    transform 120ms ease,
-    box-shadow 140ms ease;
 }
 
-.sn-chat-titlebar__control svg {
-  width: 18px;
-  height: 18px;
-}
-
-.sn-chat-titlebar__control:hover {
-  border-color: var(--sn-border-hover);
-  background: var(--sn-bevel-bg-hover);
-}
-
-.sn-chat-titlebar__control:active {
-  transform: translateY(1px);
-  background: var(--sn-bevel-bg-active);
-  box-shadow: var(--sn-bevel-shadow-pressed);
-}
-
-.sn-chat-titlebar__control:focus-visible {
-  outline: 2px solid var(--sn-focus);
-  outline-offset: 2px;
-}
-
-.sn-chat-titlebar__tools-trigger[aria-expanded="true"],
-.sn-chat-titlebar__tools-trigger[data-active="true"] {
-  border-color: var(--sn-ink);
-  color: var(--sn-paper-bg);
-  background: linear-gradient(180deg, var(--sn-control-ink), var(--sn-ink));
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.18), 0 1px 2px rgba(40, 37, 30, 0.28);
-}
-
+/* C1 · chrome-window: the chat's name is a window title. */
 .sn-chat-titlebar__title {
   min-width: 0;
   margin: 0;
-  padding: 2px 8px;
+  padding: 2px var(--sn-space-2);
   border: 1px solid transparent;
-  border-radius: 8px;
+  border-radius: var(--sn-radius-control);
   background: transparent;
   color: var(--sn-ink);
-  font-family: var(--sn-editor-display-font);
-  font-size: 23px;
-  font-weight: var(--sn-garamond-weight);
-  letter-spacing: 0;
-  line-height: 1.1;
+  font: var(--sn-type-window);
+  letter-spacing: var(--sn-type-window-track);
   text-align: center;
 }
 
 .sn-chat-titlebar__title:hover {
-  border-color: var(--sn-border);
+  border-color: var(--sn-line);
 }
 
 .sn-chat-titlebar__title:focus-visible {
-  outline: none;
-  border-color: var(--sn-border-control);
-  background: var(--sn-paper-bg);
-  box-shadow: inset 0 1px 2px rgba(40, 37, 30, 0.14);
+  outline: 2px solid var(--sn-selection);
+  outline-offset: 2px;
+  background: var(--sn-field-bg);
 }
 
 .sn-visually-hidden {
@@ -139,10 +97,11 @@
   border: 0;
 }
 
+/* The tools drawer lies on top: raised surface, menu shadow. */
 .sn-chat-tools {
   position: absolute;
-  top: calc(100% + 6px);
-  left: 12px;
+  top: calc(100% + 4px);
+  left: var(--sn-space-3);
   z-index: 20;
   width: min(760px, calc(100% - 24px));
   max-height: min(360px, calc(100dvh - 150px));
@@ -150,108 +109,38 @@
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 8px;
-  padding: 10px;
+  gap: var(--sn-space-2);
+  padding: var(--sn-space-2);
   overflow-y: auto;
-  border: 1px solid rgba(28, 27, 24, 0.34);
-  border-radius: 10px;
-  background: rgba(var(--sn-veil-menu-rgb), 0.98);
-  box-shadow: var(--sn-shadow-panel), 0 1px 0 rgba(255, 255, 255, 0.75) inset;
+  border: 1px solid var(--sn-line);
+  border-radius: var(--sn-radius-card);
+  background: var(--sn-surface-raised);
+  box-shadow: var(--sn-shadow-menu);
 }
 
 .sn-chat-tools__search {
   min-width: 150px;
   max-width: 430px;
-  height: 32px;
-  display: flex;
   flex: 1 1 260px;
-  align-items: center;
-  gap: 7px;
-  padding: 0 9px;
-  border: 1px solid var(--sn-border-control);
-  border-radius: 8px;
-  color: var(--sn-muted);
-  background: var(--sn-paper-bg);
-  box-shadow: inset 0 1px 2px rgba(40, 37, 30, 0.12);
 }
 
-.sn-chat-tools__search:focus-within {
-  color: var(--sn-ink);
-  border-color: var(--sn-ink);
-}
-
-.sn-chat-tools__search input {
-  width: 100%;
-  min-width: 0;
-  padding: 0;
-  border: 0;
-  outline: 0;
-  color: var(--sn-ink);
-  background: transparent;
-  font-size: 12px;
-}
-
-.sn-chat-tools__button,
+/* Pinned and Import are compact tools with labels (.sn-tool). The date jump
+   is a select (.sn-select). */
 .sn-chat-tools__date {
-  height: 32px;
+  height: var(--sn-size-32);
   display: inline-flex;
   flex: 0 0 auto;
-  align-items: center;
-  gap: 6px;
-  padding: 0 9px;
-  border: 1px solid var(--sn-bevel-border);
-  border-radius: 8px;
-  color: var(--sn-ink-soft);
-  background: var(--sn-bevel-bg);
-  box-shadow: var(--sn-bevel-shadow);
-  font-family: var(--sn-compact-font);
-  font-size: 9px;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-  white-space: nowrap;
-}
-
-.sn-chat-tools__button {
-  cursor: pointer;
-}
-
-.sn-chat-tools__button[data-active="true"] {
-  color: var(--sn-paper-bg);
-  border-color: var(--sn-selection-strong);
-  background: var(--sn-selection);
-  box-shadow: inset 0 1px 2px rgba(28, 27, 24, 0.26);
-}
-
-.sn-chat-tools__button:disabled {
-  cursor: default;
-  opacity: 0.45;
-}
-
-.sn-chat-tools__date {
-  padding-right: 4px;
 }
 
 .sn-chat-tools__date select {
-  max-width: 150px;
-  height: 28px;
-  padding: 0 24px 0 2px;
-  border: 0;
-  outline: 0;
-  color: inherit;
-  background: transparent;
-  font-family: inherit;
-  font-size: inherit;
-  letter-spacing: inherit;
-  text-transform: inherit;
+  max-width: 180px;
 }
 
 .sn-chat-tools__results {
   flex: 0 0 auto;
   color: var(--sn-muted);
-  font-family: var(--sn-compact-font);
-  font-size: 9px;
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
+  font: var(--sn-type-data);
+  letter-spacing: var(--sn-type-data-track);
 }
 
 /* Feed */
@@ -285,96 +174,103 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 9px;
-  padding: 16px 20px;
-  border: 1px solid var(--sn-border-control);
-  border-radius: 12px;
+  gap: var(--sn-space-2);
+  padding: var(--sn-space-4) 20px;
+  border: 1px solid var(--sn-line);
+  border-radius: var(--sn-radius-card);
   color: var(--sn-ink);
-  background: rgba(var(--sn-veil-paper-rgb), 0.96);
-  box-shadow: var(--sn-shadow-soft), var(--sn-bevel-shadow);
+  background: var(--sn-surface-raised);
+  box-shadow: var(--sn-shadow-menu);
   transform: translate(-50%, -50%);
   pointer-events: none;
 }
 
 .sn-chat-feed__drop-target strong {
-  font-family: var(--sn-editor-display-font);
-  font-size: 18px;
-  font-weight: 500;
+  font: var(--sn-type-item);
 }
 
+/* "Show earlier" is a form button (the bevel), centred in the feed. */
 .sn-chat-feed__earlier {
+  --_tint: rgba(0, 0, 0, 0);
   align-self: center;
-  margin-bottom: 10px;
-  padding: 6px 16px;
-  border: 1px solid var(--sn-bevel-border);
-  border-radius: 999px;
-  background: var(--sn-bevel-bg);
-  box-shadow: var(--sn-bevel-shadow);
-  color: var(--sn-ink-soft);
-  font-family: var(--sn-compact-font);
-  font-size: 10px;
-  letter-spacing: 0.07em;
-  text-transform: uppercase;
+  height: var(--sn-size-32);
+  margin-bottom: var(--sn-space-2);
+  padding: 0 var(--sn-space-3);
+  border: 1px solid var(--sn-control-border);
+  border-radius: var(--sn-radius-control);
+  background:
+    linear-gradient(var(--_tint), var(--_tint)),
+    linear-gradient(var(--sn-bevel-top), var(--sn-bevel-bottom));
+  box-shadow: var(--sn-shadow-bevel);
+  color: var(--sn-ink);
+  font: var(--sn-type-action);
   cursor: pointer;
 }
 
 .sn-chat-feed__earlier:hover {
-  background: var(--sn-bevel-bg-hover);
+  --_tint: var(--sn-hover);
 }
 
 .sn-chat-feed__earlier:active {
-  background: var(--sn-bevel-bg-active);
-  box-shadow: var(--sn-bevel-shadow-pressed);
+  background: var(--sn-bevel-bottom);
+  box-shadow: var(--sn-shadow-bevel-pressed);
 }
 
+/* The empty feed is a card laid on the desk, as in the older version: a thin
+   light frame, a bevelled plate with the drawing, the window's light serif and
+   the hint in small mono caps. */
 .sn-chat-feed__empty {
   margin: auto;
-  max-width: 380px;
+  max-width: 400px;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 10px;
+  gap: var(--sn-space-2);
   text-align: center;
   color: var(--sn-muted);
-  padding: 30px 34px 24px;
-  border: 1px solid rgba(28, 27, 24, 0.3);
+  padding: 28px var(--sn-space-8) 22px;
+  border: 1px solid var(--sn-frame-rule);
   border-radius: 16px;
   background: var(--sn-panel-bg);
-  box-shadow: var(--sn-shadow-panel);
+  outline: 1px solid var(--sn-frame-rule-inner);
+  outline-offset: -5px;
 }
 
 .sn-chat-feed__empty-plate {
   width: 56px;
   height: 56px;
+  margin-bottom: var(--sn-space-1);
   display: grid;
   place-items: center;
-  border: 1px solid var(--sn-border-control);
-  border-radius: 12px;
+  border: 1px solid var(--sn-control-border);
+  border-radius: 14px;
   color: var(--sn-ink);
   background: var(--sn-bevel-bg);
   box-shadow: var(--sn-bevel-shadow);
 }
 
+.sn-chat-feed__empty-plate .sn-icon {
+  width: 28px;
+  height: 28px;
+  stroke-width: 1.1px;
+}
+
 .sn-chat-feed__empty strong {
   color: var(--sn-ink);
-  font-family: var(--sn-editor-display-font);
-  font-size: 24px;
-  font-weight: var(--sn-garamond-weight);
-  line-height: 1.05;
+  font: var(--sn-type-window);
 }
 
 .sn-chat-feed__empty p {
   margin: 0;
-  font-size: 13.5px;
-  line-height: 1.5;
+  font: var(--sn-type-body);
 }
 
 .sn-chat-feed__empty code {
-  margin-top: 4px;
+  margin-top: var(--sn-space-1);
   color: var(--sn-meta-ink);
-  font-family: var(--sn-compact-font);
-  font-size: 10px;
+  font: var(--sn-type-data);
   letter-spacing: 0.08em;
+  text-transform: uppercase;
 }
 
 .sn-chat-feed__empty--compact {
@@ -400,33 +296,34 @@
   padding: 3px 0 7px;
 }
 
+/* The day: data, 11px — not 9px tape lettering. */
 .sn-chat-day__chip {
-  padding: 3px 11px;
-  border: 1px solid rgba(28, 27, 24, 0.14);
+  padding: 2px var(--sn-space-3);
+  border: 1px solid var(--sn-line);
+  /* A pill, as it was: the date is a tag laid on the feed, not a field. */
   border-radius: 999px;
-  background: rgba(var(--sn-veil-warm-rgb), 0.76);
-  box-shadow: 0 1px 1px rgba(28, 27, 24, 0.05);
-  color: var(--sn-muted-2);
-  font-family: var(--sn-compact-font);
-  font-size: 9px;
-  font-weight: 400;
-  letter-spacing: 0.075em;
+  background: var(--sn-surface-raised);
+  color: var(--sn-muted);
+  font: var(--sn-type-data);
+  letter-spacing: var(--sn-type-data-track);
   text-transform: uppercase;
 }
 
 /* Bubbles: warm paper cards with a machined offset shadow. */
 
+/* Bubbles keep their own form (the chat is allowed one): the 4px corner on
+   the speaker's side stands for the tail. No hard offset shadow — depth
+   belongs to what lies on top. Text is C4 · chrome-field. */
 .sn-chat-bubble {
   position: relative;
   align-self: flex-end;
   max-width: min(76%, 620px);
-  padding: 10px 14px 7px;
-  border: 1px solid rgba(28, 27, 24, 0.42);
+  padding: var(--sn-space-2) var(--sn-space-3) 6px;
+  border: 1px solid var(--sn-control-border);
   border-radius: 14px 14px 4px 14px;
-  background: linear-gradient(180deg, #fffefa, var(--sn-chat-bubble-bg));
-  box-shadow: inset 0 1px 0 #ffffff, 2px 2px 0 rgba(28, 27, 24, 0.16);
-  font-size: 15px;
-  line-height: 1.5;
+  background: var(--sn-chat-bubble-bg);
+  box-shadow: var(--sn-shadow-relief);
+  font: var(--sn-type-field);
   color: var(--sn-ink);
   overflow-wrap: anywhere;
 }
@@ -434,30 +331,7 @@
 .sn-chat-bubble[data-side="other"] {
   align-self: flex-start;
   border-radius: 14px 14px 14px 4px;
-  background: linear-gradient(180deg, var(--sn-chat-bubble-other-top), var(--sn-chat-bubble-other-bottom));
-}
-
-.sn-chat-bubble:not(.sn-chat-bubble--editing)::after {
-  content: "";
-  position: absolute;
-  right: -5px;
-  bottom: -1px;
-  width: 9px;
-  height: 10px;
-  border-right: 1px solid rgba(28, 27, 24, 0.36);
-  border-bottom: 1px solid rgba(28, 27, 24, 0.36);
-  background: var(--sn-chat-bubble-bg);
-  clip-path: polygon(0 0, 100% 100%, 0 100%);
-}
-
-.sn-chat-bubble[data-side="other"]:not(.sn-chat-bubble--editing)::after {
-  right: auto;
-  left: -5px;
-  border-right: 0;
-  border-bottom: 1px solid rgba(28, 27, 24, 0.36);
-  border-left: 1px solid rgba(28, 27, 24, 0.36);
-  background: var(--sn-chat-bubble-other-bottom);
-  clip-path: polygon(100% 0, 100% 100%, 0 100%);
+  background: var(--sn-chat-bubble-other-top);
 }
 
 .sn-chat-bubble--editing {
@@ -468,24 +342,21 @@
 .sn-chat-bubble__sender {
   display: block;
   margin-bottom: 2px;
-  color: var(--sn-selection-strong);
-  font-family: var(--sn-compact-font);
-  font-size: 10px;
-  font-weight: 650;
-  letter-spacing: 0.03em;
+  color: var(--sn-selection);
+  font: var(--sn-type-data);
+  letter-spacing: var(--sn-type-data-track);
 }
 
+/* The time is data: 11px mono, as written — not 9.5px caps. */
 .sn-chat-bubble__meta {
   display: flex;
   justify-content: flex-end;
   align-items: baseline;
-  gap: 8px;
-  margin-top: 3px;
-  color: var(--sn-meta-ink);
-  font-family: var(--sn-compact-font);
-  font-size: 9.5px;
-  letter-spacing: 0.07em;
-  text-transform: uppercase;
+  gap: var(--sn-space-2);
+  margin-top: 2px;
+  color: var(--sn-muted);
+  font: var(--sn-type-data);
+  letter-spacing: var(--sn-type-data-track);
 }
 
 .sn-chat-bubble__meta em {
@@ -513,20 +384,19 @@
   left: 0;
 }
 
+/* A compact tool (.sn-tool) on a raised chip so it reads over the bubble. */
 .sn-chat-bubble__actions .sn-chat-bubble__action-trigger {
-  width: 29px;
-  height: 29px;
-  display: inline-grid;
-  place-items: center;
-  padding: 0;
-  border: 1px solid var(--sn-bevel-border);
-  border-radius: 8px;
-  color: var(--sn-ink-soft);
-  background: var(--sn-bevel-bg);
-  box-shadow: var(--sn-bevel-shadow), 1px 1px 0 rgba(28, 27, 24, 0.16);
-  cursor: pointer;
+  border: 1px solid var(--sn-line);
+  background: var(--sn-surface-raised);
+  box-shadow: var(--sn-shadow-menu);
+  color: var(--sn-ink);
   opacity: 0;
   transition: opacity 120ms ease;
+}
+
+.sn-chat-bubble__actions .sn-chat-bubble__action-trigger:hover,
+.sn-chat-bubble__actions .sn-chat-bubble__action-trigger[aria-expanded="true"] {
+  background: linear-gradient(var(--sn-hover), var(--sn-hover)), var(--sn-surface-raised);
 }
 
 .sn-chat-bubble:hover .sn-chat-bubble__action-trigger,
@@ -535,64 +405,24 @@
   opacity: 1;
 }
 
+/* .sn-menu in the markup; the bubble only anchors it. */
 .sn-chat-bubble__action-menu {
   position: absolute;
   top: 34px;
   right: 0;
-  width: 152px;
-  display: grid;
-  gap: 2px;
-  padding: 5px;
-  border: 1px solid var(--sn-border-strong);
-  border-radius: 9px;
-  background: var(--sn-menu-bg);
-  box-shadow: var(--sn-shadow-soft);
-}
-
-.sn-chat-bubble__action-menu button {
-  width: 100%;
-  min-height: 31px;
-  display: flex;
-  align-items: center;
-  justify-content: flex-start;
-  gap: 8px;
-  padding: 0 8px;
-  border: 0;
-  border-radius: 6px;
-  color: var(--sn-ink-soft);
-  background: transparent;
-  cursor: pointer;
-  font-family: var(--sn-compact-font);
-  font-size: 9px;
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
-}
-
-.sn-chat-bubble__action-menu button:hover,
-.sn-chat-bubble__action-menu button:focus-visible {
-  color: var(--sn-ink);
-  background: rgba(28, 27, 24, 0.065);
-  outline: 0;
-}
-
-.sn-chat-bubble__action-menu .sn-chat-bubble__action-danger,
-.sn-chat-bubble__action-menu .sn-chat-bubble__action-danger:hover {
-  color: var(--sn-danger-ink-chat);
+  width: 220px;
 }
 
 .sn-chat-bubble__delete-confirm {
   display: grid;
-  gap: 7px;
-  padding: 5px;
+  gap: var(--sn-space-1);
+  padding: var(--sn-space-1);
 }
 
 .sn-chat-bubble__delete-confirm strong {
-  padding: 3px 4px 0;
+  padding: var(--sn-space-1) var(--sn-space-1) 0;
   color: var(--sn-ink);
-  font-family: var(--sn-compact-font);
-  font-size: 9px;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
+  font: var(--sn-type-body);
 }
 
 .sn-chat-bubble__delete-confirm > div {
@@ -608,11 +438,11 @@
   align-items: center;
   justify-content: space-between;
   gap: 10px;
-  padding: 7px 14px;
-  border-top: 1px solid rgba(28, 27, 24, 0.2);
-  color: var(--sn-ink-soft);
+  padding: 6px var(--sn-space-3);
+  border-top: 1px solid var(--sn-line);
+  color: var(--sn-ink);
   background: var(--sn-selection-soft);
-  font-size: 12px;
+  font: var(--sn-type-secondary);
 }
 
 .sn-chat-transfer-status[data-tone="error"] {
@@ -620,18 +450,8 @@
   background: var(--sn-danger-bg);
 }
 
-.sn-chat-transfer-status button {
-  width: 26px;
-  height: 26px;
-  display: grid;
-  flex: 0 0 auto;
-  place-items: center;
-  padding: 0;
-  border: 1px solid currentColor;
-  border-radius: 7px;
+.sn-chat-transfer-status .sn-tool {
   color: inherit;
-  background: transparent;
-  cursor: pointer;
 }
 
 /* Message content */
@@ -652,20 +472,17 @@
 
 .sn-chat-message__content pre {
   margin: 5px 0;
-  padding: 9px 12px;
-  border: 1px solid var(--sn-border-strong);
-  border-radius: 8px;
-  background: var(--sn-surface-muted);
-  box-shadow: inset 0 1px 2px rgba(40, 37, 30, 0.1);
-  font-family: var(--sn-compact-font);
-  font-size: 12.5px;
+  padding: var(--sn-space-2) var(--sn-space-3);
+  border-radius: var(--sn-radius-card);
+  background: var(--sn-code-bg);
+  font: 400 0.82em / 1.6 var(--sn-font-mono);
   overflow-x: auto;
   white-space: pre-wrap;
 }
 
 .sn-chat-message__content code {
-  font-family: var(--sn-compact-font);
-  font-size: 0.9em;
+  font-family: var(--sn-font-mono);
+  font-size: 0.82em;
 }
 
 .sn-chat-message__content mark {
@@ -693,9 +510,9 @@
   margin: 7px 0;
   padding: 10px 12px;
   overflow-x: auto;
-  border: 1px solid rgba(28, 27, 24, 0.1);
-  border-radius: 7px;
-  background: rgba(var(--sn-veil-deep-rgb), 0.52);
+  border: 1px solid var(--sn-line);
+  border-radius: var(--sn-radius-card);
+  background: var(--sn-code-bg);
   text-align: center;
 }
 
@@ -703,22 +520,19 @@
   margin: 5px 0;
   padding: 2px 12px;
   border-left: 3px solid var(--sn-selection);
-  color: var(--sn-ink-soft);
+  color: var(--sn-muted);
 }
 
 .sn-chat-message__heading {
   margin: 0 0 3px;
-  font-family: var(--sn-editor-display-font);
-  font-size: 1.24em;
-  font-weight: 500;
-  line-height: 1.15;
+  font: 600 1.2em / 1.2 var(--sn-font-ui);
 }
 
 .sn-chat-message__callout {
   margin: 5px 0;
-  padding: 9px 12px;
-  border: 1px solid var(--sn-border-strong);
-  border-radius: 8px;
+  padding: var(--sn-space-2) var(--sn-space-3);
+  border: 1px solid var(--sn-line);
+  border-radius: var(--sn-radius-card);
   background: var(--sn-selection-soft);
 }
 
@@ -742,51 +556,38 @@
 .sn-chat-message__image img {
   display: block;
   width: 100%;
-  border: 1px solid rgba(28, 27, 24, 0.42);
-  border-radius: 10px;
-  box-shadow: 2px 2px 0 rgba(28, 27, 24, 0.12);
+  border: 1px solid var(--sn-line);
+  border-radius: var(--sn-radius-card);
   cursor: zoom-in;
 }
 
 .sn-chat-message__image figcaption {
-  margin-top: 4px;
+  margin-top: var(--sn-space-1);
   color: var(--sn-muted);
-  font-size: 12.5px;
+  font: var(--sn-type-secondary);
 }
 
 .sn-chat-message__image-placeholder,
 .sn-chat-message__image-error {
   display: grid;
   place-items: center;
-  gap: 4px;
+  gap: var(--sn-space-1);
   width: 100%;
   min-width: 200px;
-  border: 1px dashed var(--sn-border-strong);
-  border-radius: 10px;
+  border: 1px dashed var(--sn-line);
+  border-radius: var(--sn-radius-card);
   background: var(--sn-surface-muted);
   color: var(--sn-muted);
-  font-family: var(--sn-compact-font);
-  font-size: 11px;
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
+  font: var(--sn-type-secondary);
 }
 
 /* Composer: an instrument panel with a ridge cap and machined controls. */
 
 .sn-chat-footer {
   flex: 0 0 auto;
-  padding: 11px 14px 13px;
-  background: linear-gradient(180deg, var(--sn-chat-footer-bg), var(--sn-surface-solid));
-  border-top: 1px solid rgba(28, 27, 24, 0.28);
-}
-
-.sn-chat-footer::before {
-  content: "";
-  display: block;
-  height: 7px;
-  margin: -4px 2px 9px;
-  background: var(--sn-stripe-line);
-  opacity: 0.5;
+  padding: var(--sn-space-3) var(--sn-space-3) var(--sn-space-3);
+  background: var(--sn-surface-solid);
+  border-top: 1px solid var(--sn-line);
 }
 
 /* Author picker: one control on the composer row, opening upward. */
@@ -796,163 +597,75 @@
   flex: 0 0 auto;
 }
 
+/* .sn-menu in the markup; it opens upward from the author control. */
 .sn-chat-author__menu {
   position: absolute;
-  bottom: calc(100% + 6px);
+  bottom: calc(100% + 4px);
   left: 0;
   z-index: 12;
-  min-width: 168px;
-  display: grid;
-  gap: 3px;
-  padding: 6px;
-  border: 1px solid var(--sn-border-control);
-  border-radius: 8px;
-  background: var(--sn-surface-solid);
-  box-shadow: 2px 2px 0 rgba(28, 27, 24, 0.14);
-}
-
-.sn-chat-author__label {
-  padding: 2px 6px 4px;
-  color: var(--sn-muted);
-  font-family: var(--sn-compact-font);
-  font-size: 9px;
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
-}
-
-.sn-chat-author__menu button {
-  height: 28px;
-  padding: 0 9px;
-  overflow: hidden;
-  border: 1px solid transparent;
-  border-radius: 4px;
-  color: var(--sn-ink-soft);
-  background: transparent;
-  cursor: pointer;
-  font-family: var(--sn-compact-font);
-  font-size: 10px;
-  letter-spacing: 0.04em;
-  text-align: left;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.sn-chat-author__menu button:hover,
-.sn-chat-author__menu button:focus-visible {
-  border-color: var(--sn-border-hairline);
-  background: var(--sn-bevel-bg);
+  min-width: 220px;
 }
 
 /* Graphite, not the accent: which of two authors is selected is a local
    setting, not something worth the product's one accent colour. */
-.sn-chat-author__menu button[data-active="true"] {
-  color: var(--sn-paper-bg);
-  border-color: var(--sn-ink);
-  background: linear-gradient(180deg, var(--sn-author-active-top), var(--sn-author-active-bottom));
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.14);
-}
 
 .sn-chat-composer {
   width: min(100%, 860px);
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--sn-space-2);
   margin-inline: auto;
 }
 
-/* The composer's own control, not `.sn-icon-button`: that class is pinned to
-   50px by a release override, and sized to the topbar it reads as oversized
-   next to a single-line field. Same bevel, own size. */
+/* Composer controls are 32 squircles (.sn-squircle--32 in the markup); send
+   is the primary. */
 .sn-chat-control {
-  width: 32px;
-  height: 32px;
-  display: inline-grid;
-  place-items: center;
   flex: 0 0 auto;
-  padding: 0;
-  border: 1px solid var(--sn-bevel-border);
-  border-radius: 8px;
-  color: var(--sn-control-ink);
-  background: var(--sn-bevel-bg);
-  box-shadow: var(--sn-bevel-shadow);
-  cursor: pointer;
-  transition:
-    background-color 140ms ease,
-    border-color 140ms ease,
-    color 140ms ease,
-    transform 120ms ease,
-    box-shadow 140ms ease;
 }
 
-.sn-chat-control svg {
-  width: 16px;
-  height: 16px;
-}
-
-.sn-chat-control:hover:not(:disabled) {
-  border-color: var(--sn-border-hover);
-  color: var(--sn-ink);
-  background: var(--sn-bevel-bg-hover);
-}
-
-.sn-chat-control:active:not(:disabled) {
-  transform: translateY(1px);
-  background: var(--sn-bevel-bg-active);
-  box-shadow: var(--sn-bevel-shadow-pressed);
-}
-
-.sn-chat-control:disabled {
-  border-color: rgba(28, 27, 24, 0.18);
-  color: rgba(28, 27, 24, 0.3);
-  cursor: not-allowed;
-  background: rgba(var(--sn-veil-warm-rgb), 0.7);
-  box-shadow: none;
-}
-
-.sn-chat-control--primary,
-.sn-chat-control[aria-expanded="true"] {
-  border-color: var(--sn-ink);
-  color: var(--sn-paper-bg);
-  background: linear-gradient(180deg, var(--sn-control-ink), var(--sn-ink));
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.18), 0 1px 2px rgba(40, 37, 30, 0.28);
-}
-
+/* The message field: the field well, its edge and focus ring. */
 .sn-chat-composer__input {
   position: relative;
   flex: 1 1 auto;
   min-width: 0;
+  /* Rounded and sunk into the footer, as in the older version: a field on a
+     device, not a row of a form. */
   min-height: 42px;
   max-height: 180px;
   overflow-y: auto;
   display: flex;
   flex-direction: column;
   justify-content: center;
-  border: 1px solid var(--sn-border-control);
-  border-radius: 11px;
-  background: var(--sn-paper-bg);
-  box-shadow: inset 0 1px 2px rgba(40, 37, 30, 0.14);
-  padding: 9px 14px;
+  border: 1px solid var(--sn-control-border);
+  /* Half the one-line height: a pill, like the date chip above the feed. */
+  border-radius: 21px;
+  background: var(--sn-field-bg);
+  box-shadow: var(--sn-shadow-field-inset);
+  padding: 9px 16px;
+}
+
+.sn-chat-composer__input:hover {
+  border-color: var(--sn-ink);
 }
 
 .sn-chat-composer__input:focus-within {
-  border-color: var(--sn-ink);
-  box-shadow: inset 0 1px 2px rgba(40, 37, 30, 0.14), 0 0 0 1px rgba(28, 27, 24, 0.32);
+  outline: 2px solid var(--sn-selection);
+  outline-offset: 2px;
 }
 
 .sn-chat-composer__placeholder {
   position: absolute;
   top: 50%;
-  left: 14px;
+  left: 16px;
   transform: translateY(-50%);
-  color: var(--sn-muted-2);
+  color: var(--sn-muted);
   pointer-events: none;
-  font-size: 15px;
+  font: var(--sn-type-field);
 }
 
 .sn-chat-composer__prosemirror {
   outline: none;
-  font-size: 15px;
-  line-height: 1.5;
+  font: var(--sn-type-field);
   color: var(--sn-ink);
 }
 
@@ -970,11 +683,6 @@
   margin: 4px 0;
   overflow-x: auto;
   text-align: center;
-}
-
-.sn-chat-composer__send:disabled {
-  opacity: 0.45;
-  cursor: default;
 }
 
 /* Bubble edit mode reuses the composer inline. */
@@ -1005,19 +713,24 @@
     padding-inline: 10px;
   }
 
-  .sn-chat-titlebar__control {
-    width: 42px;
-    height: 42px;
+  /* Touch: the squircles grow to the 44 target. */
+  .sn-chat-titlebar__control,
+  .sn-chat-control {
+    --_size: var(--sn-size-44);
+    --_ring: var(--sn-squircle-ring-44);
   }
 
-  .sn-chat-titlebar__title {
-    font-size: 20px;
+  .sn-chat-control .sn-icon {
+    width: var(--sn-icon-20);
+    height: var(--sn-icon-20);
+    stroke-width: var(--sn-stroke-20);
   }
 
   .sn-chat-tools__search {
     max-width: none;
   }
 
+  /* 16px keeps mobile Safari from zooming into the field on focus. */
   .sn-chat-tools__search input,
   .sn-chat-tools__date select {
     font-size: 16px;
@@ -1027,20 +740,28 @@
     max-width: 88%;
   }
 
+  /* On touch the chip stays 32 so it covers no more of the message, and an
+     invisible margin makes the target 44. */
   .sn-chat-bubble__actions .sn-chat-bubble__action-trigger {
-    width: 38px;
-    height: 38px;
+    position: relative;
+    width: var(--sn-size-32);
+    height: var(--sn-size-32);
     opacity: 1;
   }
 
-  .sn-chat-bubble__action-menu {
-    top: 43px;
-    width: 176px;
+  .sn-chat-bubble__actions .sn-chat-bubble__action-trigger::before {
+    content: "";
+    position: absolute;
+    inset: -6px;
   }
 
-  .sn-chat-bubble__action-menu button {
+  .sn-chat-bubble__action-menu {
+    top: 38px;
+  }
+
+  .sn-chat-bubble__action-menu .sn-menu-item,
+  .sn-chat-author__menu .sn-menu-item {
     min-height: 44px;
-    font-size: 10px;
   }
 
   .sn-chat-feed {
@@ -1052,21 +773,6 @@
     padding-bottom: calc(10px + env(safe-area-inset-bottom, 0px));
   }
 
-  /* Back to a real touch target: the desktop sizing above is for a pointer. */
-  .sn-chat-control {
-    width: 44px;
-    height: 44px;
-  }
-
-  .sn-chat-control svg {
-    width: 20px;
-    height: 20px;
-  }
-
-  .sn-chat-author__menu button {
-    min-height: 44px;
-    font-size: 11px;
-  }
 }
 
 @media (max-width: 600px) {
@@ -1087,10 +793,11 @@
     display: none;
   }
 
+  /* A phone is narrow for a 24px window title: the panel voice. */
   .sn-chat-titlebar__title {
     width: 100%;
     padding-inline: 4px;
-    font-size: 21px;
+    font: var(--sn-type-panel);
     text-align: center;
   }
 
@@ -1107,9 +814,8 @@
   }
 
   .sn-chat-tools__button {
-    width: 68px;
-    justify-content: center;
-    overflow: hidden;
+    flex: 1 1 auto;
+    height: var(--sn-size-44);
   }
 
   .sn-chat-tools__date {
@@ -1139,10 +845,6 @@
     padding: 24px 20px 20px;
   }
 
-  .sn-chat-footer::before {
-    margin-bottom: 7px;
-  }
-
   .sn-chat-composer {
     gap: 7px;
   }
@@ -1168,24 +870,26 @@
   width: min(720px, calc(100vw - 32px));
 }
 
-.sn-modal--telegram-import .sn-command-window {
-  width: 100%;
-  max-height: min(82dvh, 780px);
-}
-
 .sn-telegram-import {
   display: flex;
   flex-direction: column;
+  max-height: min(82dvh, 780px);
+}
+
+.sn-telegram-import__heading {
+  margin: 0;
+  padding: var(--sn-space-6) var(--sn-space-6) var(--sn-space-2);
+  color: var(--sn-ink);
+  font: var(--sn-type-window);
 }
 
 .sn-telegram-import__instructions {
   display: grid;
   grid-template-columns: auto minmax(0, 1fr) auto;
   align-items: center;
-  gap: 13px;
-  padding: 18px 20px;
-  border-bottom: 1px solid var(--sn-border-hairline);
-  background: rgba(var(--sn-veil-paper-warm-rgb), 0.72);
+  gap: var(--sn-space-3);
+  padding: var(--sn-space-3) var(--sn-space-6) var(--sn-space-6);
+  border-bottom: 1px solid var(--sn-line);
 }
 
 .sn-telegram-import__instructions > svg {
@@ -1196,62 +900,49 @@
 .sn-telegram-import__result strong {
   display: block;
   color: var(--sn-ink);
-  font-family: var(--sn-editor-display-font);
-  font-size: 18px;
-  font-weight: 500;
+  font: var(--sn-type-item);
 }
 
 .sn-telegram-import__instructions p,
 .sn-telegram-import__result p {
-  margin: 3px 0 0;
+  margin: 2px 0 0;
   color: var(--sn-muted);
-  font-size: 12px;
-  line-height: 1.45;
-}
-
-.sn-telegram-import__instructions .sn-button,
-.sn-telegram-import__actions .sn-button,
-.sn-telegram-import__result .sn-button {
-  min-height: 38px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 7px;
+  font: var(--sn-type-secondary);
 }
 
 .sn-telegram-import__preview {
   min-height: 0;
   display: grid;
-  gap: 14px;
-  padding: 18px 20px;
+  gap: var(--sn-space-4);
+  padding: var(--sn-space-4) var(--sn-space-6);
   overflow-y: auto;
 }
 
 .sn-telegram-import__summary {
   display: grid;
   grid-template-columns: minmax(95px, auto) minmax(0, 1fr);
-  gap: 7px 14px;
-  padding: 13px 15px;
-  border: 1px solid var(--sn-border);
-  border-radius: 9px;
-  background: var(--sn-paper-bg);
+  gap: 6px var(--sn-space-3);
+  padding: var(--sn-space-3);
+  border: 1px solid var(--sn-line);
+  border-radius: var(--sn-radius-card);
+  background: var(--sn-field-bg);
 }
 
-.sn-telegram-import__summary span,
-.sn-telegram-import__participant > span {
+.sn-telegram-import__summary span {
   color: var(--sn-muted);
-  font-family: var(--sn-compact-font);
-  font-size: 9px;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
+  font: var(--sn-type-secondary);
+}
+
+.sn-telegram-import__participant > span {
+  color: var(--sn-ink);
+  font: var(--sn-type-action);
 }
 
 .sn-telegram-import__summary strong {
   min-width: 0;
   overflow-wrap: anywhere;
   color: var(--sn-ink);
-  font-size: 12px;
-  font-weight: 600;
+  font: var(--sn-type-body);
 }
 
 .sn-telegram-import__participant {
@@ -1261,75 +952,69 @@
 
 .sn-telegram-import__participant select {
   width: 100%;
-  height: 40px;
-  padding: 0 36px 0 11px;
-  border: 1px solid var(--sn-border-control);
-  border-radius: 8px;
+  height: var(--sn-size-36);
+  padding: 0 30px 0 10px;
+  border: 1px solid var(--sn-control-border);
+  border-radius: var(--sn-radius-control);
   color: var(--sn-ink);
-  background: var(--sn-paper-bg);
-  box-shadow: inset 0 1px 2px rgba(40, 37, 30, 0.12);
-  font-size: 13px;
+  background: var(--sn-field-bg);
+  box-shadow: none;
+  font: var(--sn-type-field);
 }
 
 .sn-telegram-import__participant small {
   color: var(--sn-muted);
-  font-size: 11px;
-  line-height: 1.4;
+  font: var(--sn-type-secondary);
 }
 
 .sn-telegram-import__warnings {
-  border: 1px solid rgba(149, 101, 33, 0.32);
-  border-radius: 8px;
-  background: rgba(var(--sn-veil-warning-rgb), 0.46);
+  border: 1px solid var(--sn-line);
+  border-radius: var(--sn-radius-card);
+  background: var(--sn-code-bg);
 }
 
 .sn-telegram-import__warnings summary {
-  padding: 9px 11px;
+  padding: var(--sn-space-2) var(--sn-space-3);
   cursor: pointer;
-  color: var(--sn-warning-ink);
-  font-family: var(--sn-compact-font);
-  font-size: 10px;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
+  color: var(--sn-ink);
+  font: var(--sn-type-action);
 }
 
 .sn-telegram-import__warnings ul {
   max-height: 130px;
   margin: 0;
-  padding: 0 26px 12px 30px;
+  padding: 0 26px var(--sn-space-3) 30px;
   overflow-y: auto;
-  color: var(--sn-ink-soft);
-  font-size: 11px;
-  line-height: 1.45;
+  color: var(--sn-ink);
+  font: var(--sn-type-secondary);
 }
 
 .sn-telegram-import__status,
 .sn-telegram-import__error {
   display: flex;
   align-items: center;
-  gap: 8px;
-  margin: 12px 20px 0;
-  padding: 10px 12px;
-  border: 1px solid var(--sn-border);
-  border-radius: 8px;
-  color: var(--sn-ink-soft);
+  gap: var(--sn-space-2);
+  margin: var(--sn-space-3) var(--sn-space-6) 0;
+  padding: var(--sn-space-2) var(--sn-space-3);
+  border: 1px solid var(--sn-line);
+  border-radius: var(--sn-radius-control);
+  color: var(--sn-ink);
   background: var(--sn-selection-soft);
-  font-size: 12px;
+  font: var(--sn-type-secondary);
 }
 
 .sn-telegram-import__error {
-  border-color: rgba(155, 64, 54, 0.34);
-  color: var(--sn-danger-ink-deep);
+  border-color: var(--sn-danger);
+  color: var(--sn-danger);
   background: var(--sn-danger-bg);
 }
 
 .sn-telegram-import__actions {
   display: flex;
   justify-content: flex-end;
-  gap: 8px;
-  padding: 14px 20px 18px;
-  border-top: 1px solid var(--sn-border-hairline);
-  background: var(--sn-import-actions-bg);
+  gap: var(--sn-space-2);
+  padding: var(--sn-space-4) var(--sn-space-6) var(--sn-space-6);
+  border-top: 1px solid var(--sn-line);
 }
 
 .sn-telegram-import__result {
@@ -1343,21 +1028,18 @@
 }
 
 .sn-telegram-import__result-icon {
-  width: 48px;
-  height: 48px;
+  width: var(--sn-icon-20);
+  height: var(--sn-icon-20);
   display: grid;
   grid-row: span 2;
   place-items: center;
-  border: 1px solid var(--sn-success);
-  border-radius: 12px;
   color: var(--sn-success);
-  background: rgba(79, 118, 92, 0.1);
 }
 
-.sn-telegram-import__result .sn-button {
+.sn-telegram-import__result .sn-btn {
   grid-column: 2;
   justify-self: start;
-  margin-top: 8px;
+  margin-top: var(--sn-space-2);
 }
 
 @media (max-width: 600px) {
@@ -1366,7 +1048,7 @@
     margin: 0;
   }
 
-  .sn-modal--telegram-import .sn-command-window {
+  .sn-modal--telegram-import .sn-modal__surface {
     max-height: 100dvh;
     border-radius: 0;
   }
@@ -1376,10 +1058,10 @@
     padding: 14px;
   }
 
-  .sn-telegram-import__instructions .sn-button {
+  .sn-telegram-import__instructions .sn-btn {
     grid-column: 1 / -1;
     width: 100%;
-    min-height: 44px;
+    height: var(--sn-size-44);
   }
 
   .sn-telegram-import__preview {
@@ -1387,7 +1069,7 @@
   }
 
   .sn-telegram-import__participant select {
-    height: 44px;
+    height: var(--sn-size-44);
     font-size: 16px;
   }
 
@@ -1395,8 +1077,8 @@
     padding: 12px 14px max(14px, env(safe-area-inset-bottom, 0px));
   }
 
-  .sn-telegram-import__actions .sn-button {
-    min-height: 44px;
+  .sn-telegram-import__actions .sn-btn {
+    height: var(--sn-size-44);
     flex: 1 1 0;
   }
 }

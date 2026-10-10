@@ -99,11 +99,11 @@ function FolderNode({
             aria-label={t(isExpanded ? 'library.collapseFolder' : 'library.expandFolder')}
             aria-expanded={isExpanded}
             aria-controls={childrenId}
-            className="sn-folder-tree__twisty"
+            className="sn-folder-tree__twisty sn-tool"
             onClick={() => expansion.toggle(node.folder.id)}
             type="button"
           >
-            <UiIcon name="chevronRight" />
+            <UiIcon className="sn-icon sn-icon--16" name="chevronRight" />
           </button>
         ) : <span className="sn-folder-tree__twisty-space" aria-hidden="true" />}
         <button
@@ -111,7 +111,7 @@ function FolderNode({
           onClick={() => onSelectFolder(node.folder.id)}
           type="button"
         >
-          <UiIcon name="folder" />
+          <UiIcon className="sn-icon sn-icon--16" name="folder" />
           <span title={node.folder.name}>{node.folder.name}</span>
         </button>
         <span className="sn-folder-tree__count">{node.noteCount}</span>
@@ -120,37 +120,42 @@ function FolderNode({
             aria-expanded={isActionsOpen}
             aria-haspopup="menu"
             aria-label={t('library.folderActions', { name: node.folder.name })}
-            className="sn-folder-tree__icon"
+            className="sn-folder-tree__icon sn-tool"
             onClick={() => setActionsOpen((open) => !open)}
             type="button"
           >
-            <UiIcon name="moreHorizontal" />
+            <UiIcon className="sn-icon sn-icon--16" name="moreHorizontal" />
           </button>
           {isActionsOpen ? (
-            <div className="sn-folder-tree__menu" role="menu">
-              <button onClick={() => {
+            <div className="sn-folder-tree__menu sn-menu" role="menu">
+              <button className="sn-menu-item" onClick={() => {
                 setActionsOpen(false)
                 onCreateFolder(node.folder.id)
               }} role="menuitem" type="button">
-                <UiIcon name="plus" /> {t('library.newSubfolder')}
+                <UiIcon className="sn-icon sn-icon--16" name="plus" />
+                <span className="sn-menu-item__label">{t('library.newSubfolder')}</span>
               </button>
-              <button onClick={() => {
+              <button className="sn-menu-item" onClick={() => {
                 setActionsOpen(false)
                 onRenameFolder(node.folder.id, node.folder.name)
               }} role="menuitem" type="button">
-                <UiIcon name="edit" /> {t('library.renameFolder')}
+                <UiIcon className="sn-icon sn-icon--16" name="edit" />
+                <span className="sn-menu-item__label">{t('library.renameFolder')}</span>
               </button>
-              {onMoveFolder ? <button onClick={() => {
+              {onMoveFolder ? <button className="sn-menu-item" onClick={() => {
                 setActionsOpen(false)
                 onMoveFolder(node.folder.id)
               }} role="menuitem" type="button">
-                <UiIcon name="folder" /> {t('folder.moveTitle')}
+                <UiIcon className="sn-icon sn-icon--16" name="folder" />
+                <span className="sn-menu-item__label">{t('folder.moveTitle')}</span>
               </button> : null}
-              <button className="sn-folder-tree__menu-danger" onClick={() => {
+              <div className="sn-menu__sep" role="separator" />
+              <button className="sn-menu-item sn-menu-item--danger sn-folder-tree__menu-danger" onClick={() => {
                 setActionsOpen(false)
                 onDeleteFolder(node.folder.id)
               }} role="menuitem" type="button">
-                <UiIcon name="trash" /> {t('library.deleteFolder')}
+                <UiIcon className="sn-icon sn-icon--16" name="trash" />
+                <span className="sn-menu-item__label">{t('library.deleteFolder')}</span>
               </button>
             </div>
           ) : null}
@@ -201,11 +206,11 @@ export function FolderTree(props: FolderTreeProps) {
             aria-label={t(
               isFolderListExpanded ? 'library.collapseFolders' : 'library.expandFolders',
             )}
-            className="sn-folder-tree__twisty"
+            className="sn-folder-tree__twisty sn-tool"
             onClick={() => expansion.toggle('root')}
             type="button"
           >
-            <UiIcon name="chevronRight" />
+            <UiIcon className="sn-icon sn-icon--16" name="chevronRight" />
           </button>
         ) : <span className="sn-folder-tree__twisty-space" aria-hidden="true" />}
         <button
@@ -213,16 +218,16 @@ export function FolderTree(props: FolderTreeProps) {
           onClick={() => props.onSelectFolder(undefined)}
           type="button"
         >
-          <UiIcon name="library" />
+          <UiIcon className="sn-icon sn-icon--16" name="library" />
           {t('library.allNotes')}
         </button>
         <button
           aria-label={t('library.newRootFolder')}
-          className="sn-folder-tree__icon"
+          className="sn-folder-tree__icon sn-tool"
           onClick={() => props.onCreateFolder(null)}
           type="button"
         >
-          <UiIcon name="folderPlus" />
+          <UiIcon className="sn-icon sn-icon--16" name="folderPlus" />
         </button>
       </div>
       <div
@@ -246,7 +251,7 @@ export function FolderTree(props: FolderTreeProps) {
           onClick={() => props.onSelectFolder(null)}
           type="button"
         >
-          <UiIcon name="document" />
+          <UiIcon className="sn-icon sn-icon--16" name="document" />
           {t('library.unfiled')}
         </button>
       </div>

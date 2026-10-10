@@ -149,33 +149,37 @@ function ChatAuthorPicker({ onChange, otherName, value }: ChatAuthorPickerProps)
         aria-expanded={isOpen}
         aria-haspopup="menu"
         aria-label={t('chat.authorPicker', { name: currentName })}
-        className="sn-chat-control sn-chat-author__trigger"
+        className={`sn-squircle sn-squircle--32 sn-chat-control sn-chat-author__trigger${isOpen ? ' is-on' : ''}`}
         onClick={() => setOpen((open) => !open)}
         title={t('chat.authorPicker', { name: currentName })}
         type="button"
       >
-        <UiIcon name="users" />
+        <UiIcon className="sn-icon" name="users" />
       </button>
       {isOpen ? (
-        <div className="sn-chat-author__menu" role="menu">
-          <span className="sn-chat-author__label">{t('chat.writeAs')}</span>
+        <div className="sn-chat-author__menu sn-menu" role="menu">
+          <span className="sn-menu__group">{t('chat.writeAs')}</span>
           <button
+            className="sn-menu-item"
             data-active={value === 'self'}
             onClick={() => choose('self')}
             role="menuitemradio"
             aria-checked={value === 'self'}
             type="button"
           >
-            {selfName}
+            <span className="sn-menu-item__label">{selfName}</span>
+            {value === 'self' ? <UiIcon className="sn-icon sn-icon--16" name="check" /> : null}
           </button>
           <button
+            className="sn-menu-item"
             data-active={value === 'other'}
             onClick={() => choose('other')}
             role="menuitemradio"
             aria-checked={value === 'other'}
             type="button"
           >
-            {otherName}
+            <span className="sn-menu-item__label">{otherName}</span>
+            {value === 'other' ? <UiIcon className="sn-icon sn-icon--16" name="check" /> : null}
           </button>
         </div>
       ) : null}
@@ -413,14 +417,14 @@ export function ChatShell({
             aria-controls={toolsPanelId}
             aria-expanded={isToolsOpen}
             aria-label={t('chat.tools')}
-            className="sn-chat-titlebar__control sn-chat-titlebar__tools-trigger"
+            className={`sn-squircle sn-squircle--36 sn-chat-titlebar__control sn-chat-titlebar__tools-trigger${isToolsOpen || isFiltering ? ' is-on' : ''}`}
             data-active={isFiltering}
             onClick={() => setToolsOpen((open) => !open)}
             ref={toolsButtonRef}
             title={t('chat.tools')}
             type="button"
           >
-            <UiIcon name="moreHorizontal" />
+            <UiIcon className="sn-icon" name="moreHorizontal" />
           </button>
           <span aria-hidden="true" className="sn-chat-titlebar__ridge" />
           <input
@@ -440,12 +444,12 @@ export function ChatShell({
           <span aria-hidden="true" className="sn-chat-titlebar__ridge" />
           <button
             aria-label={t('chat.lock')}
-            className="sn-chat-titlebar__control sn-chat-titlebar__lock"
+            className="sn-squircle sn-squircle--36 sn-chat-titlebar__control sn-chat-titlebar__lock"
             onClick={() => onRequestLock(note.id)}
             title={t('chat.lock')}
             type="button"
           >
-            <UiIcon name="lock" />
+            <UiIcon className="sn-icon" name="lock" />
           </button>
           {isToolsOpen ? (
             <div
@@ -455,8 +459,8 @@ export function ChatShell({
               ref={toolsPanelRef}
               role="region"
             >
-              <label className="sn-chat-tools__search">
-                <UiIcon height={15} name="search" width={15} />
+              <label className="sn-chat-tools__search sn-search">
+                <UiIcon className="sn-icon sn-icon--16" name="search" />
                 <span className="sn-visually-hidden">{t('chat.searchMessages')}</span>
                 <input
                   onChange={(event) => setSearchQuery(event.target.value)}
@@ -467,17 +471,17 @@ export function ChatShell({
               </label>
               <button
                 aria-pressed={pinnedOnly}
-                className="sn-chat-tools__button"
+                className="sn-chat-tools__button sn-tool"
                 data-active={pinnedOnly}
                 disabled={pinnedCount === 0}
                 onClick={() => setPinnedOnly((current) => !current)}
                 type="button"
               >
-                <UiIcon height={14} name="pin" width={14} />
-                Pinned {pinnedCount > 0 ? `(${pinnedCount})` : ''}
+                <UiIcon className="sn-icon" name="pin" />
+                {t('chat.pinnedOnly')}
+                {pinnedCount > 0 ? ` (${pinnedCount})` : ''}
               </button>
-              <label className="sn-chat-tools__date">
-                <UiIcon height={14} name="calendar" width={14} />
+              <label className="sn-chat-tools__date sn-select">
                 <span className="sn-visually-hidden">{t('chat.jumpToDate')}</span>
                 <select
                   aria-label={t('chat.jumpToDate')}
@@ -512,20 +516,20 @@ export function ChatShell({
               </label>
               {onImportTelegram ? (
                 <button
-                  className="sn-chat-tools__button"
+                  className="sn-chat-tools__button sn-tool"
                   onClick={() => {
                     setToolsOpen(false)
                     onImportTelegram()
                   }}
                   type="button"
                 >
-                  <UiIcon height={14} name="arrowDown" width={14} />
-                  Import
+                  <UiIcon className="sn-icon" name="arrowDown" />
+                  {t('chat.import')}
                 </button>
               ) : null}
               {isFiltering ? (
                 <span aria-live="polite" className="sn-chat-tools__results">
-                  {filteredMessages.length} found
+                  {t('chat.foundCount', { count: filteredMessages.length })}
                 </span>
               ) : null}
             </div>
@@ -568,30 +572,29 @@ export function ChatShell({
               onClick={showEarlierMessages}
               type="button"
             >
-              Show earlier messages ({hiddenCount})
+              {t('chat.showEarlier', { count: hiddenCount })}
             </button>
           ) : null}
 
           {messages.length === 0 ? (
             <div className="sn-chat-feed__empty">
               <span aria-hidden="true" className="sn-chat-feed__empty-plate">
-                <UiIcon height={24} name="chat" width={24} />
+                <UiIcon className="sn-icon" name="chats" />
               </span>
               <strong>{t('chat.emptyTitle')}</strong>
               <p>
-                Drop thoughts, links and images here the way you would in your
-                saved-messages chat.{' '}
+                {t('chat.emptyBody')}{' '}
                 {hasRemote
                   ? t('chat.emptyRemote')
                   : t('chat.emptyLocal')}
               </p>
-              <code>DROP · PASTE · ENTER SENDS</code>
+              <code>{t('chat.emptyHint')}</code>
             </div>
           ) : null}
           {messages.length > 0 && visibleMessages.length === 0 ? (
             <div className="sn-chat-feed__empty sn-chat-feed__empty--compact">
               <span aria-hidden="true" className="sn-chat-feed__empty-plate">
-                <UiIcon height={24} name="search" width={24} />
+                <UiIcon className="sn-icon" name="search" />
               </span>
               <strong>{t('chat.noMatches')}</strong>
               <p>{t('chat.noMatchesHint')}</p>
@@ -603,7 +606,7 @@ export function ChatShell({
                 }}
                 type="button"
               >
-                Clear filters
+                {t('chat.clearFilters')}
               </button>
             </div>
           ) : null}
@@ -649,10 +652,11 @@ export function ChatShell({
             {imageSendError && onDismissImageError ? (
               <button
                 aria-label={t('chat.dismissImageError')}
+                className="sn-tool"
                 onClick={onDismissImageError}
                 type="button"
               >
-                <UiIcon height={14} name="close" width={14} />
+                <UiIcon className="sn-icon sn-icon--16" name="close" />
               </button>
             ) : null}
           </div>

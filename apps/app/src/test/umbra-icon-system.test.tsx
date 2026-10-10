@@ -53,7 +53,12 @@ describe('Umbra production icon system', () => {
     expect(button?.classList.contains('sn-squircle-button')).toBe(true)
     expect(button?.dataset.size).toBe('large')
     expect(button?.dataset.variant).toBe('primary')
-    expect(button?.querySelectorAll('.sn-squircle-button__frame path')).toHaveLength(2)
+    // The superellipse and its ring are the design system's `.sn-squircle`,
+    // drawn by CSS masks on the button's own pseudo-elements: the only SVG
+    // inside is the functional glyph.
+    expect(button?.classList.contains('sn-squircle')).toBe(true)
+    expect(button?.classList.contains('sn-squircle--primary')).toBe(true)
+    expect(button?.querySelectorAll('svg')).toHaveLength(1)
     expect(button?.querySelector('.sn-squircle-button__icon')?.getAttribute('viewBox'))
       .toBe('0 0 24 24')
   })

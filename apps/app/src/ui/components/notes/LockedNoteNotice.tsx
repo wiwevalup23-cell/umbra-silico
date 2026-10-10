@@ -64,7 +64,7 @@ export function LockedNoteNotice({
 
         <div className="sn-editor-paper">
           <div className="sn-locked-paper">
-            <UiIcon name="lock" />
+            <UiIcon className="sn-icon" name="lock" />
             <h3>{t('lock.encrypted')}</h3>
             <p>{t('lock.masterPasswordRequired')}</p>
           </div>

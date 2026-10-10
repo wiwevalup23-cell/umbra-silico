@@ -1,11 +1,13 @@
 import { useEffect, useRef, type ReactNode, type RefObject } from 'react'
-import { UiIcon } from '@/ui/icons/ui/UiIcon'
+import { SquircleButton } from '@/ui/components/silicon/SquircleButton'
 import { useTranslation } from '@/ui/i18n/use-translation'
 
 type RetroDialogShellProps = {
   children: ReactNode
   className?: string
   closeDisabled?: boolean
+  /** A specific accessible name for the close button; defaults to "Close: <title>". */
+  closeLabel?: string
   describedBy?: string
   initialFocusRef?: RefObject<HTMLElement | null>
   labelledBy: string
@@ -18,6 +20,7 @@ export function RetroDialogShell({
   children,
   className = '',
   closeDisabled = false,
+  closeLabel,
   describedBy,
   initialFocusRef,
   labelledBy,
@@ -92,15 +95,13 @@ export function RetroDialogShell({
             <span aria-hidden="true" />
             <h2 id={labelledBy}>{title}</h2>
             <span aria-hidden="true" />
-            <button
-              aria-label={`Close ${title.toLocaleLowerCase()}`}
+            <SquircleButton
+              aria-label={closeLabel ?? `${t('action.close')}: ${title.toLocaleLowerCase()}`}
               disabled={closeDisabled}
+              icon="close"
               onClick={onClose}
               title={t('action.close')}
-              type="button"
-            >
-              <UiIcon name="close" />
-            </button>
+            />
           </header>
         ) : null}
         {children}

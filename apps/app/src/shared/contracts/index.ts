@@ -38,6 +38,7 @@ export type {
 export {
   argon2idParamsSchema,
   encryptionAlgorithmSchema,
+  InvalidVaultCredentialError,
   localCryptoProfileSchema,
   lockCredentialsSchema,
   noteEncryptionMetadataSchema,
@@ -54,6 +55,7 @@ export type {
   PasswordKdfParams,
   UnlockCredentials,
   UnlockedNoteSession,
+  VaultCredential,
 } from './crypto'
 export {
   documentNodeSchema,

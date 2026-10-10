@@ -2,7 +2,6 @@ import { useRef } from 'react'
 import type { NoteTemplateId, NoteTemplateSummary } from '@/shared/note-templates'
 import { RetroDialogShell } from '@/ui/components/silicon'
 import { UiIcon } from '@/ui/icons/ui/UiIcon'
-import { SquircleButton } from '@/ui/components/silicon/SquircleButton'
 import { useTranslation } from '@/ui/i18n/use-translation'
 
 const templateIcons = {
@@ -30,27 +29,18 @@ export function TemplatePicker({
   const firstTemplateRef = useRef<HTMLButtonElement>(null)
 
   return (
+    // The same window as every other dialog (titlebar, title, 36 squircle to
+    // close). The old header had its own grid, a serif heading and an English
+    // "NEW PAGE" eyebrow on a Russian screen.
     <RetroDialogShell
-      className="sn-modal--command"
+      className="sn-modal--templates"
+      closeLabel={t('templates.close')}
       initialFocusRef={firstTemplateRef}
       labelledBy="template-picker-title"
       onClose={onClose}
-      showTitlebar={false}
       title={t('templates.title')}
     >
-      <section className="sn-command-window sn-template-picker">
-        <header className="sn-command-window__header">
-          <div>
-            <span className="sn-command-window__eyebrow">New page</span>
-            <h2 id="template-picker-title">{t('templates.title')}</h2>
-          </div>
-          <SquircleButton
-            aria-label={t('templates.close')}
-            icon="close"
-            onClick={onClose}
-          />
-        </header>
-
+      <section className="sn-template-picker">
         <div className="sn-template-grid">
           {templates.map((template, index) => (
             <button
@@ -62,13 +52,13 @@ export function TemplatePicker({
               type="button"
             >
               <span className="sn-template-card__icon" aria-hidden="true">
-                <UiIcon name={templateIcons[template.id]} />
+                <UiIcon className="sn-icon" name={templateIcons[template.id]} />
               </span>
               <span>
                 <strong>{t(template.labelKey)}</strong>
                 <small>{t(template.descriptionKey)}</small>
               </span>
-              <UiIcon name="chevronRight" />
+              <UiIcon className="sn-icon sn-icon--16" name="chevronRight" />
             </button>
           ))}
           {onImportTelegram ? (
@@ -79,13 +69,13 @@ export function TemplatePicker({
               type="button"
             >
               <span className="sn-template-card__icon" aria-hidden="true">
-                <UiIcon name="arrowDown" />
+                <UiIcon className="sn-icon" name="arrowDown" />
               </span>
               <span>
                 <strong>{t('templates.importTelegram')}</strong>
                 <small>{t('templates.importTelegramHint')}</small>
               </span>
-              <UiIcon name="chevronRight" />
+              <UiIcon className="sn-icon sn-icon--16" name="chevronRight" />
             </button>
           ) : null}
         </div>

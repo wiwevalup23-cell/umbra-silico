@@ -609,7 +609,7 @@ export function NoteEditor({
           <div className="sn-editor-status-badges" aria-label={t('editor.noteStatus')}>
             {statusBadges.map((badge) => (
               <span className="sn-editor-status-badge" key={badge.title} title={badge.title}>
-                <UiIcon name={badge.icon} />
+                <UiIcon className="sn-icon sn-icon--16" name={badge.icon} />
                 {badge.label}
               </span>
             ))}

@@ -87,3 +87,27 @@ export const unlockedNoteSessionSchema = z.object({
 })
 
 export type UnlockedNoteSession = z.infer<typeof unlockedNoteSessionSchema>
+
+export type VaultCredential = 'master-password' | 'recovery-key'
+
+/**
+ * The secret offered does not open the vault.
+ *
+ * WebCrypto reports a failed AES-GCM unwrap as an `OperationError` whose
+ * message depends on the engine — Chromium leaves it empty — so a wrong
+ * password used to surface as no message at all. Callers need a stable type
+ * to tell "that is not the password" from a genuine failure.
+ */
+export class InvalidVaultCredentialError extends Error {
+  readonly credential: VaultCredential
+
+  constructor(credential: VaultCredential) {
+    super(
+      credential === 'recovery-key'
+        ? 'The recovery key does not open this vault.'
+        : 'The master password does not open this vault.',
+    )
+    this.name = 'InvalidVaultCredentialError'
+    this.credential = credential
+  }
+}

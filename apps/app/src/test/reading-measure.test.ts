@@ -7,6 +7,7 @@ import { normalizeEditorContent } from '@/ui/editor/document-content'
 
 const css = readFileSync(`${process.cwd()}/src/ui/styles/silicon-nostalgia.css`, 'utf8')
 const mobileCss = readFileSync(`${process.cwd()}/src/ui/styles/mobile-ui.css`, 'utf8')
+const designSystemCss = readFileSync(`${process.cwd()}/src/ui/styles/design-system.css`, 'utf8')
 const pageLayout = readFileSync(
   `${process.cwd()}/src/ui/editor/extensions/page-layout.ts`,
   'utf8',
@@ -202,16 +203,17 @@ describe('page layout policy', () => {
   })
 
   it('keeps collapse tooltips local to their live panel button', () => {
-    const button = lastRuleBody('.sn-panel-collapse-button')
-    const tooltip =
-      screenCss.match(/\.sn-panel-collapse-button::after\s*\{([^}]*)\}/)?.[1] ?? ''
+    // The tooltip is a child span of the squircle, which is its positioning
+    // context: removing the panel removes the bubble in the same frame.
+    const squircle = designSystemCss.match(/\n\.sn-squircle \{([^}]*)\}/)?.[1] ?? ''
+    const tooltip = screenCss.match(/\n\.sn-squircle__tooltip \{([^}]*)\}/)?.[1] ?? ''
 
-    expect(button).toContain('position: relative !important')
-    expect(tooltip).toContain('position: absolute !important')
-    expect(tooltip).toContain('opacity: 0 !important')
-    expect(tooltip).toContain('visibility: hidden !important')
-    expect(screenCss).toContain('> .sn-library-panel')
-    expect(screenCss).toContain('> .sn-inspector-panel')
+    expect(squircle).toContain('position: relative')
+    expect(tooltip).toContain('position: absolute')
+    expect(tooltip).toContain('opacity: 0')
+    expect(tooltip).toContain('visibility: hidden')
+    expect(screenCss).toContain('> .sn-library-panel .sn-squircle__tooltip')
+    expect(screenCss).toContain('> .sn-inspector-panel .sn-squircle__tooltip')
   })
 
   it('keeps toolbar actions visible by wrapping instead of hidden horizontal scrolling', () => {

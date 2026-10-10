@@ -2,14 +2,33 @@ import type { ButtonHTMLAttributes } from 'react'
 import { Icon, type IconName } from '@/ui/icons/umbra'
 import { LegacyUiIcon, type LegacyUiIconName } from '@/ui/icons/ui/LegacyUiIcon'
 
-const squirclePath = 'M42.9 22C42.9 25.87 42.8 31.04 42.59 33.61C42.38 36.19 42.07 36.4 41.63 37.46C41.2 38.52 40.67 39.28 39.98 39.98C39.28 40.67 38.52 41.2 37.46 41.63C36.4 42.07 36.19 42.38 33.61 42.59C31.04 42.8 25.87 42.9 22 42.9C18.13 42.9 12.96 42.8 10.39 42.59C7.81 42.38 7.6 42.07 6.54 41.63C5.48 41.2 4.72 40.67 4.02 39.98C3.33 39.28 2.8 38.52 2.37 37.46C1.93 36.4 1.62 36.19 1.41 33.61C1.2 31.04 1.1 25.87 1.1 22C1.1 18.13 1.2 12.96 1.41 10.39C1.62 7.81 1.93 7.6 2.37 6.54C2.8 5.48 3.33 4.72 4.02 4.02C4.72 3.33 5.48 2.8 6.54 2.37C7.6 1.93 7.81 1.62 10.39 1.41C12.96 1.2 18.13 1.1 22 1.1C25.87 1.1 31.04 1.2 33.61 1.41C36.19 1.62 36.4 1.93 37.46 2.37C38.52 2.8 39.28 3.33 39.98 4.02C40.67 4.72 41.2 5.48 41.63 6.54C42.07 7.6 42.38 7.81 42.59 10.39C42.8 12.96 42.9 18.13 42.9 22Z'
-
 export type SquircleButtonProps = Omit<ButtonHTMLAttributes<HTMLButtonElement>, 'children'> & {
   active?: boolean
   icon?: IconName
   legacyIcon?: LegacyUiIconName
   size?: 'small' | 'compact' | 'large'
+  /** A short label drawn below the button on hover and keyboard focus. */
+  tooltip?: string
   variant?: 'quiet' | 'primary' | 'inverted'
+}
+
+/**
+ * The global action: the design system's `.sn-squircle`. One form in three
+ * sizes — 44 in the app header (`large`), 36 in panel headers and on window
+ * close (`compact`), 32 on the sheet (`small`). The superellipse and its 1px
+ * ring are drawn by design-system.css on the button's own pseudo-elements, so
+ * the only children are the icon and an optional tooltip.
+ */
+const sizeClass: Record<NonNullable<SquircleButtonProps['size']>, string> = {
+  large: '',
+  compact: 'sn-squircle--36',
+  small: 'sn-squircle--32',
+}
+
+const variantClass: Record<NonNullable<SquircleButtonProps['variant']>, string> = {
+  quiet: '',
+  primary: 'sn-squircle--primary',
+  inverted: 'sn-squircle--inverse',
 }
 
 export function SquircleButton({
@@ -18,30 +37,39 @@ export function SquircleButton({
   icon,
   legacyIcon,
   size = 'compact',
+  tooltip,
   variant = 'quiet',
   ...props
 }: SquircleButtonProps) {
+  const iconClass = size === 'small' ? 'sn-icon sn-icon--16' : 'sn-icon'
+  const classes = [
+    'sn-icon-button sn-squircle-button sn-squircle',
+    sizeClass[size],
+    variantClass[variant],
+    active ? 'is-on' : '',
+    className,
+  ]
+    .filter(Boolean)
+    .join(' ')
+
   return (
     <button
-      className={`sn-icon-button sn-squircle-button ${className}`.trim()}
+      className={classes}
       data-active={active || undefined}
       data-size={size}
       data-variant={variant}
       type="button"
       {...props}
     >
-      <svg aria-hidden="true" className="sn-squircle-button__frame" focusable="false" viewBox="0 0 44 44">
-        <path className="sn-squircle-button__surface" d={squirclePath} />
-        <path className="sn-squircle-button__focus" d={squirclePath} />
-      </svg>
       {legacyIcon ? (
-        <LegacyUiIcon
-          className="sn-squircle-button__icon"
-          name={legacyIcon}
-          size={size === 'small' ? 18 : 20}
-        />
+        <LegacyUiIcon className={`sn-squircle-button__icon ${iconClass}`} name={legacyIcon} />
       ) : icon ? (
-        <Icon className="sn-squircle-button__icon" name={icon} size={size === 'small' ? 18 : 20} />
+        <Icon className={`sn-squircle-button__icon ${iconClass}`} name={icon} />
+      ) : null}
+      {tooltip ? (
+        <span aria-hidden="true" className="sn-squircle__tooltip">
+          {tooltip}
+        </span>
       ) : null}
     </button>
   )

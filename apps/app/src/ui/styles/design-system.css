@@ -1,0 +1,237 @@
+/* Umbra Silico — design system v2 controls (CD-02).
+   ---------------------------------------------------------------------------
+   Ported from the design system's components/bundle.css (Claude Design,
+   06.10.2026; https://claude.ai/artifact/M6JBMPQM49WBxxM6GxgSya). Colours,
+   sizes, radii and shadows come only from the tokens in silicon-nostalgia.css
+   :root and themes.css — no literals here.
+
+   Three button materials, each tied to a role, never more than three on one
+   screen:
+     .sn-squircle  global action      flat superellipse with a 1px ring
+     .sn-tool      compact tool       no frame of its own, a tint under the pointer
+     .sn-btn       form action        the Platinum bevel
+   plus fields, segmented control, panel tabs, chips, menus, keycaps,
+   disclosure, task checkbox and slider. One focus ring for all of them. */
+
+:root {
+  /* Superellipse n = 4 and 1px rings cut separately for each size, so the
+     edge stays one device pixel wide instead of scaling with the button. */
+  --sn-squircle-shape: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 44 44' preserveAspectRatio='none'%3E%3Cpath d='M44 22L43.96 28.49L43.83 31.17L43.62 33.19L43.33 34.87L42.94 36.30L42.47 37.56L41.91 38.66L41.26 39.64L40.50 40.50L39.64 41.26L38.66 41.91L37.56 42.47L36.30 42.94L34.87 43.33L33.19 43.62L31.17 43.83L28.49 43.96L22 44L15.51 43.96L12.83 43.83L10.81 43.62L9.13 43.33L7.70 42.94L6.44 42.47L5.34 41.91L4.36 41.26L3.50 40.50L2.74 39.64L2.09 38.66L1.53 37.56L1.06 36.30L0.67 34.87L0.38 33.19L0.17 31.17L0.04 28.49L0 22L0.04 15.51L0.17 12.83L0.38 10.81L0.67 9.13L1.06 7.70L1.53 6.44L2.09 5.34L2.74 4.36L3.50 3.50L4.36 2.74L5.34 2.09L6.44 1.53L7.70 1.06L9.13 0.67L10.81 0.38L12.83 0.17L15.51 0.04L22 0L28.49 0.04L31.17 0.17L33.19 0.38L34.87 0.67L36.30 1.06L37.56 1.53L38.66 2.09L39.64 2.74L40.50 3.50L41.26 4.36L41.91 5.34L42.47 6.44L42.94 7.70L43.33 9.13L43.62 10.81L43.83 12.83L43.96 15.51Z'/%3E%3C/svg%3E");
+  --sn-squircle-ring-44: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 44 44' preserveAspectRatio='none'%3E%3Cpath fill-rule='evenodd' d='M44 22L43.96 28.49L43.83 31.17L43.62 33.19L43.33 34.87L42.94 36.30L42.47 37.56L41.91 38.66L41.26 39.64L40.50 40.50L39.64 41.26L38.66 41.91L37.56 42.47L36.30 42.94L34.87 43.33L33.19 43.62L31.17 43.83L28.49 43.96L22 44L15.51 43.96L12.83 43.83L10.81 43.62L9.13 43.33L7.70 42.94L6.44 42.47L5.34 41.91L4.36 41.26L3.50 40.50L2.74 39.64L2.09 38.66L1.53 37.56L1.06 36.30L0.67 34.87L0.38 33.19L0.17 31.17L0.04 28.49L0 22L0.04 15.51L0.17 12.83L0.38 10.81L0.67 9.13L1.06 7.70L1.53 6.44L2.09 5.34L2.74 4.36L3.50 3.50L4.36 2.74L5.34 2.09L6.44 1.53L7.70 1.06L9.13 0.67L10.81 0.38L12.83 0.17L15.51 0.04L22 0L28.49 0.04L31.17 0.17L33.19 0.38L34.87 0.67L36.30 1.06L37.56 1.53L38.66 2.09L39.64 2.74L40.50 3.50L41.26 4.36L41.91 5.34L42.47 6.44L42.94 7.70L43.33 9.13L43.62 10.81L43.83 12.83L43.96 15.51ZM43 22L42.96 28.20L42.84 30.75L42.64 32.68L42.36 34.28L41.99 35.65L41.54 36.85L41.01 37.90L40.38 38.84L39.66 39.66L38.84 40.38L37.90 41.01L36.85 41.54L35.65 41.99L34.28 42.36L32.68 42.64L30.75 42.84L28.20 42.96L22 43L15.80 42.96L13.25 42.84L11.32 42.64L9.72 42.36L8.35 41.99L7.15 41.54L6.10 41.01L5.16 40.38L4.34 39.66L3.62 38.84L2.99 37.90L2.46 36.85L2.01 35.65L1.64 34.28L1.36 32.68L1.16 30.75L1.04 28.20L1 22L1.04 15.80L1.16 13.25L1.36 11.32L1.64 9.72L2.01 8.35L2.46 7.15L2.99 6.10L3.62 5.16L4.34 4.34L5.16 3.62L6.10 2.99L7.15 2.46L8.35 2.01L9.72 1.64L11.32 1.36L13.25 1.16L15.80 1.04L22 1L28.20 1.04L30.75 1.16L32.68 1.36L34.28 1.64L35.65 2.01L36.85 2.46L37.90 2.99L38.84 3.62L39.66 4.34L40.38 5.16L41.01 6.10L41.54 7.15L41.99 8.35L42.36 9.72L42.64 11.32L42.84 13.25L42.96 15.80Z'/%3E%3C/svg%3E");
+  --sn-squircle-ring-36: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 36 36' preserveAspectRatio='none'%3E%3Cpath fill-rule='evenodd' d='M36 18L35.97 23.31L35.86 25.50L35.69 27.16L35.45 28.53L35.14 29.70L34.75 30.73L34.29 31.63L33.75 32.43L33.14 33.14L32.43 33.75L31.63 34.29L30.73 34.75L29.70 35.14L28.53 35.45L27.16 35.69L25.50 35.86L23.31 35.97L18 36L12.69 35.97L10.50 35.86L8.84 35.69L7.47 35.45L6.30 35.14L5.27 34.75L4.37 34.29L3.57 33.75L2.86 33.14L2.25 32.43L1.71 31.63L1.25 30.73L0.86 29.70L0.55 28.53L0.31 27.16L0.14 25.50L0.03 23.31L0 18L0.03 12.69L0.14 10.50L0.31 8.84L0.55 7.47L0.86 6.30L1.25 5.27L1.71 4.37L2.25 3.57L2.86 2.86L3.57 2.25L4.37 1.71L5.27 1.25L6.30 0.86L7.47 0.55L8.84 0.31L10.50 0.14L12.69 0.03L18 0L23.31 0.03L25.50 0.14L27.16 0.31L28.53 0.55L29.70 0.86L30.73 1.25L31.63 1.71L32.43 2.25L33.14 2.86L33.75 3.57L34.29 4.37L34.75 5.27L35.14 6.30L35.45 7.47L35.69 8.84L35.86 10.50L35.97 12.69ZM35 18L34.97 23.02L34.87 25.08L34.71 26.65L34.48 27.94L34.18 29.05L33.82 30.02L33.39 30.87L32.88 31.63L32.30 32.30L31.63 32.88L30.87 33.39L30.02 33.82L29.05 34.18L27.94 34.48L26.65 34.71L25.08 34.87L23.02 34.97L18 35L12.98 34.97L10.92 34.87L9.35 34.71L8.06 34.48L6.95 34.18L5.98 33.82L5.13 33.39L4.37 32.88L3.70 32.30L3.12 31.63L2.61 30.87L2.18 30.02L1.82 29.05L1.52 27.94L1.29 26.65L1.13 25.08L1.03 23.02L1 18L1.03 12.98L1.13 10.92L1.29 9.35L1.52 8.06L1.82 6.95L2.18 5.98L2.61 5.13L3.12 4.37L3.70 3.70L4.37 3.12L5.13 2.61L5.98 2.18L6.95 1.82L8.06 1.52L9.35 1.29L10.92 1.13L12.98 1.03L18 1L23.02 1.03L25.08 1.13L26.65 1.29L27.94 1.52L29.05 1.82L30.02 2.18L30.87 2.61L31.63 3.12L32.30 3.70L32.88 4.37L33.39 5.13L33.82 5.98L34.18 6.95L34.48 8.06L34.71 9.35L34.87 10.92L34.97 12.98Z'/%3E%3C/svg%3E");
+  --sn-squircle-ring-32: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32' preserveAspectRatio='none'%3E%3Cpath fill-rule='evenodd' d='M32 16L31.97 20.72L31.88 22.67L31.73 24.14L31.51 25.36L31.23 26.40L30.89 27.31L30.48 28.12L30 28.83L29.45 29.45L28.83 30L28.12 30.48L27.31 30.89L26.40 31.23L25.36 31.51L24.14 31.73L22.67 31.88L20.72 31.97L16 32L11.28 31.97L9.33 31.88L7.86 31.73L6.64 31.51L5.60 31.23L4.69 30.89L3.88 30.48L3.17 30L2.55 29.45L2 28.83L1.52 28.12L1.11 27.31L0.77 26.40L0.49 25.36L0.27 24.14L0.12 22.67L0.03 20.72L0 16L0.03 11.28L0.12 9.33L0.27 7.86L0.49 6.64L0.77 5.60L1.11 4.69L1.52 3.88L2 3.17L2.55 2.55L3.17 2L3.88 1.52L4.69 1.11L5.60 0.77L6.64 0.49L7.86 0.27L9.33 0.12L11.28 0.03L16 0L20.72 0.03L22.67 0.12L24.14 0.27L25.36 0.49L26.40 0.77L27.31 1.11L28.12 1.52L28.83 2L29.45 2.55L30 3.17L30.48 3.88L30.89 4.69L31.23 5.60L31.51 6.64L31.73 7.86L31.88 9.33L31.97 11.28ZM31 16L30.97 20.43L30.89 22.25L30.74 23.63L30.54 24.77L30.28 25.75L29.96 26.61L29.58 27.36L29.13 28.03L28.61 28.61L28.03 29.13L27.36 29.58L26.61 29.96L25.75 30.28L24.77 30.54L23.63 30.74L22.25 30.89L20.43 30.97L16 31L11.57 30.97L9.75 30.89L8.37 30.74L7.23 30.54L6.25 30.28L5.39 29.96L4.64 29.58L3.97 29.13L3.39 28.61L2.87 28.03L2.42 27.36L2.04 26.61L1.72 25.75L1.46 24.77L1.26 23.63L1.11 22.25L1.03 20.43L1 16L1.03 11.57L1.11 9.75L1.26 8.37L1.46 7.23L1.72 6.25L2.04 5.39L2.42 4.64L2.87 3.97L3.39 3.39L3.97 2.87L4.64 2.42L5.39 2.04L6.25 1.72L7.23 1.46L8.37 1.26L9.75 1.11L11.57 1.03L16 1L20.43 1.03L22.25 1.11L23.63 1.26L24.77 1.46L25.75 1.72L26.61 2.04L27.36 2.42L28.03 2.87L28.61 3.39L29.13 3.97L29.58 4.64L29.96 5.39L30.28 6.25L30.54 7.23L30.74 8.37L30.89 9.75L30.97 11.57Z'/%3E%3C/svg%3E");
+  --sn-glyph-check: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M5 12.5l4.5 4.5L19 7.5'/%3E%3C/svg%3E");
+  --sn-glyph-info: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='12' r='8.25'/%3E%3Cpath d='M12 11v5M12 7.75h.01'/%3E%3C/svg%3E");
+  --sn-glyph-chevron: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.9' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");}
+
+/* ── типографские роли хрома ─────────────────────────────────────────── */
+.sn-t-brand     { font: var(--sn-type-brand-weight) var(--sn-type-brand-size)/var(--sn-type-brand-line) var(--sn-font-display); letter-spacing: var(--sn-type-brand-track); }
+.sn-t-window    { font: var(--sn-type-window-weight) var(--sn-type-window-size)/var(--sn-type-window-line) var(--sn-font-display); letter-spacing: var(--sn-type-window-track); }
+.sn-t-panel     { font: var(--sn-type-panel-weight) var(--sn-type-panel-size)/var(--sn-type-panel-line) var(--sn-font-ui); letter-spacing: var(--sn-type-panel-track); }
+.sn-t-item      { font: var(--sn-type-item-weight) var(--sn-type-item-size)/var(--sn-type-item-line) var(--sn-font-ui); letter-spacing: var(--sn-type-item-track); }
+.sn-t-field     { font: var(--sn-type-field-weight) var(--sn-type-field-size)/var(--sn-type-field-line) var(--sn-font-ui); letter-spacing: var(--sn-type-field-track); }
+.sn-t-body      { font: var(--sn-type-body-weight) var(--sn-type-body-size)/var(--sn-type-body-line) var(--sn-font-ui); letter-spacing: var(--sn-type-body-track); }
+.sn-t-action    { font: var(--sn-type-action-weight) var(--sn-type-action-size)/var(--sn-type-action-line) var(--sn-font-ui); letter-spacing: var(--sn-type-action-track); }
+.sn-t-secondary { font: var(--sn-type-secondary-weight) var(--sn-type-secondary-size)/var(--sn-type-secondary-line) var(--sn-font-ui); letter-spacing: var(--sn-type-secondary-track); }
+.sn-t-data      { font: var(--sn-type-data-weight) var(--sn-type-data-size)/var(--sn-type-data-line) var(--sn-font-mono); letter-spacing: var(--sn-type-data-track); font-variant-numeric: tabular-nums; }
+.sn-t-caps      { text-transform: uppercase; }
+
+/* ── иконка: сетка 24, контур, круглые окончания, две оптические версии ── */
+.sn-icon { width: var(--sn-icon-20); height: var(--sn-icon-20); flex: none; fill: none; stroke: currentColor; stroke-width: var(--sn-stroke-20); stroke-linecap: round; stroke-linejoin: round; }
+.sn-icon * { vector-effect: non-scaling-stroke; }
+.sn-icon--16 { width: var(--sn-icon-16); height: var(--sn-icon-16); stroke-width: var(--sn-stroke-16); }
+
+/* ── общий фокус ─────────────────────────────────────────────────────── */
+.sn-squircle:focus-visible, .sn-tool:focus-visible, .sn-btn:focus-visible, .sn-field:focus-visible, .sn-select select:focus-visible,
+.sn-search:focus-within, .sn-seg__item:focus-visible, .sn-tabs__tab:focus-visible, .sn-menu-item:focus-visible,
+.sn-disclosure > summary:focus-visible, .sn-check:focus-visible, .sn-slider:focus-visible, .sn-chip__remove:focus-visible,
+.is-focus { outline: 2px solid var(--sn-selection); outline-offset: 2px; }
+
+/* ── 1 · глобальное действие: squircle ──────────────────────────────── */
+.sn-squircle {
+  --_size: var(--sn-size-44); --_ring: var(--sn-squircle-ring-44);
+  --_fill: var(--sn-squircle-fill); --_edge: var(--sn-control-border); --_tint: rgba(0, 0, 0, 0);
+  position: relative; isolation: isolate; display: inline-grid; place-items: center; flex: none;
+  width: var(--_size); height: var(--_size); padding: 0; border: 0; border-radius: 30%;
+  background: none; color: var(--sn-ink); cursor: pointer; -webkit-tap-highlight-color: transparent;
+}
+.sn-squircle::before, .sn-squircle::after { content: ""; position: absolute; inset: 0; z-index: -1; }
+.sn-squircle::before { background: linear-gradient(var(--_tint), var(--_tint)), var(--_fill); -webkit-mask: var(--sn-squircle-shape) center / 100% 100% no-repeat; mask: var(--sn-squircle-shape) center / 100% 100% no-repeat; }
+.sn-squircle::after { background: var(--_edge); -webkit-mask: var(--_ring) center / 100% 100% no-repeat; mask: var(--_ring) center / 100% 100% no-repeat; }
+.sn-squircle--36 { --_size: var(--sn-size-36); --_ring: var(--sn-squircle-ring-36); }
+.sn-squircle--32 { --_size: var(--sn-size-32); --_ring: var(--sn-squircle-ring-32); }
+.sn-squircle--32 .sn-icon { width: var(--sn-icon-16); height: var(--sn-icon-16); stroke-width: var(--sn-stroke-16); }
+.sn-squircle:hover, .sn-squircle.is-hover { --_tint: var(--sn-hover); }
+.sn-squircle:active, .sn-squircle.is-pressed { --_tint: var(--sn-pressed); }
+.sn-squircle[aria-pressed="true"], .sn-squircle.is-on { --_fill: var(--sn-selection-soft); --_edge: var(--sn-selection); }
+.sn-squircle--primary { --_fill: var(--sn-primary); --_edge: var(--sn-primary); color: var(--sn-on-primary); }
+.sn-squircle--primary:hover, .sn-squircle--primary.is-hover { --_fill: var(--sn-primary-hover); --_edge: var(--sn-primary-hover); --_tint: rgba(0, 0, 0, 0); }
+.sn-squircle--primary:active, .sn-squircle--primary.is-pressed { --_fill: var(--sn-primary); --_edge: var(--sn-primary); --_tint: rgba(0, 0, 0, 0); }
+.sn-squircle--inverse { --_fill: var(--sn-on-primary); --_edge: var(--sn-on-primary); color: var(--sn-primary); }
+.sn-squircle:disabled, .sn-squircle.is-disabled { --_fill: rgba(0, 0, 0, 0); --_edge: var(--sn-line); --_tint: rgba(0, 0, 0, 0); color: var(--sn-disabled); cursor: default; }
+
+/* ── 2 · компактный инструмент: без собственной рамки ───────────────── */
+.sn-tool {
+  display: inline-flex; align-items: center; justify-content: center; gap: var(--sn-space-1); flex: none;
+  height: var(--sn-size-28); min-width: var(--sn-size-28); padding: 0 6px; border: 0; border-radius: var(--sn-radius-control);
+  background: none; color: var(--sn-ink); cursor: pointer; white-space: nowrap;
+  font: var(--sn-type-action-weight) var(--sn-type-action-size)/var(--sn-type-action-line) var(--sn-font-ui);
+}
+.sn-tool .sn-icon { width: var(--sn-icon-16); height: var(--sn-icon-16); stroke-width: var(--sn-stroke-16); }
+.sn-tool:hover, .sn-tool.is-hover { background: var(--sn-hover); }
+.sn-tool:active, .sn-tool.is-pressed { background: var(--sn-pressed); }
+.sn-tool[aria-pressed="true"], .sn-tool.is-on { background: var(--sn-selection-soft); }
+.sn-tool:disabled, .sn-tool.is-disabled { background: none; color: var(--sn-disabled); cursor: default; }
+
+/* ── 3 · кнопка формы: Platinum-фаска ───────────────────────────────── */
+.sn-btn {
+  --_tint: rgba(0, 0, 0, 0);
+  display: inline-flex; align-items: center; justify-content: center; gap: 6px; flex: none; box-sizing: border-box;
+  height: var(--sn-size-32); padding: 0 var(--sn-space-3); border: 1px solid var(--sn-control-border); border-radius: var(--sn-radius-control);
+  background: linear-gradient(var(--_tint), var(--_tint)), linear-gradient(var(--sn-bevel-top), var(--sn-bevel-bottom));
+  box-shadow: var(--sn-shadow-bevel); color: var(--sn-ink); cursor: pointer; white-space: nowrap;
+  font: var(--sn-type-action-weight) var(--sn-type-action-size)/var(--sn-type-action-line) var(--sn-font-ui);
+}
+.sn-btn .sn-icon { width: var(--sn-icon-16); height: var(--sn-icon-16); stroke-width: var(--sn-stroke-16); }
+.sn-btn--36 { height: var(--sn-size-36); padding: 0 var(--sn-space-4); }
+.sn-btn:hover, .sn-btn.is-hover { --_tint: var(--sn-hover); }
+.sn-btn:active, .sn-btn.is-pressed { background: var(--sn-bevel-bottom); box-shadow: var(--sn-shadow-bevel-pressed); }
+.sn-btn--primary { background: var(--sn-primary); border-color: var(--sn-primary); box-shadow: none; color: var(--sn-on-primary); }
+.sn-btn--primary:hover, .sn-btn--primary.is-hover { background: var(--sn-primary-hover); border-color: var(--sn-primary-hover); }
+.sn-btn--primary:active, .sn-btn--primary.is-pressed { background: var(--sn-primary); border-color: var(--sn-primary); box-shadow: none; }
+.sn-btn--danger { background: linear-gradient(var(--_tint), var(--_tint)), var(--sn-danger); border-color: var(--sn-danger); box-shadow: none; color: var(--sn-on-signal); }
+.sn-btn--danger:active, .sn-btn--danger.is-pressed { --_tint: var(--sn-pressed); background: linear-gradient(var(--_tint), var(--_tint)), var(--sn-danger); box-shadow: none; }
+.sn-btn:disabled, .sn-btn.is-disabled { background: none; border-color: var(--sn-line); box-shadow: none; color: var(--sn-disabled); cursor: default; }
+
+/* ── поле ввода, селект, поиск ──────────────────────────────────────── */
+.sn-field, .sn-select select, .sn-search {
+  box-sizing: border-box; height: var(--sn-size-32); border: 1px solid var(--sn-control-border); border-radius: var(--sn-radius-control);
+  background: var(--sn-field-bg); color: var(--sn-ink);
+  font: var(--sn-type-field-weight) var(--sn-type-field-size)/var(--sn-type-field-line) var(--sn-font-ui);
+}
+.sn-field { padding: 0 10px; min-width: 0; }
+.sn-field::placeholder, .sn-search input::placeholder { color: var(--sn-muted); opacity: 1; }
+.sn-field--36, .sn-select--36 select, .sn-search--36 { height: var(--sn-size-36); }
+.sn-field:hover, .sn-field.is-hover, .sn-select select:hover, .sn-search:hover { border-color: var(--sn-ink); }
+.sn-field[aria-invalid="true"] { border-color: var(--sn-danger); }
+.sn-field:disabled, .sn-select select:disabled { background: none; border-color: var(--sn-line); color: var(--sn-disabled); }
+.sn-select { position: relative; display: inline-flex; min-width: 0; color: var(--sn-ink); }
+.sn-select select { appearance: none; -webkit-appearance: none; width: 100%; padding: 0 30px 0 10px; cursor: pointer; }
+.sn-select::after { content: ""; position: absolute; right: 8px; top: 50%; width: var(--sn-icon-16); height: var(--sn-icon-16); margin-top: -8px; pointer-events: none; background: currentColor; -webkit-mask: var(--sn-glyph-chevron) center / contain no-repeat; mask: var(--sn-glyph-chevron) center / contain no-repeat; }
+.sn-search { display: inline-flex; align-items: center; gap: 6px; padding: 0 10px; min-width: 0; color: var(--sn-muted); }
+.sn-search .sn-icon { width: var(--sn-icon-16); height: var(--sn-icon-16); stroke-width: var(--sn-stroke-16); }
+.sn-search input { flex: 1; min-width: 0; height: 100%; padding: 0; border: 0; outline: 0; background: none; color: var(--sn-ink); font: inherit; }
+.sn-label { display: block; margin-bottom: 6px; color: var(--sn-ink); font: var(--sn-type-action-weight) var(--sn-type-action-size)/var(--sn-type-action-line) var(--sn-font-ui); }
+.sn-hint { display: block; margin-top: 6px; color: var(--sn-muted); font: var(--sn-type-secondary-weight) var(--sn-type-secondary-size)/var(--sn-type-secondary-line) var(--sn-font-ui); }
+
+/* ── сегментный переключатель ───────────────────────────────────────── */
+.sn-seg { display: inline-flex; box-sizing: border-box; height: var(--sn-size-32); padding: 2px; gap: 2px; border: 1px solid var(--sn-control-border); border-radius: var(--sn-radius-control); background: var(--sn-hover); box-shadow: var(--sn-shadow-bevel-pressed); }
+.sn-seg__item {
+  display: inline-flex; align-items: center; justify-content: center; gap: var(--sn-space-1); padding: 0 var(--sn-space-3); border: 1px solid rgba(0, 0, 0, 0); border-radius: calc(var(--sn-radius-control) - 1px);
+  background: none; color: var(--sn-ink); cursor: pointer; white-space: nowrap;
+  font: var(--sn-type-action-weight) var(--sn-type-action-size)/var(--sn-type-action-line) var(--sn-font-ui);
+}
+.sn-seg__item:hover, .sn-seg__item.is-hover { background: var(--sn-hover); }
+.sn-seg__item[aria-checked="true"], .sn-seg__item[aria-selected="true"], .sn-seg__item[data-active="true"], .sn-seg__item.is-on { border-color: var(--sn-control-border); background: linear-gradient(var(--sn-bevel-top), var(--sn-bevel-bottom)); box-shadow: var(--sn-shadow-bevel); }
+.sn-seg__item:disabled { color: var(--sn-disabled); cursor: default; background: none; }
+
+/* ── вкладки панели ─────────────────────────────────────────────────── */
+.sn-tabs { display: flex; gap: 2px; border-bottom: 1px solid var(--sn-line); }
+.sn-tabs__tab {
+  position: relative; display: inline-flex; align-items: center; justify-content: center; gap: var(--sn-space-1); flex: 1 1 auto;
+  height: var(--sn-size-28); margin-bottom: 5px; padding: 0 var(--sn-space-1); border: 0; border-radius: var(--sn-radius-control);
+  background: none; color: var(--sn-muted); cursor: pointer; white-space: nowrap;
+  font: var(--sn-type-action-weight) var(--sn-type-action-size)/var(--sn-type-action-line) var(--sn-font-ui);
+}
+.sn-tabs__tab .sn-icon { width: var(--sn-icon-16); height: var(--sn-icon-16); stroke-width: var(--sn-stroke-16); }
+.sn-tabs__tab:hover, .sn-tabs__tab.is-hover { background: var(--sn-hover); color: var(--sn-ink); }
+.sn-tabs__tab[aria-selected="true"] { color: var(--sn-ink); }
+.sn-tabs__tab[aria-selected="true"]::after { content: ""; position: absolute; left: 0; right: 0; bottom: -6px; height: 2px; background: var(--sn-ink); }
+.sn-tabs__tab:disabled { color: var(--sn-disabled); cursor: default; background: none; }
+
+/* ── чип: статус и тег ──────────────────────────────────────────────── */
+.sn-chip {
+  --_tone: var(--sn-signal-graphite);
+  display: inline-flex; align-items: center; gap: var(--sn-space-1); box-sizing: border-box; max-width: 100%;
+  height: var(--sn-size-24); padding: 0 var(--sn-space-2); border: 1px solid var(--sn-line); border-radius: var(--sn-radius-control);
+  background: none; color: var(--sn-ink); white-space: nowrap;
+  font: var(--sn-type-secondary-weight) var(--sn-type-secondary-size)/var(--sn-type-secondary-line) var(--sn-font-ui);
+}
+.sn-chip .sn-icon { width: var(--sn-icon-16); height: var(--sn-icon-16); stroke-width: var(--sn-stroke-16); color: var(--_tone); }
+.sn-chip--status { font-weight: var(--sn-type-action-weight); }
+.sn-chip--tag { color: var(--sn-muted); }
+
+.sn-chip--blue { --_tone: var(--sn-signal-blue); }
+
+.sn-chip--gold { --_tone: var(--sn-signal-gold); }
+
+.sn-chip--green { --_tone: var(--sn-signal-green); }
+
+.sn-chip--red { --_tone: var(--sn-signal-red); }
+
+.sn-chip--violet { --_tone: var(--sn-signal-violet); }
+
+.sn-chip__remove { display: inline-grid; place-items: center; width: 16px; height: 16px; margin-right: -4px; padding: 0; border: 0; border-radius: calc(var(--sn-radius-control) - 1px); background: none; color: var(--sn-muted); cursor: pointer; }
+.sn-chip__remove:hover { background: var(--sn-hover); color: var(--sn-ink); }
+.sn-chip__remove .sn-icon { color: inherit; }
+
+/* ── меню и пункт меню (образец — палитра Ctrl+K) ───────────────────── */
+.sn-menu { box-sizing: border-box; min-width: 220px; padding: var(--sn-space-1); border: 1px solid var(--sn-line); border-radius: var(--sn-radius-card); background: var(--sn-surface-raised); box-shadow: var(--sn-shadow-menu); color: var(--sn-ink); }
+.sn-menu__group { padding: var(--sn-space-2) var(--sn-space-2) var(--sn-space-1); color: var(--sn-muted); text-transform: uppercase; font: var(--sn-type-data-weight) var(--sn-type-data-size)/var(--sn-type-data-line) var(--sn-font-mono); letter-spacing: var(--sn-type-data-track); }
+.sn-menu__sep { height: 1px; margin: var(--sn-space-1) var(--sn-space-2); background: var(--sn-line); }
+.sn-menu-item {
+  display: flex; align-items: center; gap: var(--sn-space-2); box-sizing: border-box; width: 100%; min-height: var(--sn-size-28); padding: 4px var(--sn-space-2);
+  border: 0; border-radius: var(--sn-radius-control); background: none; color: var(--sn-ink); cursor: pointer; text-align: left; white-space: nowrap;
+  font: var(--sn-type-body-weight) var(--sn-type-body-size)/var(--sn-type-body-line) var(--sn-font-ui);
+}
+.sn-menu-item .sn-icon { width: var(--sn-icon-16); height: var(--sn-icon-16); stroke-width: var(--sn-stroke-16); }
+.sn-menu-item__label { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+.sn-menu-item__title { display: block; font: var(--sn-type-item-weight) var(--sn-type-item-size)/var(--sn-type-item-line) var(--sn-font-ui); overflow: hidden; text-overflow: ellipsis; }
+.sn-menu-item__desc { display: block; color: var(--sn-muted); font: var(--sn-type-secondary-weight) var(--sn-type-secondary-size)/var(--sn-type-secondary-line) var(--sn-font-ui); overflow: hidden; text-overflow: ellipsis; }
+.sn-menu-item__check { color: var(--sn-ink); visibility: hidden; }
+.sn-menu-item[aria-checked="true"] .sn-menu-item__check { visibility: visible; }
+.sn-menu-item[aria-checked="true"], .sn-menu-item[data-active="true"] { background: var(--sn-selection-soft); }
+.sn-menu-item:hover, .sn-menu-item.is-hover { background: var(--sn-hover); }
+.sn-menu-item:active, .sn-menu-item.is-pressed { background: var(--sn-pressed); }
+.sn-menu-item--danger { color: var(--sn-danger); }
+.sn-menu-item:disabled, .sn-menu-item.is-disabled { background: none; color: var(--sn-disabled); cursor: default; }
+
+/* ── клавиша ────────────────────────────────────────────────────────── */
+.sn-key {
+  display: inline-flex; align-items: center; justify-content: center; box-sizing: border-box; min-width: 20px; height: 20px; padding: 0 5px;
+  border: 1px solid var(--sn-line); border-bottom-width: 2px; border-radius: var(--sn-radius-control); background: var(--sn-bevel-top); color: var(--sn-ink); white-space: nowrap;
+  font: var(--sn-type-data-weight) var(--sn-type-data-size)/var(--sn-type-data-line) var(--sn-font-mono); letter-spacing: 0;
+}
+
+/* ── раскрывашка: вместо системного треугольника <summary> ──────────── */
+.sn-disclosure > summary {
+  display: inline-flex; align-items: center; gap: var(--sn-space-1); height: var(--sn-size-28); padding: 0 var(--sn-space-2) 0 var(--sn-space-1); border-radius: var(--sn-radius-control);
+  color: var(--sn-ink); cursor: pointer; list-style: none; user-select: none;
+  font: var(--sn-type-action-weight) var(--sn-type-action-size)/var(--sn-type-action-line) var(--sn-font-ui);
+}
+.sn-disclosure > summary::-webkit-details-marker { display: none; }
+.sn-disclosure > summary::before { content: ""; width: var(--sn-icon-16); height: var(--sn-icon-16); flex: none; background: currentColor; -webkit-mask: var(--sn-glyph-chevron) center / contain no-repeat; mask: var(--sn-glyph-chevron) center / contain no-repeat; transform: rotate(-90deg); }
+.sn-disclosure[open] > summary::before { transform: none; }
+.sn-disclosure > summary:hover, .sn-disclosure > summary.is-hover { background: var(--sn-hover); }
+.sn-disclosure__meta { margin-left: var(--sn-space-1); color: var(--sn-muted); font-weight: var(--sn-type-body-weight); }
+
+/* ── чекбокс задачи (на бумаге) ─────────────────────────────────────── */
+.sn-check {
+  appearance: none; -webkit-appearance: none; position: relative; box-sizing: border-box; flex: none; width: 20px; height: 20px; margin: 0; vertical-align: -3px;
+  border: 1.5px solid var(--sn-control-border); border-radius: var(--sn-radius-control); background: var(--sn-field-bg); cursor: pointer;
+}
+.sn-check:hover, .sn-check.is-hover { border-color: var(--sn-ink); }
+.sn-check:checked { border-color: var(--sn-primary); background: var(--sn-primary); }
+.sn-check:checked::before { content: ""; position: absolute; inset: 0; background: var(--sn-on-primary); -webkit-mask: var(--sn-glyph-check) center / 14px 14px no-repeat; mask: var(--sn-glyph-check) center / 14px 14px no-repeat; }
+.sn-check:disabled { border-color: var(--sn-line); background: none; cursor: default; }
+.sn-check:disabled:checked { background: var(--sn-disabled); border-color: var(--sn-disabled); }
+
+/* ── слайдер ────────────────────────────────────────────────────────── */
+.sn-slider { appearance: none; -webkit-appearance: none; width: 160px; height: var(--sn-size-24); margin: 0; background: none; cursor: pointer; border-radius: var(--sn-radius-control); }
+.sn-slider::-webkit-slider-runnable-track { height: 4px; border-radius: 2px; background: var(--sn-control-border); }
+.sn-slider::-moz-range-track { height: 4px; border-radius: 2px; background: var(--sn-control-border); }
+.sn-slider::-webkit-slider-thumb { -webkit-appearance: none; box-sizing: border-box; width: 16px; height: 16px; margin-top: -6px; border: 1px solid var(--sn-control-border); border-radius: 50%; background: linear-gradient(var(--sn-bevel-top), var(--sn-bevel-bottom)); box-shadow: var(--sn-shadow-bevel); }
+.sn-slider::-moz-range-thumb { box-sizing: border-box; width: 16px; height: 16px; border: 1px solid var(--sn-control-border); border-radius: 50%; background: linear-gradient(var(--sn-bevel-top), var(--sn-bevel-bottom)); box-shadow: var(--sn-shadow-bevel); }
+.sn-slider:disabled { cursor: default; opacity: 1; }
+.sn-slider:disabled::-webkit-slider-runnable-track { background: var(--sn-line); }
+.sn-slider:disabled::-webkit-slider-thumb { border-color: var(--sn-line); box-shadow: none; background: var(--sn-surface-solid); }

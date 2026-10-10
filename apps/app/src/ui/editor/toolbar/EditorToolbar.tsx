@@ -357,8 +357,7 @@ export function EditorToolbar({
         className="sn-editor-toolbar__group sn-editor-toolbar__group--typography"
         role="group"
       >
-        <label className="sn-editor-format-field">
-          <span aria-hidden="true" className="sn-editor-format-field__prefix">Aa</span>
+        <label className="sn-editor-format-field sn-select">
           <span className="sn-sr-only">{t('editor.fontFamily')}</span>
           <select
             aria-label={t('editor.fontFamily')}
@@ -384,7 +383,7 @@ export function EditorToolbar({
             ))}
           </select>
         </label>
-        <label className="sn-editor-format-field sn-editor-format-field--size">
+        <label className="sn-editor-format-field sn-editor-format-field--size sn-select">
           <span className="sn-sr-only">{t('editor.fontSize')}</span>
           <select
             aria-label={t('editor.fontSize')}
@@ -469,12 +468,12 @@ export function EditorToolbar({
           {isHighlightMenuOpen ? createPortal(
             <div
               aria-label={t('editor.markerColors')}
-              className="sn-editor-highlight-menu"
+              className="sn-editor-highlight-menu sn-menu"
               ref={highlightPanelRef}
               role="menu"
               style={highlightMenuStyle ?? { visibility: 'hidden' }}
             >
-              <span className="sn-editor-highlight-menu__label">{t('editor.marker')}</span>
+              <span className="sn-menu__group">{t('editor.marker')}</span>
               <div className="sn-editor-highlight-menu__swatches">
                 {editorHighlightOptions.map((option) => (
                   <button
@@ -492,8 +491,9 @@ export function EditorToolbar({
                   />
                 ))}
               </div>
+              <div className="sn-menu__sep" role="separator" />
               <button
-                className="sn-editor-highlight-menu__clear"
+                className="sn-editor-highlight-menu__clear sn-menu-item"
                 disabled={!toolbarState.highlightColor}
                 onClick={() => {
                   editor?.chain().focus().unsetHighlight().run()
@@ -501,7 +501,7 @@ export function EditorToolbar({
                 }}
                 type="button"
               >
-                {t('editor.markerClear')}
+                <span className="sn-menu-item__label">{t('editor.markerClear')}</span>
               </button>
             </div>,
             document.body,
@@ -598,7 +598,7 @@ export function EditorToolbar({
           onPress={() => toggleToolsPanel('insert')}
           pressed={openPanel === 'insert'}
         >
-          <span className="sn-editor-tool-caption"><UiIcon name="plus" />{t('editor.insertPanel')}</span>
+          <span className="sn-editor-tool-caption"><UiIcon className="sn-icon sn-icon--16" name="plus" />{t('editor.insertPanel')}</span>
         </ToolbarButton>
         <ToolbarButton
           controls={editorToolsPanelIds.blocks}
@@ -624,7 +624,7 @@ export function EditorToolbar({
         {openPanel === 'blocks' ? createPortal(
           <div
             aria-label={t('editor.blocksPanel')}
-            className="sn-editor-tools-menu sn-editor-tools-menu--blocks sn-editor-tools-menu--floating"
+            className="sn-editor-tools-menu sn-editor-tools-menu--blocks sn-editor-tools-menu--floating sn-menu"
             id={editorToolsPanelIds.blocks}
             ref={toolsMenuRef}
             role="dialog"
@@ -632,7 +632,7 @@ export function EditorToolbar({
             tabIndex={-1}
           >
             <div className="sn-editor-tools-menu__section" role="group">
-              <span className="sn-editor-tools-menu__label">{t('editor.groupLayout')}</span>
+              <span className="sn-editor-tools-menu__label sn-menu__group">{t('editor.groupLayout')}</span>
               <div className="sn-editor-tools-menu__row sn-editor-tools-menu__row--alignment">
                 {textAlignValues.map((alignment) => (
                   <MenuButton
@@ -649,20 +649,20 @@ export function EditorToolbar({
               </div>
             </div>
 
-            <details className="sn-editor-advanced">
+            <details className="sn-editor-advanced sn-disclosure">
               <summary>{t('editor.advancedLayout', {
                 line: toolbarState.blockLayout.blockLineHeight,
                 indent: toolbarState.blockLayout.blockFirstLineIndent,
               })}</summary>
             <div className="sn-editor-tools-menu__section" role="group">
-              <span className="sn-editor-tools-menu__label">{t('editor.lineSpacing')}</span>
-              <div className="sn-editor-layout-presets">
+              <span className="sn-editor-tools-menu__label sn-menu__group">{t('editor.lineSpacing')}</span>
+              <div className="sn-editor-layout-presets sn-seg">
                 {/* Even 0.2 steps. The old ladder wasted a slot on 1.45 and
                     1.5 — three per cent apart, indistinguishable — and offered
                     1.0, at which body lines touch. */}
                 {[1.2, 1.4, 1.6, 1.8, 2].map((lineHeight) => (
                   <button
-                    className="sn-editor-layout-preset"
+                    className="sn-editor-layout-preset sn-seg__item"
                     data-active={toolbarState.blockLayout.blockLineHeight === lineHeight}
                     disabled={!editor}
                     key={lineHeight}
@@ -686,11 +686,11 @@ export function EditorToolbar({
             </div>
 
             <div className="sn-editor-tools-menu__section" role="group">
-              <span className="sn-editor-tools-menu__label">{t('editor.paragraphSpacing')}</span>
-              <div className="sn-editor-layout-presets">
+              <span className="sn-editor-tools-menu__label sn-menu__group">{t('editor.paragraphSpacing')}</span>
+              <div className="sn-editor-layout-presets sn-seg">
                 {blockMarginValues.map((margin) => (
                   <button
-                    className="sn-editor-layout-preset"
+                    className="sn-editor-layout-preset sn-seg__item"
                     data-active={toolbarState.blockLayout.blockMargin === margin}
                     disabled={!editor}
                     key={margin}
@@ -704,15 +704,15 @@ export function EditorToolbar({
             </div>
 
             <div className="sn-editor-tools-menu__section" role="group">
-              <span className="sn-editor-tools-menu__label">{t('editor.firstLineIndent')}</span>
-              <div className="sn-editor-layout-presets">
+              <span className="sn-editor-tools-menu__label sn-menu__group">{t('editor.firstLineIndent')}</span>
+              <div className="sn-editor-layout-presets sn-seg">
                 {([
                   ['editor.indentNone', 0],
                   ['editor.indentSmall', 24],
                   ['editor.indentLarge', 40],
                 ] as const).map(([labelKey, indent]) => (
                   <button
-                    className="sn-editor-layout-preset"
+                    className="sn-editor-layout-preset sn-seg__item"
                     data-active={toolbarState.blockLayout.blockFirstLineIndent === indent}
                     disabled={!editor}
                     key={labelKey}
@@ -737,7 +737,7 @@ export function EditorToolbar({
             </details>
 
             <div className="sn-editor-tools-menu__section" role="group">
-              <span className="sn-editor-tools-menu__label">{t('editor.groupText')}</span>
+              <span className="sn-editor-tools-menu__label sn-menu__group">{t('editor.groupText')}</span>
               <div className="sn-editor-tools-menu__row">
                 <MenuButton
                   disabled={!editor}
@@ -789,7 +789,7 @@ export function EditorToolbar({
         {openPanel === 'insert' ? createPortal(
           <div
             aria-label={t('editor.insertPanel')}
-            className="sn-editor-tools-menu sn-editor-tools-menu--floating"
+            className="sn-editor-tools-menu sn-editor-tools-menu--floating sn-menu"
             id={editorToolsPanelIds.insert}
             onClick={(event) => {
               if ((event.target as HTMLElement).closest('button')) setOpenPanel(null)
@@ -800,7 +800,7 @@ export function EditorToolbar({
             tabIndex={-1}
           >
             <div className="sn-editor-tools-menu__section" role="group">
-              <span className="sn-editor-tools-menu__label">{t('editor.groupLists')}</span>
+              <span className="sn-editor-tools-menu__label sn-menu__group">{t('editor.groupLists')}</span>
               <div className="sn-editor-tools-menu__row">
                 <MenuButton
                   disabled={!editor}
@@ -834,7 +834,7 @@ export function EditorToolbar({
             </div>
 
             <div className="sn-editor-tools-menu__section" role="group">
-              <span className="sn-editor-tools-menu__label">{t('editor.groupInsert')}</span>
+              <span className="sn-editor-tools-menu__label sn-menu__group">{t('editor.groupInsert')}</span>
               <div className="sn-editor-tools-menu__row">
                 <MenuButton
                   disabled={!editor}
@@ -888,7 +888,7 @@ export function EditorToolbar({
         {openPanel === 'page' ? createPortal(
           <div
             aria-label={t('editor.pagePanel')}
-            className="sn-editor-tools-menu sn-editor-tools-menu--page sn-editor-tools-menu--floating"
+            className="sn-editor-tools-menu sn-editor-tools-menu--page sn-editor-tools-menu--floating sn-menu"
             id={editorToolsPanelIds.page}
             ref={toolsMenuRef}
             role="dialog"
@@ -896,10 +896,10 @@ export function EditorToolbar({
             tabIndex={-1}
           >
             <div className="sn-editor-tools-menu__section" role="group">
-              <span className="sn-editor-tools-menu__label">{t('editor.pageMargins')}</span>
+              <span className="sn-editor-tools-menu__label sn-menu__group">{t('editor.pageMargins')}</span>
               <div>
                 <p className="sn-editor-tools-menu__hint">{t('editor.pageMarginsHint')}</p>
-                <div className="sn-editor-layout-presets">
+                <div className="sn-editor-layout-presets sn-seg">
                   {([
                     ['editor.marginNarrow', 48, 40, 72],
                     [
@@ -911,7 +911,7 @@ export function EditorToolbar({
                     ['editor.marginWide', 96, 72, 112],
                   ] as const).map(([labelKey, side, top, bottom]) => (
                     <button
-                      className="sn-editor-layout-preset"
+                      className="sn-editor-layout-preset sn-seg__item"
                       data-active={
                         toolbarState.pageLayout.pageSideMargin === side &&
                         toolbarState.pageLayout.pageHeaderOffset === top &&
@@ -936,7 +936,7 @@ export function EditorToolbar({
             </div>
 
             <div className="sn-editor-tools-menu__section" role="group">
-              <span className="sn-editor-tools-menu__label">{t('editor.customMargins')}</span>
+              <span className="sn-editor-tools-menu__label sn-menu__group">{t('editor.customMargins')}</span>
               <div className="sn-editor-page-settings">
                 <LayoutNumberField
                   disabled={!editor}
@@ -973,7 +973,7 @@ export function EditorToolbar({
 
         {openPanel === 'table' ? createPortal(
           <div
-            className="sn-editor-tools-menu sn-editor-tools-menu--floating"
+            className="sn-editor-tools-menu sn-editor-tools-menu--floating sn-menu"
             id={editorToolsPanelIds.table}
             ref={toolsMenuRef}
             role="menu"
@@ -985,7 +985,7 @@ export function EditorToolbar({
             ) : null}
 
             <div className="sn-editor-tools-menu__section" role="group">
-              <span className="sn-editor-tools-menu__label">{t('editor.groupTableRows')}</span>
+              <span className="sn-editor-tools-menu__label sn-menu__group">{t('editor.groupTableRows')}</span>
               <div className="sn-editor-tools-menu__row">
                 <MenuButton
                   disabled={!editor || !toolbarState.canAddTableRow}
@@ -1015,7 +1015,7 @@ export function EditorToolbar({
             </div>
 
             <div className="sn-editor-tools-menu__section" role="group">
-              <span className="sn-editor-tools-menu__label">{t('editor.groupTableColumns')}</span>
+              <span className="sn-editor-tools-menu__label sn-menu__group">{t('editor.groupTableColumns')}</span>
               <div className="sn-editor-tools-menu__row">
                 <MenuButton
                   disabled={!editor || !toolbarState.canAddTableColumn}
@@ -1045,7 +1045,7 @@ export function EditorToolbar({
             </div>
 
             <div className="sn-editor-tools-menu__section" role="group">
-              <span className="sn-editor-tools-menu__label">{t('editor.groupTableCells')}</span>
+              <span className="sn-editor-tools-menu__label sn-menu__group">{t('editor.groupTableCells')}</span>
               <div className="sn-editor-tools-menu__row">
                 <MenuButton
                   disabled={!editor || !toolbarState.canMergeCells}

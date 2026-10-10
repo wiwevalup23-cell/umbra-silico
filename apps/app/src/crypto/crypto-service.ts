@@ -1,9 +1,11 @@
-import type {
-  LocalCryptoProfile,
-  LockCredentials,
-  NoteEncryptionMetadata,
-  UnlockCredentials,
-  UserId,
+import {
+  InvalidVaultCredentialError,
+  type LocalCryptoProfile,
+  type LockCredentials,
+  type NoteEncryptionMetadata,
+  type UnlockCredentials,
+  type UserId,
+  type VaultCredential,
 } from '@/shared/contracts'
 import {
   base64ToBytes,
@@ -141,6 +143,24 @@ async function decryptBytes({
       bytesToArrayBuffer(ciphertext),
     ),
   )
+}
+
+/**
+ * Unwraps the master key, translating "this secret does not fit" into a type.
+ *
+ * AES-GCM authentication is the only check a wrong password meets, so its
+ * failure is the wrong-password signal; anything thrown before the decrypt
+ * (a broken profile, a missing KDF) keeps its own error.
+ */
+async function unwrapMasterKeyBytes(
+  credential: VaultCredential,
+  input: { ciphertext: Uint8Array; key: CryptoKey; nonce: Uint8Array },
+): Promise<Uint8Array> {
+  try {
+    return await decryptBytes(input)
+  } catch {
+    throw new InvalidVaultCredentialError(credential)
+  }
 }
 
 export class WebCryptoService implements CryptoService {
@@ -311,7 +331,7 @@ export class WebCryptoService implements CryptoService {
       params: profile.kdf,
       salt: base64ToBytes(profile.salt),
     })
-    const rawMasterKey = await decryptBytes({
+    const rawMasterKey = await unwrapMasterKeyBytes('master-password', {
       ciphertext: base64ToBytes(profile.wrappedMasterKey),
       key: wrappingKey,
       nonce: base64ToBytes(profile.wrapNonce),
@@ -333,7 +353,7 @@ export class WebCryptoService implements CryptoService {
       params: profile.recovery.kdf,
       salt: base64ToBytes(profile.recovery.salt),
     })
-    const rawMasterKey = await decryptBytes({
+    const rawMasterKey = await unwrapMasterKeyBytes('recovery-key', {
       ciphertext: base64ToBytes(profile.recovery.wrappedMasterKey),
       key: wrappingKey,
       nonce: base64ToBytes(profile.recovery.wrapNonce),

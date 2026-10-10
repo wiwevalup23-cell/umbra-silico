@@ -74,6 +74,7 @@ export function MathEditorPanel({
         <input
           aria-label={t('editor.latexExpression')}
           autoFocus
+          className="sn-field"
           onChange={(event) => onChange(event.target.value)}
           onKeyDown={(event) => {
             if (event.key === 'Escape') {
@@ -96,31 +97,32 @@ export function MathEditorPanel({
         {onDelete ? (
           <button
             aria-label={t('editor.equationDelete')}
-            className="sn-math-editor__delete"
+            className="sn-math-editor__delete sn-tool"
             onClick={onDelete}
             title={t('editor.equationDelete')}
             type="button"
           >
-            <UiIcon name="trash" />
+            <UiIcon className="sn-icon sn-icon--16" name="trash" />
           </button>
         ) : null}
         <button
           aria-label={t('editor.closeEquationEditor')}
+          className="sn-tool"
           onClick={onCancel}
           title={t('editor.closeEquationEditor')}
           type="button"
         >
-          <UiIcon name="close" />
+          <UiIcon className="sn-icon sn-icon--16" name="close" />
         </button>
         <button
           aria-label={t(draft.mode === 'edit' ? 'editor.equationUpdate' : 'editor.equationInsert')}
-          className="sn-math-editor__save"
+          className="sn-math-editor__save sn-btn sn-btn--primary"
           disabled={!draft.latex.trim()}
           onClick={onSave}
           title={t(draft.mode === 'edit' ? 'editor.equationUpdate' : 'editor.equationInsert')}
           type="button"
         >
-          <UiIcon name="check" />
+          <UiIcon className="sn-icon sn-icon--16" name="check" />
         </button>
       </div>
     </section>

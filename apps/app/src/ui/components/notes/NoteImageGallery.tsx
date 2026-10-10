@@ -61,7 +61,7 @@ function GalleryThumb({ image, onSelect }: GalleryThumbProps) {
               : 'sn-note-gallery__thumb-loading'
           }
         >
-          <UiIcon name="image" />
+          <UiIcon className="sn-icon sn-icon--16" name="image" />
         </span>
       )}
     </button>
@@ -77,7 +77,7 @@ export function NoteImageGallery({
   if (images.length === 0) {
     return (
       <div className="sn-note-gallery__empty">
-        <UiIcon name="image" />
+        <UiIcon className="sn-icon" name="image" />
         <strong>{t('gallery.empty')}</strong>
         <p>{t('gallery.emptyHint')}</p>
       </div>

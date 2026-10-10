@@ -135,7 +135,9 @@ describe('P1-B navigation and folder workflows', () => {
       <TemplatePicker onClose={vi.fn()} onSelect={vi.fn()} templates={noteTemplates} />,
     )
     cleanupTasks.push(rendered.cleanup)
-    expect(rendered.container.querySelector('dialog.sn-modal--command')).not.toBeNull()
+    // The common window: the shell's titlebar and close, not a header of its own.
+    expect(rendered.container.querySelector('dialog.sn-modal--retro.sn-modal--templates')).not.toBeNull()
+    expect(rendered.container.querySelector('.sn-lock-titlebar h2')?.textContent).toBe('Choose a starting point')
     expect(rendered.container.querySelectorAll('.sn-template-card').length).toBe(noteTemplates.length)
   })
 
@@ -246,8 +248,12 @@ describe('P1-B navigation and folder workflows', () => {
     expect(css).toContain('font-family: "SN Cormorant Garamond"')
     expect(css).toContain('CormorantGaramond-Variable.woff2')
     expect(css).toContain('--sn-garamond-weight: 300')
-    // Export, save and lock are all icon-only actions with equal geometry.
-    expect(css).toContain('.sn-editor-actions .sn-icon-button {')
-    expect(css).toContain('.sn-editor-actions .sn-icon-button svg {')
+    // Export and save are icon-only actions with equal geometry: both are the
+    // design system's 32 squircle (SquircleButton size="small").
+    const editorSource = readFileSync(`${process.cwd()}/src/ui/editor/NoteEditor.tsx`, 'utf8')
+    const actionsStart = editorSource.indexOf('<div className="sn-editor-actions">')
+    const actions = editorSource.slice(actionsStart, editorSource.indexOf('</div>', actionsStart))
+    expect(actions.match(/<SquircleButton/g)).toHaveLength(2)
+    expect(actions.match(/size="small"/g)).toHaveLength(2)
   })
 })

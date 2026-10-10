@@ -1,5 +1,9 @@
 import { useState } from 'react'
-import type { NoteDetail, NoteId } from '@/shared/contracts'
+import {
+  InvalidVaultCredentialError,
+  type NoteDetail,
+  type NoteId,
+} from '@/shared/contracts'
 import { useAppUiStore } from '@/viewmodel/app-ui-store'
 import {
   createStaticLiveQuery,
@@ -16,10 +20,35 @@ export type LockModalCredentials = {
   recoveryKey?: string
 }
 
+/**
+ * What went wrong, in terms the person can act on; the UI words it.
+ *
+ * `detail` keeps the underlying message for diagnostics. It is never the text
+ * shown on its own: some engines leave it empty, and it is not localised.
+ */
+export type LockModalError = {
+  kind: 'wrong-password' | 'wrong-recovery-key' | 'failed'
+  detail: string | null
+}
+
+function describeLockModalError(error: unknown): LockModalError {
+  if (error instanceof InvalidVaultCredentialError) {
+    return {
+      kind: error.credential === 'recovery-key' ? 'wrong-recovery-key' : 'wrong-password',
+      detail: error.message,
+    }
+  }
+
+  return {
+    kind: 'failed',
+    detail: error instanceof Error && error.message ? error.message : null,
+  }
+}
+
 export type LockModalViewModel = {
   acknowledgeRecoveryKey(): void
   close(): void
-  error: string | null
+  error: LockModalError | null
   isOpen: boolean
   isPending: boolean
   mode: LockModalMode
@@ -37,7 +66,7 @@ export function useLockModalViewModel(): LockModalViewModel {
   const noteId = useAppUiStore((state) => state.lockModalNoteId)
   const closeLockModal = useAppUiStore((state) => state.closeLockModal)
   const setActiveNote = useAppUiStore((state) => state.setActiveNote)
-  const [error, setError] = useState<string | null>(null)
+  const [error, setError] = useState<LockModalError | null>(null)
   const [isPending, setIsPending] = useState(false)
   const [recoveryKey, setRecoveryKey] = useState<string | null>(null)
   const liveQuery = useOwnedLiveQuery(
@@ -53,7 +82,12 @@ export function useLockModalViewModel(): LockModalViewModel {
   return {
     acknowledgeRecoveryKey() {
       setRecoveryKey(null)
-      closeLockModal()
+
+      // A key can be shown for a lock that then failed (see `submit`). The
+      // dialog stays open on the form so the failure is still reported.
+      if (!error) {
+        closeLockModal()
+      }
     },
     close() {
       setError(null)
@@ -73,6 +107,12 @@ export function useLockModalViewModel(): LockModalViewModel {
 
       setError(null)
       setIsPending(true)
+
+      // Whichever step first meets an empty device creates the vault and is
+      // handed its recovery key — today that is the image preparation, which
+      // runs before the note lock. The key exists only in this variable, so it
+      // is kept even if a later step fails.
+      let createdRecoveryKey: string | null = null
 
       try {
         if (mode === 'unlock') {
@@ -98,7 +138,11 @@ export function useLockModalViewModel(): LockModalViewModel {
           // Ciphertext for every attachment is made durable before the note
           // lock is published. If the note write fails, plaintext remains the
           // active representation and the preparation is rolled back.
-          await imageRepository?.prepareNoteImagesLock(noteId, lockCredentials)
+          const prepared = await imageRepository?.prepareNoteImagesLock(
+            noteId,
+            lockCredentials,
+          )
+          createdRecoveryKey = prepared?.recoveryKey ?? null
           let lockResult: { recoveryKey: string | null }
 
           try {
@@ -113,21 +157,25 @@ export function useLockModalViewModel(): LockModalViewModel {
           await imageRepository?.commitPreparedNoteImagesLock(noteId)
           syncEngine?.requestSync('outbox-change')
 
+          createdRecoveryKey ??= lockResult.recoveryKey
+
           // A vault was just created. Hold the modal open on the key panel
           // instead of closing, because this is the only time it can be read.
-          if (lockResult.recoveryKey) {
-            setRecoveryKey(lockResult.recoveryKey)
+          if (createdRecoveryKey) {
+            setRecoveryKey(createdRecoveryKey)
             return
           }
         }
 
         closeLockModal()
       } catch (submitError) {
-        setError(
-          submitError instanceof Error
-            ? submitError.message
-            : 'Unable to update locked note state.',
-        )
+        setError(describeLockModalError(submitError))
+
+        // The vault outlives the failed lock, so this is still the only moment
+        // its key can be read. Show it first; the error waits behind it.
+        if (createdRecoveryKey) {
+          setRecoveryKey(createdRecoveryKey)
+        }
       } finally {
         setIsPending(false)
       }

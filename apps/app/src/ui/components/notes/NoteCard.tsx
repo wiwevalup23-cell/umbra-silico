@@ -163,7 +163,7 @@ export function NoteCard({
         <span className="sn-note-card__topline">
           {note.kind === 'chat' ? (
             <span aria-label={t('note.chatNote')} className="sn-note-card__kind" title={t('note.chat')}>
-              <UiIcon height={13} name="chat" width={13} />
+              <UiIcon className="sn-icon sn-icon--16" name="chat" />
             </span>
           ) : null}
           <strong data-empty-title={isUntitled}>{displayTitle}</strong>
@@ -179,7 +179,7 @@ export function NoteCard({
               />
             ) : null}
             {note.isLocked ? (
-              <UiIcon name="lock" />
+              <UiIcon className="sn-icon sn-icon--16" name="lock" />
             ) : null}
           </span>
         </span>
@@ -190,7 +190,7 @@ export function NoteCard({
           <span className="sn-note-card__properties">
             {shouldShowPageStatus ? (
               <span
-                className="sn-note-card__page-status"
+                className="sn-note-card__page-status sn-chip sn-chip--status"
                 data-tone={pageStatus.value}
                 title={t('note.statusTitle', { status: pageStatusLabel })}
               >
@@ -217,9 +217,9 @@ export function NoteCard({
             ) : null}
             {visibleTags.length > 0 ? (
               <span className="sn-note-card__tags" aria-label={t('note.tags')}>
-                {visibleTags.map((tag) => <span key={tag}>{tag}</span>)}
+                {visibleTags.map((tag) => <span className="sn-chip sn-chip--tag" key={tag}>{tag}</span>)}
                 {hiddenTagCount > 0 ? (
-                  <span className="sn-note-card__tag-overflow">+{hiddenTagCount}</span>
+                  <span className="sn-chip sn-chip--tag sn-note-card__tag-overflow">+{hiddenTagCount}</span>
                 ) : null}
               </span>
             ) : null}
@@ -235,21 +235,18 @@ export function NoteCard({
             aria-expanded={isActionsOpen}
             aria-haspopup="menu"
             aria-label={t('note.actionsFor', { title: displayTitle })}
-            className="sn-note-card__actions-trigger"
+            className="sn-note-card__actions-trigger sn-tool"
             onClick={() => setActionsOpen((open) => !open)}
             title={t('note.actions')}
             type="button"
           >
-            <span aria-hidden="true" className="sn-note-card__actions-dots">
-              <i />
-              <i />
-              <i />
-            </span>
+            <UiIcon className="sn-icon sn-icon--16" name="moreHorizontal" />
           </button>
           {isActionsOpen ? (
-            <div className="sn-note-card__menu" role="menu">
+            <div className="sn-note-card__menu sn-menu" role="menu">
               {onMove ? (
                 <button
+                  className="sn-menu-item"
                   onClick={() => {
                     setActionsOpen(false)
                     onMove(note.id)
@@ -257,12 +254,12 @@ export function NoteCard({
                   role="menuitem"
                   type="button"
                 >
-                  <UiIcon name="folder" />
-                  {t('note.moveToFolder')}
+                  <UiIcon className="sn-icon sn-icon--16" name="folder" />
+                  <span className="sn-menu-item__label">{t('note.moveToFolder')}</span>
                 </button>
               ) : null}
               <button
-                className="sn-note-card__menu-danger"
+                className="sn-menu-item sn-menu-item--danger sn-note-card__menu-danger"
                 onClick={() => {
                   setActionsOpen(false)
                   onDelete(note.id)
@@ -270,8 +267,8 @@ export function NoteCard({
                 role="menuitem"
                 type="button"
               >
-                <UiIcon name="trash" />
-                {t('note.moveToTrash')}
+                <UiIcon className="sn-icon sn-icon--16" name="trash" />
+                <span className="sn-menu-item__label">{t('note.moveToTrash')}</span>
               </button>
             </div>
           ) : null}

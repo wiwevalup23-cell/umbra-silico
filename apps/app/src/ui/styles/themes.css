@@ -93,24 +93,21 @@
   --sn-ink-soft: #373338;
   --sn-muted: #655f67;
   --sn-muted-2: #6f6972;
-  --sn-focus: #1c1a1d;
 
   /* Rules and hairlines */
-  --sn-border: rgba(28, 26, 29, 0.14);
   --sn-border-strong: rgba(28, 26, 29, 0.32);
   --sn-border-hairline: rgba(28, 26, 29, 0.07);
-  --sn-border-control: rgba(28, 26, 29, 0.45);
   --sn-muted-line: rgba(28, 26, 29, 0.11);
   --sn-border-hover: #706673;
 
   /* Accent */
   --sn-selection: #7C3E85;
   --sn-selection-strong: #652C66;
-  --sn-selection-soft: rgba(124, 62, 133, 0.1);
+  --sn-selection-soft: rgba(124, 62, 133, 0.12);
 
   /* Semantic */
-  --sn-success: #477765;
-  --sn-pending: #956521;
+  --sn-success: #457362;
+  --sn-pending: #8e6020;
   --sn-danger: #9b3f40;
   --sn-warning-ink: #76501d;
 
@@ -124,17 +121,8 @@
   --umbra-grey-beige: #94909e;
 
   /* Platinum relief */
-  --sn-bevel-border: #847c8c;
-  --sn-bevel-bg: linear-gradient(180deg, #ffffff 0%, #e9e5f1 55%, #dad6e4 100%);
-  --sn-bevel-bg-hover: linear-gradient(180deg, #ffffff 0%, #efebf6 55%, #e1ddea 100%);
-  --sn-bevel-bg-active: linear-gradient(180deg, #d5d1df, #e6e2ee);
-  --sn-bevel-shadow: inset 0 1px 0 #ffffff, 0 1px 2px rgba(40, 35, 42, 0.28);
-  --sn-bevel-shadow-pressed: inset 0 1px 3px rgba(40, 35, 42, 0.35);
-  --sn-field-shadow: inset 0 2px 3px rgba(40, 35, 42, 0.12);
-  --sn-shadow-soft: 0 22px 54px rgba(31, 28, 33, 0.12);
-  --sn-shadow-panel: 0 16px 36px rgba(31, 28, 33, 0.08);
-  --sn-shadow-control: 2px 2px 0 rgba(28, 26, 29, 0.34);
-  --sn-shadow-control-pressed: 1px 1px 0 rgba(28, 26, 29, 0.34);
+  --sn-bevel-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.85), 0 1px 0 rgba(28, 26, 29, 0.14);
+  --sn-bevel-shadow-pressed: inset 0 1px 2px rgba(28, 26, 29, 0.22);
   --sn-stripe-line: repeating-linear-gradient( 0deg, transparent 0 1px, rgba(28, 26, 29, 0.26) 1px 2px );
   --sn-stripe-line-vertical: repeating-linear-gradient( 90deg, transparent 0 1px, rgba(28, 26, 29, 0.24) 1px 2px );
 
@@ -198,6 +186,56 @@
   --sn-player-ink-muted: #757079;
   --sn-player-hello-ink: #131117;
   --sn-player-shadow-rgb: 40, 35, 42;
+
+  /* Design system v2 — colour (tokens.json, Lilac Platinum) */
+  --sn-surface-raised: #f6f3fb;
+  --sn-code-bg: #ece8f3;
+  --sn-disabled: #9f99a6;
+  --sn-line: #d2cddb;
+  --sn-frame-rule: rgba(28, 26, 29, 0.3);
+  --sn-frame-rule-inner: rgba(28, 26, 29, 0.13);
+  --sn-control-border: #807985;
+  --sn-on-selection: #fefeff;
+  --sn-primary-hover: #3a363c;
+  --sn-on-primary: #fefeff;
+  --sn-hover: rgba(28, 26, 29, 0.07);
+  --sn-pressed: rgba(28, 26, 29, 0.14);
+  --sn-squircle-fill: rgba(254, 254, 255, 0.5);
+  --sn-bevel-top: #fdfcff;
+  --sn-bevel-bottom: #e3deec;
+  --sn-signal-graphite: #3d3a40;
+  --sn-signal-blue: #586c82;
+  --sn-signal-gold: #8e6020;
+  --sn-signal-green: #457362;
+  --sn-signal-red: #9b3f40;
+  --sn-signal-violet: #6f6484;
+  --sn-on-signal: #fefeff;
+  --sn-shadow-menu: 0 1px 2px rgba(28, 26, 29, 0.1), 0 8px 24px rgba(28, 26, 29, 0.16);
+  --sn-shadow-dialog: 0 2px 4px rgba(28, 26, 29, 0.12), 0 24px 64px rgba(28, 26, 29, 0.28);
+  --sn-shadow-field-inset: inset 0 1px 2px rgba(28, 26, 29, 0.14);
+  --sn-shadow-relief: inset 0 1px 0 rgba(255, 255, 255, 0.75), 2px 2px 0 rgba(28, 26, 29, 0.1);
+  /* Lilac still shows the warm player (no lilac artwork yet), and the keys
+     belong to the player's plastic, not to the theme: the warm values. */
+  --sn-key-top: #fbf9f3;
+  --sn-key-bottom: #ebe5d6;
+  --sn-key-edge: #bdb5a2;
+  --sn-key-depth: #cfc7b3;
+  --sn-key-light: rgba(255, 255, 255, 0.9);
+  --sn-key-cast: rgba(32, 29, 23, 0.16);
+  --sn-key-accent: #215ea0;
+  --sn-panel-edge: rgba(28, 26, 29, 0.14);
+  --sn-panel-sheen: linear-gradient(180deg, rgba(255, 255, 255, 0.4), rgba(255, 255, 255, 0) 38%, rgba(28, 26, 29, 0.035));
+  --sn-shadow-panel-raised: inset 0 1px 0 rgba(255, 255, 255, 0.9), inset 0 -1px 0 rgba(28, 26, 29, 0.08), 0 2px 4px rgba(28, 26, 29, 0.08), 0 20px 44px rgba(28, 26, 29, 0.13);
+  --sn-panel-texture: repeating-linear-gradient(180deg, rgba(255, 255, 255, 0.32) 0 1px, rgba(255, 255, 255, 0) 1px 3px);
+  --sn-shadow-field-deep: inset 0 2px 3px rgba(28, 26, 29, 0.17), 0 1px 0 rgba(255, 255, 255, 0.8);
+  --sn-tray-bg: rgba(28, 26, 29, 0.055);
+  --sn-shadow-tray: inset 0 2px 6px rgba(28, 26, 29, 0.16), inset 0 0 0 1px rgba(28, 26, 29, 0.05), 0 1px 0 rgba(255, 255, 255, 0.8);
+  --sn-card-edge: rgba(28, 26, 29, 0.14);
+  --sn-shadow-card: inset 0 1px 0 rgba(255, 255, 255, 0.9), 0 1px 2px rgba(28, 26, 29, 0.1);
+  --sn-shadow-card-lift: inset 0 1px 0 rgba(255, 255, 255, 0.9), 0 2px 4px rgba(28, 26, 29, 0.08), 0 8px 18px rgba(28, 26, 29, 0.14);
+  --sn-row-sheen: linear-gradient(180deg, rgba(255, 255, 255, 0.7), rgba(255, 255, 255, 0.15));
+  --sn-rule-engraved: rgba(28, 26, 29, 0.1);
+  --sn-rule-engraved-light: rgba(255, 255, 255, 0.75);
 }
 
 /* --------------------------------------------------------------------
@@ -256,25 +294,22 @@
   --sn-ink-soft: #CECAD5;
   --sn-muted: #A9A3B2;
   --sn-muted-2: #A29CAB;
-  --sn-focus: #C8A9F8;
 
   /* Rules and hairlines — light on a dark case, not dark on a light one */
-  --sn-border: rgba(233, 229, 240, 0.14);
   --sn-border-strong: rgba(233, 229, 240, 0.30);
   --sn-border-hairline: rgba(233, 229, 240, 0.08);
-  --sn-border-control: rgba(233, 229, 240, 0.38);
   --sn-muted-line: rgba(233, 229, 240, 0.12);
   --sn-border-hover: #7B7081;
 
   /* Accent */
   --sn-selection: #B790EC;
   --sn-selection-strong: #C8A9F8;
-  --sn-selection-soft: rgba(183, 144, 236, 0.16);
+  --sn-selection-soft: rgba(183, 144, 236, 0.18);
 
   /* Semantic */
   --sn-success: #90CDB7;
   --sn-pending: #D4B072;
-  --sn-danger: #E88381;
+  --sn-danger: #EC8F8D;
   --sn-warning-ink: #D4B278;
 
   /* Status markers */
@@ -287,17 +322,8 @@
   --umbra-grey-beige: #B3AEBF;
 
   /* Platinum relief, re-drawn rather than inverted */
-  --sn-bevel-border: #624D64;
-  --sn-bevel-bg: linear-gradient(180deg, #493C4A 0%, #402E43 55%, #38263C 100%);
-  --sn-bevel-bg-hover: linear-gradient(180deg, #524452 0%, #453846 55%, #402E43 100%);
-  --sn-bevel-bg-active: linear-gradient(180deg, #342338, #3F2C42);
-  --sn-bevel-shadow: inset 0 1px 0 rgba(233, 229, 240, 0.14), 0 1px 2px rgba(0, 0, 0, 0.55);
-  --sn-bevel-shadow-pressed: inset 0 1px 3px rgba(0, 0, 0, 0.55);
-  --sn-field-shadow: inset 0 2px 3px rgba(0, 0, 0, 0.42);
-  --sn-shadow-soft: 0 22px 54px rgba(0, 0, 0, 0.52);
-  --sn-shadow-panel: 0 16px 36px rgba(0, 0, 0, 0.42);
-  --sn-shadow-control: 2px 2px 0 rgba(0, 0, 0, 0.55);
-  --sn-shadow-control-pressed: 1px 1px 0 rgba(0, 0, 0, 0.55);
+  --sn-bevel-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.1), 0 1px 0 rgba(0, 0, 0, 0.45);
+  --sn-bevel-shadow-pressed: inset 0 1px 2px rgba(0, 0, 0, 0.5);
   --sn-stripe-line: repeating-linear-gradient(0deg, transparent 0 1px, rgba(233, 229, 240, 0.16) 1px 2px);
   --sn-stripe-line-vertical: repeating-linear-gradient(90deg, transparent 0 1px, rgba(233, 229, 240, 0.14) 1px 2px);
 
@@ -365,6 +391,56 @@
   --sn-player-ink-muted: #a79fb0;
   --sn-player-hello-ink: #e9e3f2;
   --sn-player-shadow-rgb: 0, 0, 0;
+
+  /* Design system v2 — colour (tokens.json, CRT Room). The primary action is
+     light here: text on it is --sn-on-primary, never a literal white. */
+  --sn-surface-raised: #382640;
+  --sn-code-bg: #4d3a51;
+  --sn-disabled: #74667a;
+  --sn-line: #5a4860;
+  --sn-frame-rule: rgba(230, 227, 236, 0.3);
+  --sn-frame-rule-inner: rgba(230, 227, 236, 0.13);
+  --sn-control-border: #867a8a;
+  --sn-on-selection: #1d0f25;
+  --sn-primary-hover: #ffffff;
+  --sn-on-primary: #2f1f34;
+  --sn-hover: rgba(230, 227, 236, 0.07);
+  --sn-pressed: rgba(230, 227, 236, 0.17);
+  --sn-squircle-fill: rgba(230, 227, 236, 0.08);
+  --sn-bevel-top: #574260;
+  --sn-bevel-bottom: #44314b;
+  --sn-signal-graphite: #cbc5d2;
+  --sn-signal-blue: #8fb6de;
+  --sn-signal-gold: #d4b072;
+  --sn-signal-green: #90cdb7;
+  --sn-signal-red: #ec8f8d;
+  --sn-signal-violet: #c3b1e8;
+  --sn-on-signal: #1d0f25;
+  --sn-shadow-menu: 0 1px 2px rgba(0, 0, 0, 0.45), 0 8px 24px rgba(0, 0, 0, 0.5);
+  --sn-shadow-dialog: 0 2px 4px rgba(0, 0, 0, 0.5), 0 24px 64px rgba(0, 0, 0, 0.6);
+  --sn-shadow-field-inset: inset 0 1px 3px rgba(0, 0, 0, 0.45);
+  --sn-shadow-relief: inset 0 1px 0 rgba(255, 255, 255, 0.07), 2px 2px 0 rgba(0, 0, 0, 0.3);
+  /* The CRT player: body 3b2a3e…443246, rim 5b485c, the Play key b790ec. */
+  --sn-key-top: #4b3851;
+  --sn-key-bottom: #3a2a3e;
+  --sn-key-edge: #6b5870;
+  --sn-key-depth: #1e1422;
+  --sn-key-light: rgba(255, 255, 255, 0.1);
+  --sn-key-cast: rgba(0, 0, 0, 0.45);
+  --sn-key-accent: #b790ec;
+  --sn-panel-edge: rgba(230, 227, 236, 0.08);
+  --sn-panel-sheen: linear-gradient(180deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0) 38%, rgba(0, 0, 0, 0.12));
+  --sn-shadow-panel-raised: inset 0 1px 0 rgba(255, 255, 255, 0.08), inset 0 -1px 0 rgba(0, 0, 0, 0.35), 0 2px 4px rgba(0, 0, 0, 0.35), 0 20px 44px rgba(0, 0, 0, 0.45);
+  --sn-panel-texture: repeating-linear-gradient(180deg, rgba(255, 255, 255, 0.025) 0 1px, rgba(255, 255, 255, 0) 1px 3px);
+  --sn-shadow-field-deep: inset 0 2px 4px rgba(0, 0, 0, 0.5), 0 1px 0 rgba(255, 255, 255, 0.05);
+  --sn-tray-bg: rgba(0, 0, 0, 0.22);
+  --sn-shadow-tray: inset 0 2px 7px rgba(0, 0, 0, 0.55), inset 0 0 0 1px rgba(0, 0, 0, 0.2), 0 1px 0 rgba(255, 255, 255, 0.05);
+  --sn-card-edge: rgba(230, 227, 236, 0.12);
+  --sn-shadow-card: inset 0 1px 0 rgba(255, 255, 255, 0.07), 0 1px 2px rgba(0, 0, 0, 0.4);
+  --sn-shadow-card-lift: inset 0 1px 0 rgba(255, 255, 255, 0.09), 0 2px 4px rgba(0, 0, 0, 0.4), 0 8px 18px rgba(0, 0, 0, 0.5);
+  --sn-row-sheen: linear-gradient(180deg, rgba(255, 255, 255, 0.09), rgba(255, 255, 255, 0.02));
+  --sn-rule-engraved: rgba(0, 0, 0, 0.35);
+  --sn-rule-engraved-light: rgba(255, 255, 255, 0.05);
 }
 
 /* Raster art swaps by file. `content` on a replaced element exchanges what an
@@ -372,6 +448,7 @@
    which matters here because UI components are not allowed to read settings
    (architecture.test.ts keeps that boundary). Only the dark theme pays for the
    second file; the light themes render the original untouched. */
+
 :root[data-theme='crt'] .sn-empty-player__image {
   content: url("/assets/player-crt-cut.png");
 }

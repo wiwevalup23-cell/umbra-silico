@@ -143,20 +143,22 @@ export function QuickSwitcher({
   let renderedGroup: SwitcherItem['group'] | null = null
 
   return (
+    // The same window as the lock and settings dialogs: striped titlebar with
+    // the name and a close key; the search field sits under it.
     <RetroDialogShell
       className="sn-modal--command"
+      closeLabel={t('switcher.close')}
       describedBy="quick-switcher-hint"
       initialFocusRef={inputRef}
       labelledBy="quick-switcher-title"
       onClose={onClose}
-      showTitlebar={false}
       title={t('switcher.title')}
     >
       <section className="sn-command-window sn-quick-switcher">
         <header className="sn-command-window__header sn-command-window__header--search">
-          <UiIcon name="search" />
-          <label className="sr-only" htmlFor="quick-switcher-search" id="quick-switcher-title">
-            {t('switcher.title')}
+          <UiIcon className="sn-icon sn-icon--16" name="search" />
+          <label className="sr-only" htmlFor="quick-switcher-search">
+            {t('switcher.placeholder')}
           </label>
           <input
             aria-activedescendant={items[activeIndex] ? `${listboxId}-${items[activeIndex].id}` : undefined}
@@ -172,15 +174,7 @@ export function QuickSwitcher({
             type="search"
             value={query}
           />
-          <kbd className="sn-command-window__desktop-hint" id="quick-switcher-hint">Esc</kbd>
-          <button
-            aria-label={t('switcher.close')}
-            className="sn-command-window__mobile-close"
-            onClick={onClose}
-            type="button"
-          >
-            {t('action.close')}
-          </button>
+          <kbd className="sn-command-window__desktop-hint sn-key" id="quick-switcher-hint">Esc</kbd>
         </header>
 
         <div className="sn-command-list" id={listboxId} role="listbox">
@@ -213,12 +207,12 @@ export function QuickSwitcher({
                   role="option"
                   type="button"
                 >
-                  <UiIcon name={item.icon} />
+                  <UiIcon className="sn-icon sn-icon--16" name={item.icon} />
                   <span>
                     <strong>{item.label}</strong>
                     <small>{item.description}</small>
                   </span>
-                  <UiIcon name="chevronRight" />
+                  <UiIcon className="sn-icon sn-icon--16" name="chevronRight" />
                 </button>
               </div>
             )

@@ -69,29 +69,29 @@ export function NoteList({
 
   return (
     <section className="sn-note-list-shell" aria-label={t('library.notes')}>
-      <header className="sn-panel-heading">
+      {/* The panel heading is a small window titlebar: the scope's name and an
+          engraved ridge. How many notes, and whether they are saved, live in
+          the status bar at the foot of the panel. */}
+      <header className="sn-panel-heading sn-panel-heading--titlebar">
         <div>
           <div className="sn-panel-heading__title-row">
             {scopePath ? (
               <details className="sn-library-location" key={scopePath}>
                 <summary aria-label={`${scopeLabel}. ${t('library.location')}`}>
                   <h2 title={scopePath}>{scopeLabel}</h2>
-                  <UiIcon name="chevronDown" />
+                  <UiIcon className="sn-icon sn-icon--16" name="chevronDown" />
                 </summary>
                 <p>{scopePath}</p>
               </details>
             ) : <h2>{scopeLabel ?? t('library.allNotes')}</h2>}
-            <span className="sn-panel-heading__right">{noteCountLabel}</span>
+            <span aria-hidden="true" className="sn-panel-heading__ridge" />
           </div>
-          <p className="sn-panel-status" aria-live="polite">
-            <span className="sn-status-dot" data-tone={libraryStatus.tone} />
-            <span>{t(libraryStatus.labelKey)}</span>
-          </p>
         </div>
         {onCollapse ? (
           <div className="sn-panel-heading__actions">
             <SquircleButton
               aria-label={t('library.collapse')}
+              tooltip={t('library.collapse')}
               className="sn-panel-collapse-button"
               legacyIcon="chevronLeft"
               onClick={onCollapse}
@@ -100,10 +100,8 @@ export function NoteList({
         ) : null}
       </header>
 
-      {navigationSlot}
-
-      <label className="sn-search-field">
-        <UiIcon name="search" />
+      <label className="sn-search-field sn-search">
+        <UiIcon className="sn-icon sn-icon--16" name="search" />
         <span className="sr-only">{searchLabel}</span>
         <input
           onChange={(event) => onSearchChange?.(event.target.value)}
@@ -113,9 +111,11 @@ export function NoteList({
         />
       </label>
 
+      {navigationSlot}
+
       {notes.length === 0 ? (
         <div className="sn-empty-list">
-          <UiIcon name="document" />
+          <UiIcon className="sn-icon" name="document" />
           <strong>{t(searchQuery ? 'library.noMatches' : emptyTitle)}</strong>
           <p>{t(searchQuery ? 'library.noMatchesHint' : emptyBody)}</p>
           {!searchQuery ? (
@@ -149,21 +149,30 @@ export function NoteList({
         ))}
       </ul>
 
-      {onOpenTrash ? (
-        <footer className="sn-library-footer">
+      <footer className="sn-library-footer">
+        {onOpenTrash ? (
           <button
             className="sn-library-footer__button"
             onClick={onOpenTrash}
+            title={t('trash.title')}
             type="button"
           >
             <span>
-              <UiIcon name="trash" />
-              {t('trash.title')}
+              <UiIcon className="sn-icon sn-icon--16" name="trash" />
+              <span className="sn-library-footer__label">{t('trash.title')}</span>
             </span>
-            <span>{trashCount}</span>
+            {trashCount > 0 ? <span className="sn-library-footer__count">{trashCount}</span> : null}
           </button>
-        </footer>
-      ) : null}
+        ) : null}
+        <p
+          className="sn-panel-status sn-library-footer__status"
+          aria-live="polite"
+          title={`${noteCountLabel} · ${t(libraryStatus.labelKey)}`}
+        >
+          <span className="sn-status-dot" data-tone={libraryStatus.tone} />
+          <span>{noteCountLabel} · {t(libraryStatus.labelKey)}</span>
+        </p>
+      </footer>
     </section>
   )
 }

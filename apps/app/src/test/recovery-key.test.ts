@@ -8,7 +8,7 @@ import {
 } from '@/crypto'
 import { createDexieNotesStore } from '@/local-store/dexie/dexie-notes-store'
 import { DefaultNoteRepository } from '@/repository/note-repository'
-import type { NoteDocument } from '@/shared/contracts'
+import { InvalidVaultCredentialError, type NoteDocument } from '@/shared/contracts'
 
 const masterPassword = 'correct horse battery staple'
 
@@ -119,10 +119,44 @@ describe('recovery key unlock', () => {
 
     await expect(
       repository.unlockNoteForSession(noteId, { recoveryKey: generateRecoveryKey() }),
-    ).rejects.toThrow()
+    ).rejects.toMatchObject({
+      name: 'InvalidVaultCredentialError',
+      credential: 'recovery-key',
+    })
 
     // A failed attempt must not leave the note readable.
     expect((await repository.getNote(noteId))?.isLocked).toBe(true)
+  })
+
+  it('names a wrong master password as such, whatever the engine says', async () => {
+    const noteId = await repository.createNote({ title: 'Journal' })
+    await repository.lockNote(noteId, { masterPassword })
+
+    // The lock cached the key; a typed password must still be checked.
+    const attempt = repository.unlockNoteForSession(noteId, {
+      masterPassword: 'not the password at all',
+    })
+
+    await expect(attempt).rejects.toBeInstanceOf(InvalidVaultCredentialError)
+    await expect(attempt).rejects.toMatchObject({ credential: 'master-password' })
+    expect((await repository.getNote(noteId))?.isLocked).toBe(true)
+  })
+
+  it('locks later notes only with the vault password, even while its key is cached', async () => {
+    const first = await repository.createNote({ title: 'One' })
+    const second = await repository.createNote({ title: 'Two' })
+    await repository.lockNote(first, { masterPassword })
+
+    // Accepting this would seal the note under the vault password while its
+    // owner believes it is sealed under the one they just typed.
+    await expect(
+      repository.lockNote(second, { masterPassword: 'a different password' }),
+    ).rejects.toBeInstanceOf(InvalidVaultCredentialError)
+    expect((await repository.getNote(second))?.isLocked).toBe(false)
+
+    await expect(repository.lockNote(second, { masterPassword })).resolves.toEqual({
+      recoveryKey: null,
+    })
   })
 
   it('still opens with the master password after a recovery unlock', async () => {

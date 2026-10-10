@@ -23,6 +23,7 @@ export function MarkerPicker({ disabled = false, onChange, value }: MarkerPicker
           <button
             aria-label={label}
             aria-pressed={isSelected}
+            className="sn-tool"
             data-tone={`marker.${option.value}`}
             disabled={disabled}
             key={option.value}

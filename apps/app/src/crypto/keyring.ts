@@ -80,9 +80,11 @@ export class InMemoryKeyring implements Keyring {
       }
     }
 
-    const masterKey =
-      this.masterKeys.get(userId) ??
-      (await this.cryptoService.unlockMasterKey(profile, credentials))
+    // Always re-derive, even with the key cached. Locking asks for the master
+    // password, and honouring the cache would accept any password typed there:
+    // the note would be sealed under the vault password while its owner
+    // believes it is sealed under the one they just entered.
+    const masterKey = await this.cryptoService.unlockMasterKey(profile, credentials)
     this.masterKeys.set(userId, masterKey)
 
     return {

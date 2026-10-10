@@ -11,6 +11,7 @@ import type {
   ImageRepository,
   ImportedImage,
   ImportImageInput,
+  PrepareNoteImagesLockResult,
 } from '@/repository/contracts/image-repository'
 import { LiveQueryRegistry, StoreBackedLiveQuery } from '@/repository/live-query'
 import {
@@ -283,7 +284,7 @@ export class DefaultImageRepository implements ImageRepository {
   async prepareNoteImagesLock(
     noteId: NoteId,
     credentials: LockCredentials,
-  ): Promise<void> {
+  ): Promise<PrepareNoteImagesLockResult> {
     const parsedNoteId = noteIdSchema.parse(noteId)
     const note = await this.notesStore.getNote(parsedNoteId)
 
@@ -316,6 +317,8 @@ export class DefaultImageRepository implements ImageRepository {
       await this.rollbackPreparedNoteImagesLock(parsedNoteId)
       throw error
     }
+
+    return { recoveryKey: resolved.recoveryKey }
   }
 
   async commitPreparedNoteImagesLock(noteId: NoteId): Promise<void> {

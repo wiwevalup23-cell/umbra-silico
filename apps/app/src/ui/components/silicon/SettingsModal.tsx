@@ -149,11 +149,12 @@ export function SettingsModal({
       ref={dialogRef}
     >
       <div className="sn-modal__surface sn-settings-modal__surface">
-        <header className="sn-settings-modal__header">
-          <h2 id="sn-settings-modal-title">
-            <UiIcon name="settings" />
-            {t('settings.title')}
-          </h2>
+        {/* The same window titlebar as every other dialog: stripes, title,
+            a 36 squircle to close. */}
+        <header className="sn-lock-titlebar">
+          <span aria-hidden="true" />
+          <h2 id="sn-settings-modal-title">{t('settings.title')}</h2>
+          <span aria-hidden="true" />
           <SquircleButton
             aria-label={t('settings.close')}
             icon="close"
@@ -164,19 +165,19 @@ export function SettingsModal({
 
         <div
           aria-label={t('settings.sections')}
-          className="sn-settings-tabs"
+          className="sn-settings-tabs sn-seg"
           role="tablist"
         >
           {tabs.map((tab) => (
             <button
               aria-selected={activeTab === tab.id}
-              className="sn-settings-tab"
+              className="sn-settings-tab sn-seg__item"
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
               role="tab"
               type="button"
             >
-              <UiIcon name={tab.icon} />
+              <UiIcon className="sn-icon sn-icon--16" name={tab.icon} />
               {tab.label}
             </button>
           ))}
@@ -253,7 +254,7 @@ export function SettingsModal({
                 <p className="sn-settings-section__hint">{t('settings.opacityHint')}</p>
                 <input
                   aria-labelledby="sn-background-opacity-label"
-                  className="sn-opacity-range"
+                  className="sn-opacity-range sn-slider"
                   max={100}
                   min={0}
                   onChange={(event) =>
@@ -331,7 +332,7 @@ export function SettingsModal({
                     onClick={pickFile}
                     type="button"
                   >
-                    <UiIcon name="image" />
+                    <UiIcon className="sn-icon sn-icon--16" name="image" />
                     {customBackground.url
                       ? t('settings.backgroundReplace')
                       : t('settings.backgroundUpload')}
@@ -343,7 +344,7 @@ export function SettingsModal({
                       onClick={customBackground.onRemove}
                       type="button"
                     >
-                      <UiIcon name="trash" />
+                      <UiIcon className="sn-icon sn-icon--16" name="trash" />
                       {t('settings.backgroundRemove')}
                     </button>
                   ) : null}
@@ -398,13 +399,13 @@ export function SettingsModal({
               <p className="sn-settings-section__hint">{t('settings.languageHint')}</p>
               <div
                 aria-labelledby="sn-language-label"
-                className="sn-language-options"
+                className="sn-language-options sn-seg"
                 role="radiogroup"
               >
                 {locales.map((option) => (
                   <button
                     aria-checked={settings.locale === option}
-                    className="sn-language-option"
+                    className="sn-language-option sn-seg__item"
                     data-active={settings.locale === option}
                     key={option}
                     onClick={() => updateSetting('locale', option)}

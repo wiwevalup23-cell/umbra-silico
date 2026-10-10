@@ -78,7 +78,7 @@ function makeNoteRepository(note: NoteDetail) {
   return {
     liveNote: vi.fn(() => staticQuery<NoteDetail | null>(note)),
     liveTrashList: vi.fn(() => staticQuery([])),
-    lockNote: vi.fn(async () => undefined),
+    lockNote: vi.fn(async () => ({ recoveryKey: null as string | null })),
     unlockNoteForSession: vi.fn(async () => ({ noteId, expiresAt: now })),
     purgeNote: vi.fn(async () => undefined),
     restoreNote: vi.fn(async () => undefined),
@@ -91,7 +91,7 @@ function makeImageRepository() {
     importImage: vi.fn(),
     getImageBlob: vi.fn(async () => null),
     reconcileNoteImages: vi.fn(async () => undefined),
-    prepareNoteImagesLock: vi.fn(async () => undefined),
+    prepareNoteImagesLock: vi.fn(async () => ({ recoveryKey: null as string | null })),
     commitPreparedNoteImagesLock: vi.fn(async () => undefined),
     rollbackPreparedNoteImagesLock: vi.fn(async () => undefined),
     lockNoteImages: vi.fn(async () => undefined),
@@ -229,7 +229,79 @@ describe('image lock lifecycle wiring', () => {
     expect(imageRepository.prepareNoteImagesLock).toHaveBeenCalled()
     expect(imageRepository.rollbackPreparedNoteImagesLock).toHaveBeenCalledWith(noteId)
     expect(imageRepository.commitPreparedNoteImagesLock).not.toHaveBeenCalled()
-    expect((viewModel as LockModalViewModel | null)?.error).toBe('note lock failed')
+    expect((viewModel as LockModalViewModel | null)?.error).toEqual({
+      kind: 'failed',
+      detail: 'note lock failed',
+    })
+  })
+
+  it('shows the recovery key even when image preparation is what created the vault', async () => {
+    // Preparation runs before the note lock, so on an empty device it is the
+    // step that meets "no vault yet" — and the note lock then reports none.
+    const repository = makeNoteRepository(makePlainNote())
+    const imageRepository = makeImageRepository()
+    imageRepository.prepareNoteImagesLock.mockResolvedValue({ recoveryKey: 'ABCDE-FGH1J' })
+    let viewModel: LockModalViewModel | null = null
+
+    function Probe() {
+      viewModel = useLockModalViewModel()
+      return null
+    }
+
+    renderProbe(repository, imageRepository, Probe)
+    act(() => {
+      useAppUiStore.setState({ lockModalNoteId: noteId })
+    })
+
+    await act(async () => {
+      await viewModel?.submit({ masterPassword: 'correct horse battery' })
+    })
+
+    expect((viewModel as LockModalViewModel | null)?.recoveryKey).toBe('ABCDE-FGH1J')
+    // Held open on the key panel: this is the only time the key can be read.
+    expect(useAppUiStore.getState().lockModalNoteId).toBe(noteId)
+
+    act(() => {
+      ;(viewModel as LockModalViewModel | null)?.acknowledgeRecoveryKey()
+    })
+    expect(useAppUiStore.getState().lockModalNoteId).toBeNull()
+  })
+
+  it('keeps a freshly created recovery key when the note lock then fails', async () => {
+    const repository = makeNoteRepository(makePlainNote())
+    const imageRepository = makeImageRepository()
+    imageRepository.prepareNoteImagesLock.mockResolvedValue({ recoveryKey: 'ABCDE-FGH1J' })
+    ;(repository.lockNote as ReturnType<typeof vi.fn>).mockRejectedValue(
+      new Error('note lock failed'),
+    )
+    let viewModel: LockModalViewModel | null = null
+
+    function Probe() {
+      viewModel = useLockModalViewModel()
+      return null
+    }
+
+    renderProbe(repository, imageRepository, Probe)
+    act(() => {
+      useAppUiStore.setState({ lockModalNoteId: noteId })
+    })
+
+    await act(async () => {
+      await viewModel?.submit({ masterPassword: 'correct horse battery' })
+    })
+
+    // The vault exists now whatever happened to the note, so its key is shown.
+    expect((viewModel as LockModalViewModel | null)?.recoveryKey).toBe('ABCDE-FGH1J')
+    expect((viewModel as LockModalViewModel | null)?.error?.kind).toBe('failed')
+
+    act(() => {
+      ;(viewModel as LockModalViewModel | null)?.acknowledgeRecoveryKey()
+    })
+
+    // Acknowledging returns to the form, where the failure is still reported.
+    expect(useAppUiStore.getState().lockModalNoteId).toBe(noteId)
+    expect((viewModel as LockModalViewModel | null)?.recoveryKey).toBeNull()
+    expect((viewModel as LockModalViewModel | null)?.error?.kind).toBe('failed')
   })
 
   it('purging a note from trash purges its image blobs too', async () => {

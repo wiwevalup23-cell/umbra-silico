@@ -104,15 +104,15 @@ export function ChatMessageBubble({
           aria-expanded={isActionsOpen}
           aria-haspopup="menu"
           aria-label={t('chat.messageActions')}
-          className="sn-chat-bubble__action-trigger"
+          className="sn-chat-bubble__action-trigger sn-tool"
           onClick={() => setIsActionsOpen((isOpen) => !isOpen)}
           title={t('chat.messageActions')}
           type="button"
         >
-          <UiIcon height={15} name="moreHorizontal" width={15} />
+          <UiIcon className="sn-icon" name="moreHorizontal" />
         </button>
         {isActionsOpen ? (
-          <div aria-label={t('chat.messageActions')} className="sn-chat-bubble__action-menu" role="menu">
+          <div aria-label={t('chat.messageActions')} className="sn-chat-bubble__action-menu sn-menu" role="menu">
             {isDeleteConfirming ? (
               <div
                 aria-label={t('chat.confirmDeletion')}
@@ -122,14 +122,15 @@ export function ChatMessageBubble({
                 <strong>{t('chat.deleteQuestion')}</strong>
                 <div>
                   <button
+                    className="sn-menu-item"
                     onClick={() => setIsDeleteConfirming(false)}
                     role="menuitem"
                     type="button"
                   >
-                    {t('action.cancel')}
+                    <span className="sn-menu-item__label">{t('action.cancel')}</span>
                   </button>
                   <button
-                    className="sn-chat-bubble__action-danger"
+                    className="sn-chat-bubble__action-danger sn-menu-item sn-menu-item--danger"
                     onClick={() => {
                       setIsActionsOpen(false)
                       onDelete(message.id)
@@ -137,7 +138,7 @@ export function ChatMessageBubble({
                     role="menuitem"
                     type="button"
                   >
-                    {t('chat.delete')}
+                    <span className="sn-menu-item__label">{t('chat.delete')}</span>
                   </button>
                 </div>
               </div>
@@ -145,6 +146,7 @@ export function ChatMessageBubble({
               <>
                 {canCopy ? (
                   <button
+                    className="sn-menu-item"
                     onClick={() => {
                       setIsActionsOpen(false)
                       void navigator.clipboard?.writeText(plainText)
@@ -152,11 +154,12 @@ export function ChatMessageBubble({
                     role="menuitem"
                     type="button"
                   >
-                    <UiIcon height={14} name="copy" width={14} />
-                    {t('chat.copyText')}
+                    <UiIcon className="sn-icon sn-icon--16" name="copy" />
+                    <span className="sn-menu-item__label">{t('chat.copyText')}</span>
                   </button>
                 ) : null}
                 <button
+                  className="sn-menu-item"
                   onClick={() => {
                     setIsActionsOpen(false)
                     onSetPinned(message.id, message.pinnedAt === null)
@@ -164,11 +167,12 @@ export function ChatMessageBubble({
                   role="menuitem"
                   type="button"
                 >
-                  <UiIcon height={14} name="pin" width={14} />
-                  {t(message.pinnedAt ? 'chat.unpin' : 'chat.pin')}
+                  <UiIcon className="sn-icon sn-icon--16" name="pin" />
+                  <span className="sn-menu-item__label">{t(message.pinnedAt ? 'chat.unpin' : 'chat.pin')}</span>
                 </button>
                 {canEdit ? (
                   <button
+                    className="sn-menu-item"
                     onClick={() => {
                       setIsActionsOpen(false)
                       onStartEdit(message.id)
@@ -176,20 +180,21 @@ export function ChatMessageBubble({
                     role="menuitem"
                     type="button"
                   >
-                    <UiIcon height={14} name="edit" width={14} />
-                    {t('chat.edit')}
+                    <UiIcon className="sn-icon sn-icon--16" name="edit" />
+                    <span className="sn-menu-item__label">{t('chat.edit')}</span>
                   </button>
                 ) : null}
+                <div className="sn-menu__sep" role="separator" />
                 <button
-                  className="sn-chat-bubble__action-danger"
+                  className="sn-chat-bubble__action-danger sn-menu-item sn-menu-item--danger"
                   onClick={() => {
                     setIsDeleteConfirming(true)
                   }}
                   role="menuitem"
                   type="button"
                 >
-                  <UiIcon height={14} name="trash" width={14} />
-                  Delete
+                  <UiIcon className="sn-icon sn-icon--16" name="trash" />
+                  <span className="sn-menu-item__label">{t('chat.delete')}</span>
                 </button>
               </>
             )}
@@ -203,8 +208,8 @@ export function ChatMessageBubble({
       <ChatMessageContentView content={message.content} />
 
       <span className="sn-chat-bubble__meta">
-        {message.pinnedAt ? <em className="sn-chat-bubble__pinned">pinned</em> : null}
-        {message.editedAt ? <em>edited</em> : null}
+        {message.pinnedAt ? <em className="sn-chat-bubble__pinned">{t('chat.pinnedMark')}</em> : null}
+        {message.editedAt ? <em>{t('chat.editedMark')}</em> : null}
         {time ? <time dateTime={message.createdAt}>{time}</time> : null}
       </span>
     </div>

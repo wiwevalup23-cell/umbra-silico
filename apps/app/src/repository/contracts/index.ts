@@ -10,4 +10,5 @@ export type {
   ImageRepository,
   ImportedImage,
   ImportImageInput,
+  PrepareNoteImagesLockResult,
 } from './image-repository'

@@ -26,7 +26,7 @@ export function ToolbarButton({
       aria-expanded={expanded}
       aria-label={label}
       aria-pressed={pressed}
-      className="sn-editor-tool"
+      className="sn-editor-tool sn-tool"
       data-active={pressed ?? false}
       disabled={disabled}
       onClick={onPress}
@@ -59,7 +59,7 @@ export function MenuButton({
   return (
     <button
       aria-label={label}
-      className="sn-editor-menu-button"
+      className="sn-editor-menu-button sn-menu-item"
       data-active={pressed}
       disabled={disabled}
       onClick={onPress}
@@ -67,7 +67,7 @@ export function MenuButton({
       type="button"
     >
       <span aria-hidden="true" className="sn-editor-menu-button__icon">{icon}</span>
-      <span className="sn-editor-menu-button__label">{label}</span>
+      <span className="sn-editor-menu-button__label sn-menu-item__label">{label}</span>
     </button>
   )
 }

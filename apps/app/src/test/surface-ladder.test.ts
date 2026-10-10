@@ -87,8 +87,9 @@ describe('surface ladder', () => {
   it('gives the outer sheet an edge without drawing an inner bottom line', () => {
     const sheet = css.match(/\.sn-editor-paper-sheet \{[\s\S]*?\n\}/)?.[0] ?? ''
 
-    expect(sheet).toContain('border: 1px solid var(--sn-border)')
-    expect(sheet).toContain('box-shadow: var(--sn-shadow-soft)')
+    expect(sheet).toContain('border: 1px solid var(--sn-line)')
+    // No shadow of its own: depth belongs to menus and dialogs lying on top.
+    expect(sheet).toContain('box-shadow: none')
     expect(css).toMatch(/\.sn-editor-paper \{[\s\S]*?border: 0 !important;/)
   })
 })

@@ -160,12 +160,12 @@ export function ChatComposer({
           />
           <button
             aria-label={t('chat.attachImage')}
-            className="sn-chat-control sn-chat-composer__attach"
+            className="sn-squircle sn-squircle--32 sn-chat-control sn-chat-composer__attach"
             onClick={() => fileInputRef.current?.click()}
             title={t('chat.attachImage')}
             type="button"
           >
-            <UiIcon name="image" />
+            <UiIcon className="sn-icon" name="image" />
           </button>
         </>
       ) : null}
@@ -182,24 +182,24 @@ export function ChatComposer({
       {onCancel ? (
         <button
           aria-label={t('chat.cancelEditing')}
-          className="sn-chat-control sn-chat-composer__cancel"
+          className="sn-squircle sn-squircle--32 sn-chat-control sn-chat-composer__cancel"
           onClick={onCancel}
-          title="Cancel (Esc)"
+          title={t('chat.cancelEditingHint')}
           type="button"
         >
-          <UiIcon name="close" />
+          <UiIcon className="sn-icon" name="close" />
         </button>
       ) : null}
 
       <button
         aria-label={submitLabel}
-        className="sn-chat-control sn-chat-control--primary sn-chat-composer__send"
+        className="sn-squircle sn-squircle--32 sn-squircle--primary sn-chat-control sn-chat-composer__send"
         disabled={isEmpty}
         onClick={() => submitRef.current()}
         title={`${submitLabel} (Enter)`}
         type="button"
       >
-        <UiIcon name={onCancel ? 'check' : 'send'} />
+        <UiIcon className="sn-icon" name={onCancel ? 'check' : 'send'} />
       </button>
     </div>
   )

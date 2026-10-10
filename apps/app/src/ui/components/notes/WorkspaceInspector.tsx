@@ -155,6 +155,7 @@ export function WorkspaceInspector({
             {onCollapse ? (
               <SquircleButton
                 aria-label={t('inspector.collapse')}
+                tooltip={t('inspector.collapse')}
                 className="sn-panel-collapse-button"
                 legacyIcon="chevronRight"
                 onClick={onCollapse}
@@ -164,25 +165,25 @@ export function WorkspaceInspector({
         ) : null}
       </header>
 
-      <div className="sn-inspector-tabs" role="tablist" aria-label={t('inspector.views')}>
+      <div className="sn-inspector-tabs sn-tabs" role="tablist" aria-label={t('inspector.views')}>
         <button
           aria-selected={activeTab === 'properties'}
-          className="sn-inspector-tab"
+          className="sn-inspector-tab sn-tabs__tab"
           onClick={() => setActiveTab('properties')}
           role="tab"
           type="button"
         >
-          <UiIcon name="tag" />
+          <UiIcon className="sn-icon sn-icon--16" name="tag" />
           {t('inspector.tabProperties')}
         </button>
         <button
           aria-selected={activeTab === 'photos'}
-          className="sn-inspector-tab"
+          className="sn-inspector-tab sn-tabs__tab"
           onClick={() => setActiveTab('photos')}
           role="tab"
           type="button"
         >
-          <UiIcon name="image" />
+          <UiIcon className="sn-icon sn-icon--16" name="image" />
           {t('inspector.tabPhotos')}
           {!activeNoteIsLocked && noteImages.length > 0 ? (
             <span className="sn-inspector-tab__badge">{noteImages.length}</span>
@@ -190,12 +191,12 @@ export function WorkspaceInspector({
         </button>
         <button
           aria-selected={activeTab === 'info'}
-          className="sn-inspector-tab"
+          className="sn-inspector-tab sn-tabs__tab"
           onClick={() => setActiveTab('info')}
           role="tab"
           type="button"
         >
-          <UiIcon name="info" />
+          <UiIcon className="sn-icon sn-icon--16" name="info" />
           {t('inspector.tabInfo')}
         </button>
       </div>
@@ -223,7 +224,7 @@ export function WorkspaceInspector({
           ) : (
             <>
               <div className="sn-property-field">
-                <span><UiIcon name="info" /> {t('inspector.status')}</span>
+                <span>{t('inspector.status')}</span>
                 <StatusPicker
                   onChange={(status) => void saveProperties({
                     ...properties,
@@ -235,21 +236,25 @@ export function WorkspaceInspector({
 
               <section className="sn-markers-section" aria-label={t('marker.section')}>
                 <div className="sn-property-heading">
-                  <h3><UiIcon name="status" /> {t('marker.section')}</h3>
+                  <h3>{t('marker.section')}</h3>
                   <span>{properties.markers.length}/13</span>
                 </div>
                 {properties.markers.length > 0 ? (
                   <ul className="sn-selected-markers" aria-label={t('marker.selected')}>
                     {propertyMarkerOptions.filter((option) => properties.markers.includes(option.value))
                       .map((option) => (
-                        <li key={option.value}>
+                        <li
+                          className="sn-chip sn-chip--status"
+                          data-tone={`marker.${option.value}`}
+                          key={option.value}
+                        >
                           <StatusGlyph symbol={option.icon} />
                           {t(option.labelKey)}
                         </li>
                       ))}
                   </ul>
                 ) : <p className="sn-property-empty">{t('marker.none')}</p>}
-                <details className="sn-marker-disclosure" key={activeNoteId}>
+                <details className="sn-marker-disclosure sn-disclosure" key={activeNoteId}>
                   <summary>{t('marker.edit')}</summary>
                   <p className="sn-property-empty">{t('marker.hint')}</p>
                   <MarkerPicker
@@ -264,23 +269,24 @@ export function WorkspaceInspector({
 
               <section className="sn-tags-section" aria-label={t('inspector.pageTags')}>
                 <div className="sn-property-heading">
-                  <h3><UiIcon name="tag" /> {t('inspector.tags')}</h3>
+                  <h3>{t('inspector.tags')}</h3>
                   <span>{properties.tags.length}/12</span>
                 </div>
                 {properties.tags.length > 0 ? (
                   <div className="sn-tag-list">
                     {properties.tags.map((tag) => (
-                      <span className="sn-tag" key={tag}>
+                      <span className="sn-tag sn-chip sn-chip--tag" key={tag}>
                         {tag}
                         <button
                           aria-label={t('inspector.removeTag', { tag })}
+                          className="sn-chip__remove"
                           onClick={() => void saveProperties({
                             ...properties,
                             tags: properties.tags.filter((candidate) => candidate !== tag),
                           })}
                           type="button"
                         >
-                          <UiIcon name="close" />
+                          <UiIcon className="sn-icon sn-icon--16" name="close" />
                         </button>
                       </span>
                     ))}
@@ -289,12 +295,17 @@ export function WorkspaceInspector({
                 <form className="sn-tag-entry" onSubmit={addTag}>
                   <input
                     aria-label={t('inspector.newTag')}
+                    className="sn-field"
                     maxLength={32}
                     onChange={(event) => setTagDraft(event.target.value)}
                     placeholder={t('inspector.addTag')}
                     value={tagDraft}
                   />
-                  <button disabled={!tagDraft.trim() || properties.tags.length >= 12} type="submit">
+                  <button
+                    className="sn-btn"
+                    disabled={!tagDraft.trim() || properties.tags.length >= 12}
+                    type="submit"
+                  >
                     {t('inspector.add')}
                   </button>
                 </form>
@@ -328,18 +339,21 @@ export function WorkspaceInspector({
           <dl className="sn-inspector-list">
             <div>
               <dt>{t('inspector.folder')}</dt>
-              <dd><UiIcon name="folder" />{folderName ?? t('library.unfiled')}</dd>
+              <dd>
+                <UiIcon className="sn-icon sn-icon--16" name="folder" />
+                {folderName ?? t('library.unfiled')}
+              </dd>
             </div>
             <div>
               <dt>{t('inspector.updated')}</dt>
-              <dd>
+              <dd className="sn-inspector-list__data">
                 {formatDateTime(activeNote.updatedAt, { ...dateOptions, ...timeOptions })}
               </dd>
             </div>
             <div>
               <dt>{t('inspector.privacy')}</dt>
               <dd>
-                <UiIcon name={activeNote.isLocked ? 'lock' : 'shield'} />
+                <UiIcon className="sn-icon sn-icon--16" name={activeNote.isLocked ? 'lock' : 'shield'} />
                 {activeNote.isLocked
                   ? t('inspector.privacyLocked')
                   : t('inspector.privacyLocal')}
@@ -347,12 +361,12 @@ export function WorkspaceInspector({
             </div>
             <div>
               <dt>{t('inspector.created')}</dt>
-              <dd>{formatDateTime(activeNote.createdAt, dateOptions)}</dd>
+              <dd className="sn-inspector-list__data">{formatDateTime(activeNote.createdAt, dateOptions)}</dd>
             </div>
           </dl>
           {onOpenHistory ? (
-            <button className="sn-inspector-history" onClick={onOpenHistory} type="button">
-              <UiIcon name="refresh" />
+            <button className="sn-inspector-history sn-btn" onClick={onOpenHistory} type="button">
+              <UiIcon className="sn-icon sn-icon--16" name="history" />
               {t('inspector.viewHistory')}
             </button>
           ) : null}
