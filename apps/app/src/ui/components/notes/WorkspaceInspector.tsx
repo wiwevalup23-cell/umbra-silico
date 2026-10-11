@@ -129,18 +129,14 @@ export function WorkspaceInspector({
 
   return (
     <section className="sn-inspector" aria-label={t('inspector.title')}>
-      <header className="sn-panel-heading">
+      {/* The same small window titlebar as the library's: the name and an
+          engraved ridge; which note it describes goes on the line below. */}
+      <header className="sn-panel-heading sn-panel-heading--titlebar">
         <div>
           <div className="sn-panel-heading__title-row">
             <h2>{t('shell.details')}</h2>
+            <span aria-hidden="true" className="sn-panel-heading__ridge" />
           </div>
-          <p>
-            {!activeNote
-              ? t('inspector.noNoteSelected')
-              : activeNote.isLocked
-                ? t('note.locked')
-                : activeNote.title.trim() || t('note.untitled')}
-          </p>
         </div>
         {onCollapse || onOpenSettings ? (
           <div className="sn-panel-heading__actions">
@@ -164,6 +160,14 @@ export function WorkspaceInspector({
           </div>
         ) : null}
       </header>
+
+      <p className="sn-inspector-subject">
+        {!activeNote
+          ? t('inspector.noNoteSelected')
+          : activeNote.isLocked
+            ? t('note.locked')
+            : activeNote.title.trim() || t('note.untitled')}
+      </p>
 
       <div className="sn-inspector-tabs sn-tabs" role="tablist" aria-label={t('inspector.views')}>
         <button

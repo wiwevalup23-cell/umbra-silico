@@ -498,15 +498,12 @@
   --sn-key-cast: rgba(32, 29, 23, 0.16);
   --sn-key-accent: #215ea0;
   /* The case around the sheet (side panels): a rounded body with a lit top
-     and a deep shadow on the desk, faint pinstripes, a recessed tray of raised
-     index cards, and an engraved rule — a dark line with a light one under it. */
+     and a deep shadow on the desk, raised cards lying on it, and an engraved
+     rule — a dark line with a light one under it. */
   --sn-panel-edge: rgba(28, 27, 24, 0.14);
   --sn-panel-sheen: linear-gradient(180deg, rgba(255, 255, 255, 0.4), rgba(255, 255, 255, 0) 38%, rgba(28, 27, 24, 0.035));
   --sn-shadow-panel-raised: inset 0 1px 0 rgba(255, 255, 255, 0.9), inset 0 -1px 0 rgba(28, 27, 24, 0.08), 0 2px 4px rgba(32, 29, 23, 0.08), 0 20px 44px rgba(32, 29, 23, 0.13);
-  --sn-panel-texture: repeating-linear-gradient(180deg, rgba(255, 255, 255, 0.32) 0 1px, rgba(255, 255, 255, 0) 1px 3px);
   --sn-shadow-field-deep: inset 0 2px 3px rgba(40, 37, 30, 0.17), 0 1px 0 rgba(255, 255, 255, 0.8);
-  --sn-tray-bg: rgba(28, 27, 24, 0.055);
-  --sn-shadow-tray: inset 0 2px 6px rgba(40, 37, 30, 0.16), inset 0 0 0 1px rgba(28, 27, 24, 0.05), 0 1px 0 rgba(255, 255, 255, 0.8);
   --sn-card-edge: rgba(28, 27, 24, 0.14);
   --sn-shadow-card: inset 0 1px 0 rgba(255, 255, 255, 0.9), 0 1px 2px rgba(32, 29, 23, 0.1);
   --sn-shadow-card-lift: inset 0 1px 0 rgba(255, 255, 255, 0.9), 0 2px 4px rgba(32, 29, 23, 0.08), 0 8px 18px rgba(32, 29, 23, 0.14);
@@ -6085,13 +6082,19 @@ textarea.sn-editor-title-input:focus-visible {
   flex: 0 0 auto !important;
 }
 
-/* The header carries the wordmark alone until the brand mark is drawn
-   (design system CD-07). What sat here was the operating-system app icon —
-   a bevelled tile meant for a dock, not a logo for the header. The element
-   stays in the markup so the mark can return with one rule. */
-
+/* The brand mark is back beside the wordmark (owner, 2026-10-11): the
+   eclipse-compass tile, swapped for its CRT twin in themes.css. The tile has
+   its own rounded corners and bevel, so the shadow follows its shape. */
 .sn-brand-emblem {
-  display: none !important;
+  width: 40px;
+  height: 40px;
+  overflow: visible;
+  box-shadow: none;
+  transform: none;
+}
+
+.sn-brand-emblem__image {
+  filter: drop-shadow(0 1px 1.5px rgba(32, 29, 23, 0.22));
 }
 
 /* Note history ------------------------------------------------------------ */
@@ -6514,20 +6517,21 @@ textarea.sn-editor-title-input:focus-visible {
    The case around the sheet, braver than the paper: a rounded body with a lit
    top, a dark lower edge and a deep shadow on the desk; a full-width striped
    titlebar; a pill search sunk into the case; the chosen folder a raised
-   lozenge; the notes are index cards standing in a recessed tray; a status
-   bar with the bin as a key.
-   Desktop only: the phone layout keeps its own panel. */
+   lozenge; the notes are cards lying on the panel; a status bar with the bin
+   as a key. The inspector is the same case (below).
+   Desktop only: the phone layout keeps its own panels. */
 @media (min-width: 960px) {
-  .sn-library-panel {
+  .sn-library-panel,
+  .sn-inspector-panel {
     border: 1px solid var(--sn-panel-edge);
     border-radius: 16px;
-    background: var(--sn-panel-texture), var(--sn-panel-sheen), var(--sn-panel-bg);
+    background: var(--sn-panel-sheen), var(--sn-panel-bg);
     box-shadow: var(--sn-shadow-panel-raised);
   }
 
   /* A real titlebar across the top of the case, as on the chat and the lock
      window: lit gradient, the scope's name, the ridge, the collapse key. */
-  .sn-library-panel .sn-panel-heading--titlebar {
+  .sn-panel-heading--titlebar {
     min-height: 52px;
     align-items: center;
     margin-bottom: var(--sn-space-3);
@@ -6537,25 +6541,25 @@ textarea.sn-editor-title-input:focus-visible {
     box-shadow: 0 1px 0 var(--sn-rule-engraved-light);
   }
 
-  .sn-library-panel .sn-panel-heading--titlebar .sn-panel-heading__title-row {
+  .sn-panel-heading--titlebar .sn-panel-heading__title-row {
     flex-wrap: nowrap;
     gap: var(--sn-space-3);
   }
 
-  .sn-library-panel .sn-panel-heading--titlebar .sn-panel-heading__title-row > h2,
-  .sn-library-panel .sn-panel-heading--titlebar .sn-library-location {
+  .sn-panel-heading--titlebar .sn-panel-heading__title-row > h2,
+  .sn-panel-heading--titlebar .sn-library-location {
     flex: 0 1 auto;
     flex-basis: auto;
     font: var(--sn-type-window);
     letter-spacing: var(--sn-type-window-track);
   }
 
-  .sn-library-panel .sn-panel-heading--titlebar .sn-library-location {
+  .sn-panel-heading--titlebar .sn-library-location {
     min-width: 0;
   }
 
   /* One line, like any titlebar; the full path opens under the chevron. */
-  .sn-library-panel .sn-panel-heading--titlebar .sn-library-location h2 {
+  .sn-panel-heading--titlebar .sn-library-location h2 {
     display: block;
     min-width: 0;
     overflow: hidden;
@@ -6598,16 +6602,16 @@ textarea.sn-editor-title-input:focus-visible {
     box-shadow: inset 0 0 0 1px var(--sn-card-edge), var(--sn-shadow-card);
   }
 
-  /* The tray: a deep, rounded well; the notes are index cards standing in it.
-     An empty scope shows the tray with its message lying in it. */
+  /* The notes are cards lying on the panel itself, no tray under them
+     (owner, 2026-10-11). The list keeps 2px round the cards for their
+     shadows. */
   .sn-library-panel .sn-note-list {
     gap: 6px;
-    margin: 0 var(--sn-space-3) var(--sn-space-3);
-    padding: 6px;
+    margin: 0 10px var(--sn-space-3);
+    padding: 2px 2px var(--sn-space-2);
     border: 0;
-    border-radius: 14px;
-    background: var(--sn-tray-bg);
-    box-shadow: var(--sn-shadow-tray);
+    background: none;
+    box-shadow: none;
   }
 
   .sn-library-panel .sn-note-list:empty {
@@ -6618,10 +6622,6 @@ textarea.sn-editor-title-input:focus-visible {
     flex: 1;
     align-content: center;
     margin: 0 var(--sn-space-3) var(--sn-space-3);
-    border: 0;
-    border-radius: 14px;
-    background: var(--sn-tray-bg);
-    box-shadow: var(--sn-shadow-tray);
   }
 
   .sn-library-panel .sn-note-card {
@@ -6814,4 +6814,69 @@ textarea.sn-editor-title-input:focus-visible {
   padding: 0 8px 0 14px;
   border-radius: 18px;
   box-shadow: var(--sn-shadow-field-inset);
+}
+
+/* The inspector as the library's twin (owner, 2026-10-11): the same case and
+   titlebar; which note it describes on a quiet line under the titlebar; the
+   tabs a segmented control sunk into the case with the chosen view raised;
+   sections parted by engraved rules; rounded fields and keys. */
+.sn-inspector-subject {
+  margin: 0 var(--sn-space-4) var(--sn-space-2);
+  overflow: hidden;
+  color: var(--sn-muted);
+  font: var(--sn-type-secondary);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+@media (min-width: 960px) {
+  .sn-inspector-panel .sn-inspector-subject {
+    margin-top: calc(var(--sn-space-1) * -1);
+  }
+
+  .sn-inspector-panel .sn-inspector-tabs {
+    margin: 0 var(--sn-space-3) var(--sn-space-3);
+    padding: 3px;
+    gap: 2px;
+    border: 0;
+    border-radius: 16px;
+    background: var(--sn-field-bg);
+    box-shadow: var(--sn-shadow-field-deep);
+  }
+
+  .sn-inspector-panel .sn-inspector-tab {
+    height: 28px;
+    margin: 0;
+    border-radius: 13px;
+  }
+
+  .sn-inspector-panel .sn-inspector-tab[aria-selected="true"] {
+    background: var(--sn-row-sheen), var(--sn-selection-soft);
+    box-shadow: inset 0 0 0 1px var(--sn-card-edge), var(--sn-shadow-card);
+  }
+
+  .sn-inspector-panel .sn-inspector-tab[aria-selected="true"]::after {
+    content: none;
+  }
+
+  .sn-inspector-panel .sn-properties {
+    gap: 0;
+  }
+
+  .sn-inspector-panel .sn-properties > * + * {
+    margin-top: var(--sn-space-3);
+    padding-top: var(--sn-space-3);
+    border-top: 1px solid var(--sn-rule-engraved);
+    box-shadow: inset 0 1px 0 var(--sn-rule-engraved-light);
+  }
+
+  .sn-inspector-panel .sn-field,
+  .sn-inspector-panel .sn-btn,
+  .sn-inspector-panel .sn-status-picker__trigger {
+    border-radius: 9px;
+  }
+
+  .sn-inspector-panel .sn-chip {
+    border-radius: 999px;
+  }
 }
