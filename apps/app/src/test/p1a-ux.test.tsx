@@ -220,14 +220,15 @@ describe('P1-A visual and interaction contract', () => {
     expect(en['settings.backgroundHint']).toContain('editor paper')
   })
 
-  it('keeps block actions touch-visible and collapses mobile formatting into More', () => {
+  it('keeps block actions touch-visible and uses locale-independent compact tools', () => {
     const css = readFileSync(
       `${process.cwd()}/src/ui/styles/silicon-nostalgia.css`,
       'utf8',
     )
     expect(css).toContain('.sn-block-handle__button--grip')
     expect(css).toContain('width: 44px;')
-    expect(css).toContain('.sn-editor-tool[aria-label="Ordered list"]')
+    expect(css).toContain('.sn-editor-tool[data-secondary="true"]')
+    expect(css).not.toContain('.sn-editor-tool[aria-label=')
     expect(css).toContain('.sn-editor-tools-menu')
     expect(css).toContain('bottom: calc(var(--sn-tabbar-height)')
   })

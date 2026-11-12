@@ -163,3 +163,59 @@ describe('live query lifecycle', () => {
     notes.dispose()
   })
 })
+
+
+describe('search read ordering and initial loading', () => {
+  it('announces completion even when the first result is empty', async () => {
+    let finish!: (notes: string[]) => void
+    const query = new StoreBackedLiveQuery<string[]>({
+      initialSnapshot: [], tags: ['notes'],
+      loadSnapshot: () => new Promise((resolve) => { finish = resolve }),
+    })
+    const snapshot = query.getSnapshot()
+    let notifications = 0
+    query.subscribe(() => { notifications += 1 })
+    expect(query.getIsLoading()).toBe(true)
+    finish([])
+    await Promise.resolve()
+    expect(query.getIsLoading()).toBe(false)
+    expect(query.getSnapshot()).toBe(snapshot)
+    expect(notifications).toBe(1)
+    query.dispose()
+  })
+
+  it('does not replace a newer search snapshot with an older read', async () => {
+    const reads: Array<(value: string[]) => void> = []
+    const query = new StoreBackedLiveQuery<string[]>({
+      initialSnapshot: [], tags: ['notes'],
+      loadSnapshot: () => new Promise((resolve) => { reads.push(resolve) }),
+    })
+    const newer = query.refresh()
+    reads[1](['latest'])
+    await newer
+    reads[0](['stale'])
+    await Promise.resolve()
+    expect(query.getSnapshot()).toEqual(['latest'])
+    expect(query.getIsLoading()).toBe(false)
+    query.dispose()
+  })
+
+  it('ignores a read started before a dispose and retain cycle', async () => {
+    const reads: Array<(value: string[]) => void> = []
+    const query = new StoreBackedLiveQuery<string[]>({
+      initialSnapshot: [], tags: ['notes'],
+      loadSnapshot: () => new Promise((resolve) => { reads.push(resolve) }),
+    })
+    query.dispose()
+    query.retain()
+    reads[0](['released'])
+    await Promise.resolve()
+    expect(query.getSnapshot()).toEqual([])
+    expect(query.getIsLoading()).toBe(true)
+    reads[1](['retained'])
+    await Promise.resolve()
+    expect(query.getSnapshot()).toEqual(['retained'])
+    expect(query.getIsLoading()).toBe(false)
+    query.dispose()
+  })
+})

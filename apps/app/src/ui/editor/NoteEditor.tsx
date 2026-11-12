@@ -606,7 +606,7 @@ export function NoteEditor({
               />
             </label>
           </div>
-          <div className="sn-editor-status-badges" aria-label={t('editor.noteStatus')}>
+          <div className="sn-editor-status-badges" aria-label={t('editor.noteStatus')} aria-live="polite" aria-atomic="true">
             {statusBadges.map((badge) => (
               <span className="sn-editor-status-badge" key={badge.title} title={badge.title}>
                 <UiIcon className="sn-icon sn-icon--16" name={badge.icon} />
@@ -625,7 +625,7 @@ export function NoteEditor({
             />
             <SquircleButton
               aria-label={t('editor.saveNote')}
-              disabled={autosaveState === 'saved' || autosaveState === 'saving'}
+              aria-busy={autosaveState === 'saving'}
               icon="save"
               onClick={() => {
                 void Promise.all([titleAutosave.flush(), documentAutosave.flush()])
@@ -642,6 +642,9 @@ export function NoteEditor({
         onInsertImage={canInsertImages ? openImagePicker : null}
         onOpenMath={openMathEditor}
       />
+      <p className="sn-editor-toolbar-hint">{t('editor.toolbarHint', {
+        insert: t('editor.insertPanel'), blocks: t('editor.blocksPanel'),
+      })}</p>
 
       {mathDraft ? (
         <MathEditorPanel

@@ -5453,14 +5453,7 @@ button {
     padding-right: 64px !important;
   }
 
-  .sn-editor-toolbar__group--history,
-  .sn-editor-tool[aria-label="Strike"],
-  .sn-editor-tool[aria-label="Inline code"],
-  .sn-editor-tool[aria-label="Heading 2"],
-  .sn-editor-tool[aria-label="Blockquote"],
-  .sn-editor-tool[aria-label="Ordered list"] {
-    display: none;
-  }
+
 
   .sn-editor-tools-menu {
     position: fixed;
@@ -6878,5 +6871,48 @@ textarea.sn-editor-title-input:focus-visible {
 
   .sn-inspector-panel .sn-chip {
     border-radius: 999px;
+  }
+}
+
+/* Keep compact tools independent of translated accessible names. Their named
+   equivalents live in Block settings and Insert at every screen size. */
+@media (max-width: 1280px) {
+  .sn-editor-tool[data-secondary="true"] { display: none; }
+}
+
+.sn-search-clear {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  align-self: stretch;
+  min-width: 30px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--sn-ink);
+  cursor: pointer;
+}
+.sn-search-clear:focus-visible { outline: 2px solid var(--sn-ink); outline-offset: -2px; }
+.sn-search-field input::-webkit-search-cancel-button { display: none; }
+.sn-search-status, .sn-search-context {
+  flex: 0 0 auto;
+  margin: 0 var(--sn-space-4) var(--sn-space-3);
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--sn-muted);
+}
+.sn-search-context { padding: 8px; border: 1px solid var(--sn-line); }
+.sn-search-context p { margin: 0 0 8px; overflow-wrap: anywhere; }
+.sn-editor-toolbar-hint { display: none; }
+@media (max-width: 959px) {
+  .sn-editor-toolbar-hint {
+    display: block;
+    margin: 0;
+    padding: 6px 12px;
+    color: var(--sn-muted);
+    font-size: 11px;
+    line-height: 1.4;
+    border-bottom: 1px solid var(--sn-line);
   }
 }

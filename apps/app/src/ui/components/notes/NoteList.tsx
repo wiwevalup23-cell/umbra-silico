@@ -1,4 +1,4 @@
-import type { DragEvent, ReactNode } from 'react'
+import { useRef, type DragEvent, type ReactNode } from 'react'
 import type { NoteId, NoteListItem } from '@/shared/contracts/note'
 import { NoteCard } from '@/ui/components/notes/NoteCard'
 import { UiIcon } from '@/ui/icons/ui/UiIcon'
@@ -8,6 +8,8 @@ import { getPersistencePresentation } from '@/ui/note-presentation'
 
 type NoteListProps = {
   activeNoteId: NoteId | null
+  activeNoteTitle?: string
+  isSearchPending?: boolean
   hasRemote?: boolean
   isUnfiled?: boolean
   navigationSlot?: ReactNode
@@ -32,6 +34,8 @@ type NoteListProps = {
 
 export function NoteList({
   activeNoteId,
+  activeNoteTitle,
+  isSearchPending = false,
   hasRemote = false,
   isUnfiled = false,
   navigationSlot,
@@ -53,6 +57,15 @@ export function NoteList({
   trashCount = 0,
 }: NoteListProps) {
   const { plural, t } = useTranslation()
+  const searchInputRef = useRef<HTMLInputElement>(null)
+  const hasSearch = Boolean(searchQuery.trim())
+  const activeNoteHidden = hasSearch && !isSearchPending && activeNoteId !== null
+    && activeNoteTitle !== undefined && !notes.some((note) => note.id === activeNoteId)
+
+  function clearSearch() {
+    onSearchChange?.('')
+    searchInputRef.current?.focus()
+  }
   const noteCountLabel = plural('library.noteCount', notes.length)
   const searchLabel = scopeLabel
     ? t('library.searchScope', { name: scopeLabel })
@@ -100,25 +113,58 @@ export function NoteList({
         ) : null}
       </header>
 
-      <label className="sn-search-field sn-search">
+      <div className="sn-search-field sn-search">
         <UiIcon className="sn-icon sn-icon--16" name="search" />
         <span className="sr-only">{searchLabel}</span>
         <input
+          aria-label={searchLabel}
+          ref={searchInputRef}
+          onKeyDown={(event) => {
+            if (event.key === 'Escape' && searchQuery) {
+              event.preventDefault()
+              clearSearch()
+            }
+          }}
           onChange={(event) => onSearchChange?.(event.target.value)}
           placeholder={searchLabel}
           type="search"
           value={searchQuery}
         />
-      </label>
+        {searchQuery && onSearchChange ? (
+          <button
+            aria-label={t('library.clearSearch')}
+            className="sn-search-clear"
+            onClick={clearSearch}
+            title={t('library.clearSearch')}
+            type="button"
+          >
+            <UiIcon className="sn-icon sn-icon--16" name="close" />
+          </button>
+        ) : null}
+      </div>
+
+      {(hasSearch || isSearchPending) ? (
+        <p className="sn-search-status" role="status">
+          {isSearchPending ? t('library.searching') : t('library.searchResults', { count: notes.length })}
+        </p>
+      ) : null}
+      {activeNoteHidden ? (
+        <div className="sn-search-context" role="status">
+          <p>{t('library.openNoteHidden', { title: activeNoteTitle || t('note.untitled') })}</p>
+          <button className="sn-empty-list__action" onClick={clearSearch} type="button">
+            {t('library.clearSearch')}
+          </button>
+        </div>
+      ) : null}
 
       {navigationSlot}
 
-      {notes.length === 0 ? (
+      {notes.length === 0 && !isSearchPending ? (
         <div className="sn-empty-list">
           <UiIcon className="sn-icon" name="document" />
-          <strong>{t(searchQuery ? 'library.noMatches' : emptyTitle)}</strong>
-          <p>{t(searchQuery ? 'library.noMatchesHint' : emptyBody)}</p>
-          {!searchQuery ? (
+          <strong>{t(hasSearch ? 'library.noMatches' : emptyTitle)}</strong>
+          <p>{t(hasSearch ? 'library.noMatchesHint' : emptyBody)}</p>
+          {!hasSearch ? (
             <button className="sn-empty-list__action" onClick={onCreateNote} type="button">
               {t('switcher.newBlank')}
             </button>
@@ -126,7 +172,7 @@ export function NoteList({
         </div>
       ) : null}
 
-      <ul className="sn-note-list">
+      <ul aria-busy={isSearchPending} className="sn-note-list">
         {notes.map((note, index) => (
           <li key={note.id}>
             <NoteCard

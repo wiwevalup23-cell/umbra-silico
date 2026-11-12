@@ -283,3 +283,24 @@ describe('reaching the menus that hang off the toolbar', () => {
     expect(editor.getAttributes('highlight').color).toBeTruthy()
   })
 })
+
+
+describe('compact toolbar command access', () => {
+  it('keeps secondary formatting reachable through named menu commands', () => {
+    const { container, editor } = mountToolbar({
+      type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Format me' }] }],
+    })
+    act(() => editor.commands.setTextSelection({ from: 1, to: 10 }))
+    const trigger = container.querySelector<HTMLButtonElement>('button[aria-label="Block settings"]')!
+    expect(trigger.textContent).toContain('Block settings')
+    act(() => trigger.click())
+    const strike = document.body.querySelector<HTMLButtonElement>('.sn-editor-tools-menu button[aria-label="Strike"]')!
+    expect(strike.textContent).toContain('Strike')
+    act(() => strike.click())
+    expect(editor.isActive('strike')).toBe(true)
+    const code = document.body.querySelector<HTMLButtonElement>('.sn-editor-tools-menu button[aria-label="Inline code"]')!
+    act(() => code.click())
+    expect(editor.isActive('code')).toBe(true)
+    expect(container.querySelector('button[aria-label="Ordered list"]')?.getAttribute('data-secondary')).toBe('true')
+  })
+})

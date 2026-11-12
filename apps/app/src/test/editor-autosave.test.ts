@@ -48,6 +48,19 @@ describe('editor debounced autosave', () => {
     expect(save).toHaveBeenCalledOnce()
   })
 
+  it('does not let an idle flush swallow a new manual save in the same turn', async () => {
+    vi.useFakeTimers()
+    const save = vi.fn(async () => undefined)
+    const autosave = createDebouncedAutosave<string>({ delayMs: 800, save })
+    const idle = autosave.flush()
+    autosave.schedule('new draft')
+    await autosave.flush()
+    await idle
+    expect(save).toHaveBeenCalledExactlyOnceWith('new draft')
+    expect(autosave.hasPending()).toBe(false)
+    expect(vi.getTimerCount()).toBe(0)
+  })
+
   it('keeps trying after a failed save instead of abandoning the draft', async () => {
     vi.useFakeTimers()
     const onError = vi.fn()

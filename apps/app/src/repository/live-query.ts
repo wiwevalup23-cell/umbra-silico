@@ -30,6 +30,8 @@ export class StoreBackedLiveQuery<TValue> implements LiveQuery<TValue> {
   // the incoming value; the old implementation re-serialized both sides.
   private snapshotSignature: string
   private disposed = false
+  private isLoading = true
+  private refreshVersion = 0
 
   constructor(options: {
     initialSnapshot: TValue
@@ -53,6 +55,10 @@ export class StoreBackedLiveQuery<TValue> implements LiveQuery<TValue> {
     return this.snapshot
   }
 
+  getIsLoading(): boolean {
+    return this.isLoading
+  }
+
   subscribe(listener: () => void): Unsubscribe {
     this.listeners.add(listener)
     return () => {
@@ -66,6 +72,7 @@ export class StoreBackedLiveQuery<TValue> implements LiveQuery<TValue> {
     }
 
     this.disposed = true
+    this.refreshVersion += 1
     this.listeners.clear()
     this.onDispose(this)
   }
@@ -86,18 +93,26 @@ export class StoreBackedLiveQuery<TValue> implements LiveQuery<TValue> {
       return
     }
 
+    const version = ++this.refreshVersion
     const nextSnapshot = await this.loadSnapshot()
     const nextSignature = this.signature(nextSnapshot)
 
     // A dispose that landed while the snapshot was loading has to win,
     // otherwise a released query would still notify listeners it dropped.
-    if (this.disposed || nextSignature === this.snapshotSignature) {
+    if (this.disposed || version !== this.refreshVersion) {
       return
     }
 
-    this.snapshot = nextSnapshot
-    this.snapshotSignature = nextSignature
-    this.emit()
+    const wasLoading = this.isLoading
+    this.isLoading = false
+    if (nextSignature !== this.snapshotSignature) {
+      this.snapshot = nextSnapshot
+      this.snapshotSignature = nextSignature
+      this.emit()
+    } else if (wasLoading) {
+      // An empty result is still a completed search.
+      this.emit()
+    }
   }
 
   private emit(): void {

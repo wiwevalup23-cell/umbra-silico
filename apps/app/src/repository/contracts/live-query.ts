@@ -2,6 +2,8 @@ export type Unsubscribe = () => void
 
 export type LiveQuery<TValue> = {
   getSnapshot(): TValue
+  /** True until the first store read completes; static queries may omit it. */
+  getIsLoading?(): boolean
   subscribe(listener: () => void): Unsubscribe
   /**
    * Releases the query from its repository. A LiveQuery holds a registration

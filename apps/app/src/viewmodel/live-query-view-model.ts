@@ -44,6 +44,12 @@ export function useOwnedLiveQuery<TValue>(
   return query
 }
 
+export function useLiveQueryLoading<TValue>(query: LiveQuery<TValue>): boolean {
+  const subscribe = useCallback((listener: () => void) => query.subscribe(listener), [query])
+  const getSnapshot = useCallback(() => query.getIsLoading?.() ?? false, [query])
+  return useSyncExternalStore(subscribe, getSnapshot, getSnapshot)
+}
+
 export function useLiveQuery<TValue>(query: LiveQuery<TValue>): TValue {
   const subscribe = useCallback(
     (listener: () => void) => query.subscribe(listener),

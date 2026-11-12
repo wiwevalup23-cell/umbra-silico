@@ -51,7 +51,7 @@ export { createImageUrlCache } from './image-url-cache'
 export type { NotesViewModel } from './notes-view-model'
 export type { NotesViewModelDependencies } from './notes-view-model'
 export { createNotesViewModelDependencies } from './notes-view-model'
-export { useNotesViewModel } from './notes-view-model'
+export { useNotesViewModel, useNotesSearchViewModel } from './notes-view-model'
 export {
   useImageRepository,
   useImageSourceResolver,

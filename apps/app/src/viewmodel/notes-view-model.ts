@@ -1,4 +1,5 @@
-import { useMemo } from 'react'
+import { useMemo, useState } from 'react'
+import { searchDebounceMs, useDebouncedValue } from '@/viewmodel/use-debounced-value'
 import type { NoteRepository } from '@/repository/contracts'
 import {
   noteListQuerySchema,
@@ -7,7 +8,7 @@ import {
   type NoteListQuery,
 } from '@/shared/contracts'
 import { useAppUiStore } from '@/viewmodel/app-ui-store'
-import { useLiveQuery, useOwnedLiveQuery } from '@/viewmodel/live-query-view-model'
+import { useLiveQuery, useLiveQueryLoading, useOwnedLiveQuery } from '@/viewmodel/live-query-view-model'
 import { useNoteRepository } from '@/viewmodel/repository-hooks'
 import { useSyncEngine } from '@/viewmodel/sync-engine-hooks'
 
@@ -26,6 +27,7 @@ export type NotesViewModel = {
   createNote(input?: CreateNoteInput): Promise<NoteId>
   deleteNote(noteId: NoteId): Promise<void>
   isEmpty: boolean
+  isLoading: boolean
   notes: ReturnType<NoteRepository['liveNoteList']> extends {
     getSnapshot(): infer TValue
   }
@@ -58,6 +60,7 @@ export function useNotesViewModel(query: NoteListQuery = {}): NotesViewModel {
     [repository, liveQueryInput],
   )
   const notes = useLiveQuery(liveQuery)
+  const isLoading = useLiveQueryLoading(liveQuery)
 
   return {
     activeNoteId,
@@ -75,9 +78,30 @@ export function useNotesViewModel(query: NoteListQuery = {}): NotesViewModel {
         setActiveNote(null)
       }
     },
-    isEmpty: notes.length === 0,
+    isEmpty: !isLoading && notes.length === 0,
+    isLoading,
     notes,
     openLockModal,
     selectNote: setActiveNote,
+  }
+}
+
+
+/** Keeps the input immediate while store scans trail typing. Clearing bypasses
+ * the debounce so an old non-matching query cannot keep the library hidden. */
+export function useNotesSearchViewModel(query: Omit<NoteListQuery, 'search'> = {}) {
+  const [searchQuery, setSearchQuery] = useState('')
+  const debouncedSearch = useDebouncedValue(searchQuery, searchDebounceMs)
+  const notes = useNotesViewModel({
+    ...query,
+    search: searchQuery.trim() ? debouncedSearch : '',
+  })
+  return {
+    ...notes,
+    searchQuery,
+    setSearchQuery,
+    isSearchPending: notes.isLoading || (
+      Boolean(searchQuery.trim()) && searchQuery !== debouncedSearch
+    ),
   }
 }

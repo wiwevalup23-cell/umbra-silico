@@ -106,6 +106,12 @@ export function createDebouncedAutosave<TValue>({
   function flush(): Promise<void> {
     clearTimer()
 
+    // An idle flush must not occupy the slot until the next microtask. A
+    // draft scheduled immediately afterwards still needs its own flush.
+    if (!pending && !inFlightFlush) {
+      return Promise.resolve()
+    }
+
     if (!inFlightFlush) {
       inFlightFlush = runFlush().finally(() => {
         inFlightFlush = null

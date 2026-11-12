@@ -26,12 +26,11 @@ import {
   useFoldersViewModel,
   useNoteImagesViewModel,
   useNotesViewModel,
+  useNotesSearchViewModel,
   useOverlayActions,
   useSyncViewModel,
   useTrashViewModel,
   useWorkspaceLayout,
-  searchDebounceMs,
-  useDebouncedValue,
 } from '@/viewmodel'
 
 // The editor drags TipTap, ProseMirror and KaTeX behind it, so it loads on
@@ -72,7 +71,6 @@ function AppWorkspace() {
   const { t } = useTranslation()
   const layout = useWorkspaceLayout()
   const { close: closeOverlay, open: openOverlay, toggle: toggleOverlay } = useOverlayActions()
-  const [searchQuery, setSearchQuery] = useState('')
   const [libraryMode, setLibraryMode] = useState<LibraryMode>('notes')
   const [isHomeView, setIsHomeView] = useState(false)
   const [isCreatingNote, setIsCreatingNote] = useState(false)
@@ -87,13 +85,10 @@ function AppWorkspace() {
   const { isNarrow, mobileTab, setMobileTab } = layout
 
   const foldersViewModel = useFoldersViewModel()
-  // The input stays on searchQuery so typing is instant; the query trails it so
-  // a full-text scan runs once per pause rather than once per character.
-  const debouncedSearchQuery = useDebouncedValue(searchQuery, searchDebounceMs)
-  const notesViewModel = useNotesViewModel({
+  const notesViewModel = useNotesSearchViewModel({
     folderId: libraryMode === 'notes' ? foldersViewModel.activeFolderId : undefined,
-    search: debouncedSearchQuery,
   })
+  const { searchQuery, setSearchQuery } = notesViewModel
   const allNotesViewModel = useNotesViewModel()
   const trashViewModel = useTrashViewModel()
   const noteLocation = useNoteLocation()
@@ -453,6 +448,10 @@ function AppWorkspace() {
                   onSelectNote={handleSelectNote}
                   pendingOperations={visiblePendingOperations}
                   searchQuery={searchQuery}
+                  isSearchPending={notesViewModel.isSearchPending}
+                  activeNoteTitle={allNotesViewModel.notes.find(
+                    (note) => note.id === selectedNoteId,
+                  )?.title}
                   scopeLabel={
                     foldersViewModel.activeFolderId !== undefined ? selectedFolderName : null
                   }

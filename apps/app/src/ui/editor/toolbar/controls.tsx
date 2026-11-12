@@ -9,6 +9,7 @@ export type ToolbarButtonProps = {
   label: string
   onPress: () => void
   pressed?: boolean
+  secondary?: boolean
 }
 
 export function ToolbarButton({
@@ -19,6 +20,7 @@ export function ToolbarButton({
   label,
   onPress,
   pressed,
+  secondary = false,
 }: ToolbarButtonProps) {
   return (
     <button
@@ -28,6 +30,7 @@ export function ToolbarButton({
       aria-pressed={pressed}
       className="sn-editor-tool sn-tool"
       data-active={pressed ?? false}
+      data-secondary={secondary || undefined}
       disabled={disabled}
       onClick={onPress}
       title={label}

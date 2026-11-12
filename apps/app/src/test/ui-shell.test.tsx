@@ -797,7 +797,7 @@ describe('Umbra Silico UI shell', () => {
     )
 
     expect(saveButton).not.toBeNull()
-    expect(saveButton?.disabled).toBe(true)
+    expect(saveButton?.disabled).toBe(false)
 
     await act(async () => {
       if (!titleInput) {

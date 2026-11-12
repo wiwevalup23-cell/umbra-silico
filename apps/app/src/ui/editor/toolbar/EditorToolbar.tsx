@@ -430,6 +430,7 @@ export function EditorToolbar({
         <ToolbarButton
           disabled={!editor}
           label={t('editor.strike')}
+          secondary
           onPress={() => editor?.chain().focus().toggleStrike().run()}
           pressed={toolbarState.isStrike}
         >
@@ -438,6 +439,7 @@ export function EditorToolbar({
         <ToolbarButton
           disabled={!editor}
           label={t('editor.inlineCode')}
+          secondary
           onPress={() => editor?.chain().focus().toggleCode().run()}
           pressed={toolbarState.isCode}
         >
@@ -522,6 +524,7 @@ export function EditorToolbar({
         <ToolbarButton
           disabled={!editor}
           label={t('editor.heading2')}
+          secondary
           onPress={() => editor?.chain().focus().toggleHeading({ level: 2 }).run()}
           pressed={toolbarState.isHeading2}
         >
@@ -530,6 +533,7 @@ export function EditorToolbar({
         <ToolbarButton
           disabled={!editor}
           label={t('editor.blockquote')}
+          secondary
           onPress={() => editor?.chain().focus().toggleBlockquote().run()}
           pressed={toolbarState.isBlockquote}
         >
@@ -568,6 +572,7 @@ export function EditorToolbar({
         <ToolbarButton
           disabled={!editor}
           label={t('editor.orderedList')}
+          secondary
           onPress={() => editor?.chain().focus().toggleOrderedList().run()}
           pressed={toolbarState.isOrderedList}
         >
@@ -588,7 +593,7 @@ export function EditorToolbar({
           onPress={() => toggleToolsPanel('page')}
           pressed={openPanel === 'page'}
         >
-          <CompassIcon name="pageLayout" />
+          <span className="sn-editor-tool-caption"><CompassIcon name="pageLayout" />{t('editor.pagePanel')}</span>
         </ToolbarButton>
         <ToolbarButton
           controls={editorToolsPanelIds.insert}
@@ -608,7 +613,7 @@ export function EditorToolbar({
           onPress={() => toggleToolsPanel('blocks')}
           pressed={openPanel === 'blocks'}
         >
-          <CompassIcon name="callout" />
+          <span className="sn-editor-tool-caption"><CompassIcon name="callout" />{t('editor.blocksPanel')}</span>
         </ToolbarButton>
         <ToolbarButton
           controls={editorToolsPanelIds.table}
@@ -618,7 +623,7 @@ export function EditorToolbar({
           onPress={() => toggleToolsPanel('table')}
           pressed={openPanel === 'table'}
         >
-          <CompassIcon name="table" />
+          <span className="sn-editor-tool-caption"><CompassIcon name="table" />{t('editor.tablePanel')}</span>
         </ToolbarButton>
 
         {openPanel === 'blocks' ? createPortal(
@@ -631,6 +636,26 @@ export function EditorToolbar({
             style={toolsMenuStyle ?? { visibility: 'hidden' }}
             tabIndex={-1}
           >
+            <p className="sn-editor-tools-menu__hint">{t('editor.blockSettingsHint')}</p>
+            <div className="sn-editor-tools-menu__section" role="group">
+              <span className="sn-editor-tools-menu__label sn-menu__group">{t('editor.groupFormatting')}</span>
+              <div className="sn-editor-tools-menu__row">
+                <MenuButton
+                  disabled={!editor}
+                  icon={<CompassIcon name="strikethrough" />}
+                  label={t('editor.strike')}
+                  onPress={() => editor?.chain().focus().toggleStrike().run()}
+                  pressed={toolbarState.isStrike}
+                />
+                <MenuButton
+                  disabled={!editor}
+                  icon={<CompassIcon name="code" />}
+                  label={t('editor.inlineCode')}
+                  onPress={() => editor?.chain().focus().toggleCode().run()}
+                  pressed={toolbarState.isCode}
+                />
+              </div>
+            </div>
             <div className="sn-editor-tools-menu__section" role="group">
               <span className="sn-editor-tools-menu__label sn-menu__group">{t('editor.groupLayout')}</span>
               <div className="sn-editor-tools-menu__row sn-editor-tools-menu__row--alignment">
@@ -799,6 +824,7 @@ export function EditorToolbar({
             style={toolsMenuStyle ?? { visibility: 'hidden' }}
             tabIndex={-1}
           >
+            <p className="sn-editor-tools-menu__hint">{t('editor.insertHint')}</p>
             <div className="sn-editor-tools-menu__section" role="group">
               <span className="sn-editor-tools-menu__label sn-menu__group">{t('editor.groupLists')}</span>
               <div className="sn-editor-tools-menu__row">
@@ -895,6 +921,7 @@ export function EditorToolbar({
             style={toolsMenuStyle ?? { visibility: 'hidden' }}
             tabIndex={-1}
           >
+            <p className="sn-editor-tools-menu__hint">{t('editor.pageSettingsHint')}</p>
             <div className="sn-editor-tools-menu__section" role="group">
               <span className="sn-editor-tools-menu__label sn-menu__group">{t('editor.pageMargins')}</span>
               <div>
